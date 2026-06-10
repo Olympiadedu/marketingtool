@@ -47,6 +47,10 @@ body{display:flex;height:100vh;overflow:hidden;font-family:'Noto Sans KR',sans-s
 .img-thumb-wrap.sel{border-color:var(--acc);}
 .img-thumb-wrap img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;}
 .img-name-label{font-size:9px;color:var(--mut);text-align:center;padding:2px 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#fff;}
+.bg-tools{display:flex;flex-direction:column;gap:7px;margin-top:8px;padding:8px;border:1px solid var(--bdr);border-radius:6px;background:#fafafa;}
+.bg-tools .ed-label{width:42px;}
+.bg-upload-row{display:flex;gap:6px;align-items:center;}
+.bg-file-name{font-size:11px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
 
 /* LOGO ROWS */
 .logo-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;border:1px solid var(--bdr);margin-bottom:4px;background:#fafafa;transition:background .15s;}
@@ -140,6 +144,29 @@ canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cur
       <div>
         <div class="sec-title">배경 이미지</div>
         <div class="img-grid" id="p1-img-grid"></div>
+        <div class="bg-tools">
+          <div class="bg-upload-row">
+            <button class="btn btn-outline btn-sm" type="button" id="p1-bg-upload">+ 이미지 추가</button>
+            <span class="bg-file-name" id="p1-bg-file-name">기본 배경</span>
+            <input type="file" id="p1-bg-file" accept="image/*" style="display:none">
+          </div>
+          <div class="ed-row">
+            <span class="ed-label">확대</span>
+            <input type="range" id="p1-bg-scale" min="80" max="250" value="100">
+            <span class="val-span" id="p1-bg-scale-v">100</span>
+          </div>
+          <div class="ed-row">
+            <span class="ed-label">가로</span>
+            <input type="range" id="p1-bg-x" min="-100" max="100" value="0">
+            <span class="val-span" id="p1-bg-x-v">0</span>
+          </div>
+          <div class="ed-row">
+            <span class="ed-label">세로</span>
+            <input type="range" id="p1-bg-y" min="-100" max="100" value="0">
+            <span class="val-span" id="p1-bg-y-v">0</span>
+          </div>
+          <button class="btn btn-outline btn-sm" type="button" id="p1-bg-reset">배경 초기화</button>
+        </div>
       </div>
       <div>
         <div class="sec-title">로고</div>
@@ -184,6 +211,29 @@ canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cur
       <div>
         <div class="sec-title">배경 이미지</div>
         <div class="img-grid" id="p2-img-grid"></div>
+        <div class="bg-tools">
+          <div class="bg-upload-row">
+            <button class="btn btn-outline btn-sm" type="button" id="p2-bg-upload">+ 이미지 추가</button>
+            <span class="bg-file-name" id="p2-bg-file-name">기본 배경</span>
+            <input type="file" id="p2-bg-file" accept="image/*" style="display:none">
+          </div>
+          <div class="ed-row">
+            <span class="ed-label">확대</span>
+            <input type="range" id="p2-bg-scale" min="80" max="250" value="100">
+            <span class="val-span" id="p2-bg-scale-v">100</span>
+          </div>
+          <div class="ed-row">
+            <span class="ed-label">가로</span>
+            <input type="range" id="p2-bg-x" min="-100" max="100" value="0">
+            <span class="val-span" id="p2-bg-x-v">0</span>
+          </div>
+          <div class="ed-row">
+            <span class="ed-label">세로</span>
+            <input type="range" id="p2-bg-y" min="-100" max="100" value="0">
+            <span class="val-span" id="p2-bg-y-v">0</span>
+          </div>
+          <button class="btn btn-outline btn-sm" type="button" id="p2-bg-reset">배경 초기화</button>
+        </div>
       </div>
       <div>
         <div class="sec-title">로고</div>
@@ -383,7 +433,51 @@ function wrapText(ctx, text, maxW) {
   return lines;
 }
 
-async function loadImgManifest(gridId, onSelect) {
+function resetBgTransform(state) {
+  state.bgTransform = {scale: 100, posX: 0, posY: 0};
+}
+
+function updateBgControls(prefix, state) {
+  var t = state.bgTransform || {scale: 100, posX: 0, posY: 0};
+  var scale = document.getElementById(prefix + '-bg-scale');
+  var x = document.getElementById(prefix + '-bg-x');
+  var y = document.getElementById(prefix + '-bg-y');
+  if (!scale || !x || !y) return;
+  scale.value = t.scale;
+  x.value = Math.round(t.posX);
+  y.value = Math.round(t.posY);
+  document.getElementById(prefix + '-bg-scale-v').textContent = Math.round(t.scale);
+  document.getElementById(prefix + '-bg-x-v').textContent = Math.round(t.posX);
+  document.getElementById(prefix + '-bg-y-v').textContent = Math.round(t.posY);
+}
+
+function drawBackground(ctx, state, W, H) {
+  if (!state.bgImg) {
+    ctx.fillStyle = '#222';
+    ctx.fillRect(0, 0, W, H);
+    return;
+  }
+
+  var t = state.bgTransform || {scale: 100, posX: 0, posY: 0};
+  var baseScale = Math.max(W / state.bgImg.naturalWidth, H / state.bgImg.naturalHeight);
+  var scale = baseScale * (t.scale / 100);
+  var sw = state.bgImg.naturalWidth * scale;
+  var sh = state.bgImg.naturalHeight * scale;
+  var x = (W - sw) / 2 + (t.posX / 100) * W;
+  var y = (H - sh) / 2 + (t.posY / 100) * H;
+  ctx.drawImage(state.bgImg, x, y, sw, sh);
+}
+
+function setBackground(state, img, prefix, render, name) {
+  state.bgImg = img;
+  resetBgTransform(state);
+  updateBgControls(prefix, state);
+  var nameEl = document.getElementById(prefix + '-bg-file-name');
+  if (nameEl) nameEl.textContent = name || '기본 배경';
+  render();
+}
+
+async function loadImgManifest(gridId, onSelect, uploadInputId) {
   var grid = document.getElementById(gridId);
   if (!grid) return;
   var imgList = [];
@@ -409,7 +503,7 @@ async function loadImgManifest(gridId, onSelect) {
       wrap.addEventListener('click', function() {
         selFile = img.file;
         var bgImg = new Image();
-        bgImg.onload = function() { onSelect(bgImg); };
+        bgImg.onload = function() { onSelect(bgImg, img.name); };
         bgImg.src = img.url;
         renderGrid();
       });
@@ -436,12 +530,29 @@ async function loadImgManifest(gridId, onSelect) {
     if (imgList.length) {
       selFile = imgList[0].file;
       var bgImg0 = new Image();
-      bgImg0.onload = function() { onSelect(bgImg0); };
+      bgImg0.onload = function() { onSelect(bgImg0, imgList[0].name); };
       bgImg0.src = imgList[0].url;
     }
     renderGrid();
   } catch(e) {
     renderGrid();
+  }
+
+  var uploadInput = uploadInputId ? document.getElementById(uploadInputId) : null;
+  if (uploadInput) {
+    uploadInput.addEventListener('change', function(e) {
+      var file = e.target.files && e.target.files[0];
+      if (!file || !file.type || file.type.indexOf('image/') !== 0) return;
+      var url = URL.createObjectURL(file);
+      var uploaded = {file: 'upload-' + Date.now(), name: file.name, url: url};
+      imgList.unshift(uploaded);
+      selFile = uploaded.file;
+      var bgImg = new Image();
+      bgImg.onload = function() { onSelect(bgImg, file.name); };
+      bgImg.src = url;
+      renderGrid();
+      uploadInput.value = '';
+    });
   }
 }
 
@@ -630,6 +741,7 @@ async function forceLoadFont(family, weight, size) {
 // ============================================================
 var p1State = {
   bgImg: null,
+  bgTransform: {scale: 100, posX: 0, posY: 0},
   logoItems: [],
   selLogoFile: null,
   boxes: [],
@@ -644,15 +756,7 @@ function p1render() {
   var W = p1Canvas.width;
   var H = p1Canvas.height;
   p1Ctx.clearRect(0, 0, W, H);
-  if (p1State.bgImg) {
-    var scale = Math.max(W / p1State.bgImg.naturalWidth, H / p1State.bgImg.naturalHeight);
-    var sw = p1State.bgImg.naturalWidth * scale;
-    var sh = p1State.bgImg.naturalHeight * scale;
-    p1Ctx.drawImage(p1State.bgImg, (W - sw) / 2, (H - sh) / 2, sw, sh);
-  } else {
-    p1Ctx.fillStyle = '#222';
-    p1Ctx.fillRect(0, 0, W, H);
-  }
+  drawBackground(p1Ctx, p1State, W, H);
   var selBox = null;
   p1State.boxes.forEach(function(b) {
     if (b.id === p1State.selId) { selBox = b; return; }
@@ -818,6 +922,12 @@ document.getElementById('p1-del-btn').addEventListener('click', function() {
       p1State.selId = null;
       p1State.selLogoFile = null;
       p1updatePanel();
+      if (p1State.bgImg) {
+        dragging = p1State.bgTransform;
+        dragStartX = pos.x; dragStartY = pos.y;
+        dragOrigX = p1State.bgTransform.posX; dragOrigY = p1State.bgTransform.posY;
+        e.preventDefault();
+      }
       p1render();
     }
   }
@@ -826,8 +936,14 @@ document.getElementById('p1-del-btn').addEventListener('click', function() {
     if (!dragging) return;
     var pos = getCanvasPos(e);
     var W = p1Canvas.width, H = p1Canvas.height;
-    dragging.posX = Math.max(0, Math.min(100, dragOrigX + ((pos.x - dragStartX) / W) * 100));
-    dragging.posY = Math.max(0, Math.min(100, dragOrigY + ((pos.y - dragStartY) / H) * 100));
+    if (dragging === p1State.bgTransform) {
+      dragging.posX = Math.max(-100, Math.min(100, dragOrigX + ((pos.x - dragStartX) / W) * 100));
+      dragging.posY = Math.max(-100, Math.min(100, dragOrigY + ((pos.y - dragStartY) / H) * 100));
+      updateBgControls('p1', p1State);
+    } else {
+      dragging.posX = Math.max(0, Math.min(100, dragOrigX + ((pos.x - dragStartX) / W) * 100));
+      dragging.posY = Math.max(0, Math.min(100, dragOrigY + ((pos.y - dragStartY) / H) * 100));
+    }
     p1render();
     e.preventDefault();
   }
@@ -841,6 +957,39 @@ document.getElementById('p1-del-btn').addEventListener('click', function() {
   p1Canvas.addEventListener('touchmove', onMove, {passive: false});
   p1Canvas.addEventListener('touchend', onUp);
 })();
+
+function initBgControls(prefix, state, render) {
+  var uploadBtn = document.getElementById(prefix + '-bg-upload');
+  var uploadInput = document.getElementById(prefix + '-bg-file');
+  var scale = document.getElementById(prefix + '-bg-scale');
+  var x = document.getElementById(prefix + '-bg-x');
+  var y = document.getElementById(prefix + '-bg-y');
+  var reset = document.getElementById(prefix + '-bg-reset');
+  if (!scale || !x || !y) return;
+
+  if (uploadBtn && uploadInput) {
+    uploadBtn.addEventListener('click', function() { uploadInput.click(); });
+  }
+
+  function syncFromControls() {
+    state.bgTransform.scale = +scale.value;
+    state.bgTransform.posX = +x.value;
+    state.bgTransform.posY = +y.value;
+    updateBgControls(prefix, state);
+    render();
+  }
+
+  scale.addEventListener('input', syncFromControls);
+  x.addEventListener('input', syncFromControls);
+  y.addEventListener('input', syncFromControls);
+  if (reset) {
+    reset.addEventListener('click', function() {
+      resetBgTransform(state);
+      updateBgControls(prefix, state);
+      render();
+    });
+  }
+}
 
 document.getElementById('p1-dl').addEventListener('click', function() {
   var prevSel = p1State.selId;
@@ -862,6 +1011,7 @@ document.getElementById('p1-dl').addEventListener('click', function() {
 // ============================================================
 var p2State = {
   bgImg: null,
+  bgTransform: {scale: 100, posX: 0, posY: 0},
   logoItems: [],
   selLogoFile: null,
   boxes: [],
@@ -899,16 +1049,7 @@ function p2render() {
   var W = p2Canvas.width;
   var H = p2Canvas.height;
   p2Ctx.clearRect(0, 0, W, H);
-
-  if (p2State.bgImg) {
-    var scale = Math.max(W / p2State.bgImg.naturalWidth, H / p2State.bgImg.naturalHeight);
-    var sw = p2State.bgImg.naturalWidth * scale;
-    var sh = p2State.bgImg.naturalHeight * scale;
-    p2Ctx.drawImage(p2State.bgImg, (W - sw) / 2, (H - sh) / 2, sw, sh);
-  } else {
-    p2Ctx.fillStyle = '#222';
-    p2Ctx.fillRect(0, 0, W, H);
-  }
+  drawBackground(p2Ctx, p2State, W, H);
 
   var selBox2 = null;
   p2State.boxes.forEach(function(b) {
@@ -1243,6 +1384,12 @@ function p2setCol(n) {
       p2State.selId = null;
       p2State.selLogoFile = null;
       p2updatePanel();
+      if (p2State.bgImg) {
+        dragging = p2State.bgTransform;
+        dragStartX = pos.x; dragStartY = pos.y;
+        dragOrigX = p2State.bgTransform.posX; dragOrigY = p2State.bgTransform.posY;
+        e.preventDefault();
+      }
       p2render();
     }
   }
@@ -1251,8 +1398,14 @@ function p2setCol(n) {
     if (!dragging) return;
     var pos = getCanvasPos(e);
     var W = p2Canvas.width, H = p2Canvas.height;
-    dragging.posX = Math.max(0, Math.min(100, dragOrigX + ((pos.x - dragStartX) / W) * 100));
-    dragging.posY = Math.max(0, Math.min(100, dragOrigY + ((pos.y - dragStartY) / H) * 100));
+    if (dragging === p2State.bgTransform) {
+      dragging.posX = Math.max(-100, Math.min(100, dragOrigX + ((pos.x - dragStartX) / W) * 100));
+      dragging.posY = Math.max(-100, Math.min(100, dragOrigY + ((pos.y - dragStartY) / H) * 100));
+      updateBgControls('p2', p2State);
+    } else {
+      dragging.posX = Math.max(0, Math.min(100, dragOrigX + ((pos.x - dragStartX) / W) * 100));
+      dragging.posY = Math.max(0, Math.min(100, dragOrigY + ((pos.y - dragStartY) / H) * 100));
+    }
     p2render();
     e.preventDefault();
   }
@@ -1298,9 +1451,11 @@ buildFontSelect(document.getElementById('p2-school-font'));
 buildFontSelect(document.getElementById('p2-name-font'));
 p1updatePanel();
 p2updatePanel();
+initBgControls('p1', p1State, p1render);
+initBgControls('p2', p2State, p2render);
 
-loadImgManifest('p1-img-grid', function(img) { p1State.bgImg = img; p1render(); });
-loadImgManifest('p2-img-grid', function(img) { p2State.bgImg = img; p2render(); });
+loadImgManifest('p1-img-grid', function(img, name) { setBackground(p1State, img, 'p1', p1render, name); }, 'p1-bg-file');
+loadImgManifest('p2-img-grid', function(img, name) { setBackground(p2State, img, 'p2', p2render, name); }, 'p2-bg-file');
 initLogoSection('p1-logo-rows', p1State.logoItems, p1render);
 initLogoSection('p2-logo-rows', p2State.logoItems, p2render);
 
