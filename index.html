@@ -1467,14 +1467,16 @@ function p2render() {
     var nameFw = nameBold ? (nameFd ? nameFd.w : 700) : 400;
 
     // 컬럼 구분선 먼저 그리기
+    var lastRowY = listY + (rowsPerCol - 1) * rowGap;
+    var linePad = Math.max(schoolSize, nameSize) / 2;
     for (var ci = 1; ci < cols; ci++) {
       var sepX = marginX + ci * colW;
       p2Ctx.save();
       p2Ctx.strokeStyle = 'rgba(255,255,255,.38)';
       p2Ctx.lineWidth = 1;
       p2Ctx.beginPath();
-      p2Ctx.moveTo(sepX, listY - 10);
-      p2Ctx.lineTo(sepX, listY + rowsPerCol * rowGap + 10);
+      p2Ctx.moveTo(sepX, listY - linePad);
+      p2Ctx.lineTo(sepX, lastRowY + linePad);
       p2Ctx.stroke();
       p2Ctx.restore();
     }
