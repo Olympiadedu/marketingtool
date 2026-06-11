@@ -1,7 +1,12 @@
 [
-  { "file": "olympiadedu.png", "name": "올림피아드교육" },
-  { "file": "olympiad.png",    "name": "올림피아드학원" },
-  { "file": "u2m.png",         "name": "유투엠" },
-  { "file": "glec.png",        "name": "GLEC어학원" },
-  { "file": "flip.png",        "name": "거꾸로수학교실" }
+  { "file": "olympiadedu.png", "name": "올림피아드교육(흰색)" },
+  { "file": "olympiad.png",    "name": "올림피아드학원(흰색)" },
+  { "file": "u2m.png",         "name": "유투엠(흰색)" },
+  { "file": "glec.png",        "name": "GLEC어학원(흰색)" },
+  { "file": "flip.png",        "name": "거꾸로수학교실(흰색)" },
+  { "file": "olympiadedu(c).png", "name": "올림피아드교육" },
+  { "file": "olympiad(c).png",    "name": "올림피아드학원" },
+  { "file": "u2m(c).png",         "name": "유투엠" },
+  { "file": "glec(c).png",        "name": "GLEC어학원" },
+  { "file": "flip(c).png",        "name": "거꾸로수학교실" }
 ]

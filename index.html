@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>InstaTextMaker</title>
+<title>MarketingTool</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Noto+Serif+KR:wght@400;700&family=Nanum+Gothic:wght@400;700;800&family=Nanum+Myeongjo:wght@400;700;800&family=Nanum+Gothic+Coding:wght@400;700&family=Gaegu:wght@400;700&family=Gowun+Batang:wght@400;700&family=Sunflower:wght@300;500;700&family=Hahmlet:wght@400;700;900&family=IBM+Plex+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
@@ -46,22 +46,45 @@ body{display:flex;height:100vh;overflow:hidden;font-family:'Noto Sans KR',sans-s
 .sec-title{font-size:11px;font-weight:700;color:var(--mut);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;}
 
 /* IMAGE GRID */
-.img-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:4px;}
+.tool-section{border:1px solid #e5ecf2;border-radius:8px;background:#fff;padding:10px;display:flex;flex-direction:column;gap:8px;}
+.tool-section + .tool-section{margin-top:10px;}
+.tool-section .sec-title{display:flex;align-items:center;gap:6px;margin-bottom:0;color:#152033;font-size:12px;letter-spacing:0;text-transform:none;}
+.tool-section .sec-title::before{content:'';width:8px;height:8px;border-radius:50%;background:#22c7b8;display:inline-block;}
+.img-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(74px,1fr));gap:6px;margin-bottom:4px;}
 .img-thumb-wrap{border-radius:6px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:border-color .15s;position:relative;}
 .img-thumb-wrap:hover{border-color:var(--acc);}
 .img-thumb-wrap.sel{border-color:var(--acc);}
 .img-thumb-wrap img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;}
 .img-name-label{font-size:9px;color:var(--mut);text-align:center;padding:2px 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#fff;}
-.bg-tools{display:flex;flex-direction:column;gap:7px;margin-top:8px;padding:8px;border:1px solid var(--bdr);border-radius:6px;background:#fafafa;}
+.img-add-tile{aspect-ratio:1/1;min-height:74px;border:1.5px dashed #8edbd3;border-radius:6px;background:#f3fffd;color:#087c72;font-size:12px;font-weight:900;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8px;line-height:1.2;}
+.img-add-tile strong{font-size:22px;line-height:1;}
+.img-add-tile:hover{background:#e7fffb;border-color:#18b7aa;}
+.bg-tools{display:flex;flex-direction:column;gap:7px;margin-top:8px;padding:8px;border:1px solid #dbeeea;border-radius:6px;background:#f8fffd;}
 .bg-tools .ed-label{width:42px;}
 .bg-upload-row{display:flex;gap:6px;align-items:center;}
+.bg-upload-row .btn{display:none;}
 .bg-file-name{font-size:11px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
 .crop-title{font-size:11px;font-weight:800;color:#555;margin-top:4px;}
+.crop-range-row{display:none!important;}
+.crop-mode-on{background:#7c3aed!important;color:#fff!important;border-color:#7c3aed!important;}
+.bg-tools .ed-row:has([id$="-bg-scale"]),
+.bg-tools .ed-row:has([id$="-bg-x"]),
+.bg-tools .ed-row:has([id$="-bg-y"]){display:none!important;}
+.bg-tools [id$="-bg-move-mode"]{display:none!important;}
+.move-mode-on{display:none!important;}
+.crop-overlay-note{font-size:11px;color:#666;line-height:1.35;}
+.compact-slider{display:grid;grid-template-columns:58px 1fr 36px;align-items:center;gap:8px;}
+.compact-slider .ed-label{width:auto;}
+.compact-slider input[type=range]{width:100%;min-width:0;}
 
 /* LOGO ROWS */
-.logo-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;border:1px solid var(--bdr);margin-bottom:4px;background:#fafafa;transition:background .15s;}
-.logo-row:hover{background:#f0f0f8;}
-.logo-row.on{background:#eef0ff;border-color:var(--acc);}
+.logo-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:4px;}
+.logo-tab{border:1.5px solid #cfe7f6;background:#f7fcff;color:#23627c;border-radius:7px;padding:7px 8px;font-size:12px;font-weight:900;cursor:pointer;}
+.logo-tab.on{background:#00a891;border-color:#00a891;color:#fff;}
+.logo-group-title{display:none;}
+.logo-row{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:6px;cursor:pointer;border:1px solid #e4e8ef;margin-bottom:4px;background:#fff;transition:background .15s,border-color .15s;}
+.logo-row:hover{background:#f7fcff;border-color:#a8d8ff;}
+.logo-row.on{background:#eaf8ff;border-color:#32b8e6;}
 .logo-chk{width:16px;height:16px;border-radius:3px;border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--acc);flex-shrink:0;}
 .logo-row.on .logo-chk{border-color:var(--acc);background:var(--acc);color:#fff;}
 .logo-row-name{font-size:12px;flex:1;}
@@ -72,10 +95,10 @@ body{display:flex;height:100vh;overflow:hidden;font-family:'Noto Sans KR',sans-s
 
 /* BUTTONS */
 .btn{display:inline-flex;align-items:center;justify-content:center;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:background .15s;}
-.btn-primary{background:var(--acc);color:#fff;}
-.btn-primary:hover{background:var(--acc2);}
-.btn-outline{background:#fff;color:var(--acc);border:1.5px solid var(--acc);}
-.btn-outline:hover{background:#eef0ff;}
+.btn-primary{background:#00a891;color:#fff;}
+.btn-primary:hover{background:#008f7d;}
+.btn-outline{background:#fff;color:#00a891;border:1.5px solid #00a891;}
+.btn-outline:hover{background:#eafffb;}
 .btn-danger{background:#ff3b30;color:#fff;}
 .btn-danger:hover{background:#cc2f26;}
 .btn-sm{padding:5px 10px;font-size:12px;}
@@ -106,14 +129,16 @@ hr{border:none;border-top:1px solid var(--bdr);margin:2px 0;}
 /* CANVAS AREA */
 .canvas-area{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;overflow:hidden;background:var(--bg);gap:10px;}
 .canvas-wrap{position:relative;height:calc(100vh - 80px);width:auto;max-width:calc((100vh - 80px) * 1080 / 1350);aspect-ratio:1080/1350;}
-canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cursor:crosshair;height:100%;width:auto;}
+canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cursor:default;height:100%;width:auto;}
 .canvas-badge{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;padding:3px 7px;border-radius:4px;pointer-events:none;}
-.drag-hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.45);color:#fff;font-size:10px;padding:3px 10px;border-radius:4px;pointer-events:none;white-space:nowrap;}
+.drag-hint{display:none;}
 .canvas-actions{display:flex;gap:8px;align-items:center;}
 .hint-text{font-size:11px;color:var(--mut);}
 
 /* P2 LIST CONTROLS */
 .list-controls{display:flex;flex-direction:column;gap:8px;}
+.list-panel{display:none;flex-direction:column;gap:10px;}
+.list-panel.on{display:flex;}
 .col-btns{display:flex;gap:6px;}
 .col-btn{padding:5px 14px;border-radius:6px;border:1.5px solid var(--bdr);font-size:12px;cursor:pointer;background:#fff;color:var(--mut);transition:all .15s;}
 .col-btn.active{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:700;}
@@ -125,14 +150,13 @@ canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cur
   .sidebar-top{margin-bottom:0;}
   .sidebar-brand{font-size:17px;}
   .brand-mark{width:28px;height:28px;border-radius:8px;}
-  .mobile-menu-toggle{display:inline-flex;align-items:center;justify-content:center;}
-  .sidebar-nav{display:none;margin-top:10px;padding-top:10px;border-top:1px solid #eef1f5;}
-  .sidebar.open .sidebar-nav{display:flex;}
+  .mobile-menu-toggle{display:none;}
+  .sidebar-nav{display:flex;margin-top:10px;padding-top:10px;border-top:1px solid #eef1f5;}
   .sidebar-section-title{display:none;}
   .sidebar-item{padding:12px 12px;white-space:nowrap;}
   .main{flex-direction:column;overflow:visible;}
   .page.active{flex-direction:column;overflow:visible;}
-  .left-panel{width:100%;min-width:unset;max-height:45vh;border-right:none;border-bottom:1px solid var(--bdr);}
+  .left-panel{width:100%;min-width:unset;max-height:none;overflow:visible;border-right:none;border-bottom:1px solid var(--bdr);}
   .canvas-area{padding:8px;overflow:visible;}
   .canvas-wrap{height:auto!important;width:calc(100vw - 16px)!important;max-width:calc(100vw - 16px)!important;}
   canvas{width:100%!important;height:auto!important;}
@@ -148,17 +172,16 @@ canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cur
   </div>
   <div class="sidebar-nav">
     <div class="sidebar-section-title">Image Tools</div>
-    <div class="sidebar-item active" id="nav-p1" onclick="switchPage(1)">이미지만들기</div>
-    <div class="sidebar-item" id="nav-p2" onclick="switchPage(2)">명단 이미지만들기</div>
+    <div class="sidebar-item active" id="nav-p2" onclick="switchPage(2)">이미지만들기</div>
   </div>
 </div>
 
 <div class="main">
 
   <!-- PAGE 1 -->
-  <div class="page active" id="page-1">
+  <div class="page" id="page-1">
     <div class="left-panel">
-      <div>
+      <div class="tool-section">
         <div class="sec-title">배경 이미지</div>
         <div class="img-grid" id="p1-img-grid"></div>
         <div class="bg-tools">
@@ -182,25 +205,27 @@ canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cur
             <input type="range" id="p1-bg-y" min="-100" max="100" value="0">
             <span class="val-span" id="p1-bg-y-v">0</span>
           </div>
-          <div class="crop-title">자르기</div>
-          <div class="ed-row">
+          <button class="btn btn-outline btn-sm" type="button" id="p1-bg-move-mode">위치 이동</button>
+          <button class="btn btn-outline btn-sm" type="button" id="p1-bg-crop-mode">자르기</button>
+          <div class="crop-overlay-note">이미지 이동/조절은 클릭 후 드래그, 자르기는 자르기 버튼을 누른 뒤 조절하세요.</div>
+          <div class="ed-row crop-range-row">
             <span class="ed-label">왼쪽</span>
-            <input type="range" id="p1-bg-crop-l" min="0" max="45" value="0">
+            <input type="range" id="p1-bg-crop-l" min="0" max="97" value="0">
             <span class="val-span" id="p1-bg-crop-l-v">0</span>
           </div>
-          <div class="ed-row">
+          <div class="ed-row crop-range-row">
             <span class="ed-label">오른쪽</span>
-            <input type="range" id="p1-bg-crop-r" min="0" max="45" value="0">
+            <input type="range" id="p1-bg-crop-r" min="0" max="97" value="0">
             <span class="val-span" id="p1-bg-crop-r-v">0</span>
           </div>
-          <div class="ed-row">
+          <div class="ed-row crop-range-row">
             <span class="ed-label">위</span>
-            <input type="range" id="p1-bg-crop-t" min="0" max="45" value="0">
+            <input type="range" id="p1-bg-crop-t" min="0" max="97" value="0">
             <span class="val-span" id="p1-bg-crop-t-v">0</span>
           </div>
-          <div class="ed-row">
+          <div class="ed-row crop-range-row">
             <span class="ed-label">아래</span>
-            <input type="range" id="p1-bg-crop-b" min="0" max="45" value="0">
+            <input type="range" id="p1-bg-crop-b" min="0" max="97" value="0">
             <span class="val-span" id="p1-bg-crop-b-v">0</span>
           </div>
           <button class="btn btn-outline btn-sm" type="button" id="p1-bg-reset">배경 초기화</button>
@@ -217,9 +242,9 @@ canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cur
         <div class="editor-title">텍스트 편집</div>
         <textarea id="p1-ed-text" placeholder="텍스트 입력..."></textarea>
         <select id="p1-ed-font"></select>
-        <div class="ed-row">
+        <div class="ed-row compact-slider">
           <span class="ed-label">크기</span>
-          <input type="range" id="p1-ed-size" min="20" max="200" value="72">
+          <input type="range" id="p1-ed-size" min="12" max="100" value="72">
           <span class="val-span" id="p1-ed-size-v">72</span>
         </div>
         <div class="ed-row">
@@ -238,16 +263,16 @@ canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cur
       </div>
       <div class="canvas-actions">
         <button class="btn btn-primary" id="p1-dl">다운로드</button>
-        <span class="hint-text">텍스트/로고를 드래그해서 위치 조정</span>
+        <span class="hint-text">텍스트/로고/이미지를 드래그해서 위치 조정</span>
       </div>
     </div>
   </div>
 
   <!-- PAGE 2 -->
-  <div class="page" id="page-2">
+  <div class="page active" id="page-2">
     <div class="left-panel">
-      <div>
-        <div class="sec-title">배경 이미지</div>
+      <div class="tool-section">
+        <div class="sec-title">배경</div>
         <div class="img-grid" id="p2-img-grid"></div>
         <div class="bg-tools">
           <div class="bg-upload-row">
@@ -270,57 +295,62 @@ canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cur
             <input type="range" id="p2-bg-y" min="-100" max="100" value="0">
             <span class="val-span" id="p2-bg-y-v">0</span>
           </div>
-          <div class="crop-title">자르기</div>
-          <div class="ed-row">
+          <button class="btn btn-outline btn-sm" type="button" id="p2-bg-move-mode">위치 이동</button>
+          <button class="btn btn-outline btn-sm" type="button" id="p2-bg-crop-mode">자르기</button>
+          <div class="crop-overlay-note">이미지 이동/조절은 클릭 후 드래그, 자르기는 자르기 버튼을 누른 뒤 조절하세요.</div>
+          <div class="ed-row crop-range-row">
             <span class="ed-label">왼쪽</span>
-            <input type="range" id="p2-bg-crop-l" min="0" max="45" value="0">
+            <input type="range" id="p2-bg-crop-l" min="0" max="97" value="0">
             <span class="val-span" id="p2-bg-crop-l-v">0</span>
           </div>
-          <div class="ed-row">
+          <div class="ed-row crop-range-row">
             <span class="ed-label">오른쪽</span>
-            <input type="range" id="p2-bg-crop-r" min="0" max="45" value="0">
+            <input type="range" id="p2-bg-crop-r" min="0" max="97" value="0">
             <span class="val-span" id="p2-bg-crop-r-v">0</span>
           </div>
-          <div class="ed-row">
+          <div class="ed-row crop-range-row">
             <span class="ed-label">위</span>
-            <input type="range" id="p2-bg-crop-t" min="0" max="45" value="0">
+            <input type="range" id="p2-bg-crop-t" min="0" max="97" value="0">
             <span class="val-span" id="p2-bg-crop-t-v">0</span>
           </div>
-          <div class="ed-row">
+          <div class="ed-row crop-range-row">
             <span class="ed-label">아래</span>
-            <input type="range" id="p2-bg-crop-b" min="0" max="45" value="0">
+            <input type="range" id="p2-bg-crop-b" min="0" max="97" value="0">
             <span class="val-span" id="p2-bg-crop-b-v">0</span>
           </div>
           <button class="btn btn-outline btn-sm" type="button" id="p2-bg-reset">배경 초기화</button>
         </div>
       </div>
-      <div>
+      <div class="tool-section">
         <div class="sec-title">로고</div>
         <div id="p2-logo-rows"></div>
       </div>
-      <hr>
-      <button class="btn btn-primary" id="p2-add-btn" onclick="p2addBox()">+ 텍스트 추가</button>
-      <div class="box-list" id="p2-box-list"></div>
-      <div class="editor" id="p2-editor" style="display:none">
-        <div class="editor-title">텍스트 편집</div>
-        <textarea id="p2-ed-text" placeholder="텍스트 입력..."></textarea>
-        <select id="p2-ed-font"></select>
-        <div class="ed-row">
-          <span class="ed-label">크기</span>
-          <input type="range" id="p2-ed-size" min="20" max="200" value="72">
-          <span class="val-span" id="p2-ed-size-v">72</span>
+      <div class="tool-section">
+        <div class="sec-title">텍스트</div>
+        <button class="btn btn-primary" id="p2-add-btn" onclick="p2addBox()">+ 텍스트 추가</button>
+        <div class="box-list" id="p2-box-list"></div>
+        <div class="editor" id="p2-editor" style="display:none">
+          <div class="editor-title">텍스트 편집</div>
+          <textarea id="p2-ed-text" placeholder="텍스트 입력..."></textarea>
+          <select id="p2-ed-font"></select>
+          <div class="ed-row compact-slider">
+            <span class="ed-label">크기</span>
+            <input type="range" id="p2-ed-size" min="12" max="100" value="72">
+            <span class="val-span" id="p2-ed-size-v">72</span>
+          </div>
+          <div class="ed-row">
+            <input type="color" id="p2-ed-color" value="#ffffff">
+            <button class="toggle-btn on" id="p2-ed-bold">굵게</button>
+            <button class="toggle-btn on" id="p2-ed-shadow">그림자</button>
+          </div>
+          <button class="btn btn-danger btn-sm" id="p2-del-btn">삭제</button>
         </div>
-        <div class="ed-row">
-          <input type="color" id="p2-ed-color" value="#ffffff">
-          <button class="toggle-btn on" id="p2-ed-bold">굵게</button>
-          <button class="toggle-btn on" id="p2-ed-shadow">그림자</button>
-        </div>
-        <button class="btn btn-danger btn-sm" id="p2-del-btn">삭제</button>
       </div>
-      <hr>
-      <div>
-        <div class="sec-title">명단입력</div>
-        <div class="list-controls">
+      <div class="tool-section">
+        <div class="sec-title">명단 넣기</div>
+        <button class="btn btn-outline" type="button" id="p2-list-toggle">명단 입력하기</button>
+        <div class="list-panel" id="p2-list-panel">
+          <div class="list-controls">
           <textarea id="p2-list-data" style="min-height:120px" placeholder="엑셀에서 복사(Ctrl+C) 후 붙여넣기&#10;형식: 학교명[탭]이름"></textarea>
           <div class="ed-row">
             <span class="ed-label">시작위치</span>
@@ -340,11 +370,10 @@ canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cur
             </div>
             <input type="hidden" id="p2-col-count" value="3">
           </div>
-        </div>
-      </div>
-      <hr>
-      <div>
-        <div class="sec-title">학교명 스타일</div>
+          </div>
+          <hr>
+          <div>
+            <div class="sec-title">학교명 스타일</div>
         <select id="p2-school-font"></select>
         <div class="ed-row" style="margin-top:6px">
           <span class="ed-label">크기</span>
@@ -356,10 +385,10 @@ canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cur
           <button class="toggle-btn" id="p2-school-bold">굵게</button>
           <button class="toggle-btn" id="p2-school-shadow">그림자</button>
         </div>
-      </div>
-      <hr>
-      <div>
-        <div class="sec-title">이름 스타일</div>
+          </div>
+          <hr>
+          <div>
+            <div class="sec-title">이름 스타일</div>
         <select id="p2-name-font"></select>
         <div class="ed-row" style="margin-top:6px">
           <span class="ed-label">크기</span>
@@ -370,6 +399,8 @@ canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cur
           <input type="color" id="p2-name-color" value="#ffffff">
           <button class="toggle-btn on" id="p2-name-bold">굵게</button>
           <button class="toggle-btn on" id="p2-name-shadow">그림자</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -381,7 +412,7 @@ canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cur
       </div>
       <div class="canvas-actions">
         <button class="btn btn-primary" id="p2-dl">다운로드</button>
-        <span class="hint-text">텍스트/로고를 드래그해서 위치 조정</span>
+        <span class="hint-text">텍스트/로고/이미지를 드래그해서 위치 조정</span>
       </div>
     </div>
   </div>
@@ -524,31 +555,179 @@ function updateBgControls(prefix, state) {
   }
 }
 
+function normalizeCrop(t) {
+  var minRemain = 3;
+  var l = Math.max(0, Math.min(97, t.cropL || 0));
+  var r = Math.max(0, Math.min(97, t.cropR || 0));
+  var top = Math.max(0, Math.min(97, t.cropT || 0));
+  var b = Math.max(0, Math.min(97, t.cropB || 0));
+  if (l + r > 100 - minRemain) r = 100 - minRemain - l;
+  if (top + b > 100 - minRemain) b = 100 - minRemain - top;
+  return {cropL: l, cropR: r, cropT: top, cropB: b};
+}
+
+function getBgGeometry(state, W, H) {
+  if (!state.bgImg) return null;
+  var t = state.bgTransform || {scale: 100, posX: 0, posY: 0, cropL: 0, cropR: 0, cropT: 0, cropB: 0};
+  var crop = normalizeCrop(t);
+  var baseScale = Math.max(W / state.bgImg.naturalWidth, H / state.bgImg.naturalHeight);
+  var scale = baseScale * ((t.scale || 100) / 100);
+  var full = {
+    x: (W - state.bgImg.naturalWidth * scale) / 2 + ((t.posX || 0) / 100) * W,
+    y: (H - state.bgImg.naturalHeight * scale) / 2 + ((t.posY || 0) / 100) * H,
+    w: state.bgImg.naturalWidth * scale,
+    h: state.bgImg.naturalHeight * scale
+  };
+  var sx = state.bgImg.naturalWidth * (crop.cropL / 100);
+  var sy = state.bgImg.naturalHeight * (crop.cropT / 100);
+  var sw = state.bgImg.naturalWidth * ((100 - crop.cropL - crop.cropR) / 100);
+  var sh = state.bgImg.naturalHeight * ((100 - crop.cropT - crop.cropB) / 100);
+  var cropRect = {
+    x: full.x + full.w * (crop.cropL / 100),
+    y: full.y + full.h * (crop.cropT / 100),
+    w: full.w * ((100 - crop.cropL - crop.cropR) / 100),
+    h: full.h * ((100 - crop.cropT - crop.cropB) / 100)
+  };
+  return {full: full, cropRect: cropRect, crop: crop, sx: sx, sy: sy, sw: Math.max(1, sw), sh: Math.max(1, sh), scale: scale};
+}
+
 function drawBackground(ctx, state, W, H) {
   if (!state.bgImg) {
     ctx.fillStyle = '#222';
     ctx.fillRect(0, 0, W, H);
     return;
   }
+  var g = getBgGeometry(state, W, H);
+  if (state.cropMode) {
+    ctx.save();
+    ctx.globalAlpha = 0.88;
+    ctx.drawImage(state.bgImg, g.full.x, g.full.y, g.full.w, g.full.h);
+    ctx.restore();
+  } else {
+    ctx.drawImage(state.bgImg, g.sx, g.sy, g.sw, g.sh, g.cropRect.x, g.cropRect.y, g.cropRect.w, g.cropRect.h);
+  }
+  state._bgFullRect = g.full;
+  state._bgRect = g.cropRect;
+}
 
-  var t = state.bgTransform || {scale: 100, posX: 0, posY: 0, cropL: 0, cropR: 0, cropT: 0, cropB: 0};
-  var cropL = Math.max(0, Math.min(45, t.cropL || 0));
-  var cropR = Math.max(0, Math.min(45, t.cropR || 0));
-  var cropT = Math.max(0, Math.min(45, t.cropT || 0));
-  var cropB = Math.max(0, Math.min(45, t.cropB || 0));
-  var sx = state.bgImg.naturalWidth * (cropL / 100);
-  var sy = state.bgImg.naturalHeight * (cropT / 100);
-  var sourceW = state.bgImg.naturalWidth * ((100 - cropL - cropR) / 100);
-  var sourceH = state.bgImg.naturalHeight * ((100 - cropT - cropB) / 100);
-  sourceW = Math.max(1, sourceW);
-  sourceH = Math.max(1, sourceH);
-  var baseScale = Math.max(W / sourceW, H / sourceH);
-  var scale = baseScale * (t.scale / 100);
-  var sw = sourceW * scale;
-  var sh = sourceH * scale;
-  var x = (W - sw) / 2 + (t.posX / 100) * W;
-  var y = (H - sh) / 2 + (t.posY / 100) * H;
-  ctx.drawImage(state.bgImg, sx, sy, sourceW, sourceH, x, y, sw, sh);
+function drawHandleBox(ctx, r) {
+  ctx.save();
+  ctx.strokeStyle = '#22d3ee';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(r.x, r.y, r.w, r.h);
+  ctx.fillStyle = '#fff';
+  ctx.strokeStyle = '#22d3ee';
+  var pts = [
+    [r.x, r.y], [r.x + r.w / 2, r.y], [r.x + r.w, r.y],
+    [r.x, r.y + r.h / 2], [r.x + r.w, r.y + r.h / 2],
+    [r.x, r.y + r.h], [r.x + r.w / 2, r.y + r.h], [r.x + r.w, r.y + r.h]
+  ];
+  pts.forEach(function(p) {
+    ctx.beginPath();
+    ctx.arc(p[0], p[1], 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+
+function drawCropOverlay(ctx, state, W, H) {
+  if (!state.bgImg) return;
+  var g = getBgGeometry(state, W, H);
+  if (state.cropMode) {
+    var r = g.cropRect;
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,.42)';
+    ctx.fillRect(0, 0, W, r.y);
+    ctx.fillRect(0, r.y + r.h, W, H - r.y - r.h);
+    ctx.fillRect(0, r.y, r.x, r.h);
+    ctx.fillRect(r.x + r.w, r.y, W - r.x - r.w, r.h);
+    ctx.restore();
+    drawHandleBox(ctx, r);
+  } else if (state.bgSelected) {
+    drawHandleBox(ctx, g.cropRect);
+  }
+}
+
+function hitRectHandle(rect, x, y) {
+  if (!rect) return null;
+  var pad = 28;
+  function near(px, py) { return Math.abs(x - px) <= pad && Math.abs(y - py) <= pad; }
+  if (near(rect.x, rect.y)) return 'tl';
+  if (near(rect.x + rect.w, rect.y)) return 'tr';
+  if (near(rect.x, rect.y + rect.h)) return 'bl';
+  if (near(rect.x + rect.w, rect.y + rect.h)) return 'br';
+  if (near(rect.x + rect.w / 2, rect.y)) return 't';
+  if (near(rect.x + rect.w / 2, rect.y + rect.h)) return 'b';
+  if (near(rect.x, rect.y + rect.h / 2)) return 'l';
+  if (near(rect.x + rect.w, rect.y + rect.h / 2)) return 'r';
+  if (x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h) return 'move';
+  return null;
+}
+
+function hitBgHandle(state, W, H, x, y) {
+  if (!state.bgImg) return null;
+  var g = getBgGeometry(state, W, H);
+  var hit = hitRectHandle(state.cropMode ? g.cropRect : g.cropRect, x, y);
+  if (!hit && !state.cropMode && !state.bgSelected) return hitRectHandle(g.cropRect, x, y);
+  return hit;
+}
+
+function cursorForHandle(handle) {
+  if (!handle) return 'default';
+  if (handle === 'move') return 'move';
+  if (handle === 'l' || handle === 'r') return 'ew-resize';
+  if (handle === 't' || handle === 'b') return 'ns-resize';
+  if (handle === 'tl' || handle === 'br') return 'nwse-resize';
+  if (handle === 'tr' || handle === 'bl') return 'nesw-resize';
+  return 'default';
+}
+
+function applyBgMove(state, start, current, W, H) {
+  state.bgTransform.posX = Math.max(-100, Math.min(100, start.posX + ((current.x - start.x) / W) * 100));
+  state.bgTransform.posY = Math.max(-100, Math.min(100, start.posY + ((current.y - start.y) / H) * 100));
+}
+
+function applyBgResize(state, handle, start, current) {
+  var dx = current.x - start.x;
+  var dy = current.y - start.y;
+  var delta = 0;
+  if (handle.indexOf('r') >= 0) delta = dx;
+  if (handle.indexOf('l') >= 0) delta = -dx;
+  if (handle.indexOf('b') >= 0) delta = Math.abs(dy) > Math.abs(delta) ? dy : delta;
+  if (handle.indexOf('t') >= 0) delta = Math.abs(dy) > Math.abs(delta) ? -dy : delta;
+  var base = Math.max(40, start.rect.w);
+  var next = start.scale * Math.max(0.1, (base + delta) / base);
+  state.bgTransform.scale = Math.max(20, Math.min(500, next));
+}
+
+function applyCropDrag(state, handle, start, current, W, H) {
+  var full = start.full;
+  var orig = start.crop;
+  var minRemain = 3;
+  function clamp(v) { return Math.max(0, Math.min(97, v)); }
+  var next = {cropL: orig.cropL, cropR: orig.cropR, cropT: orig.cropT, cropB: orig.cropB};
+  if (handle === 'move') {
+    var dxp = ((current.x - start.x) / full.w) * 100;
+    var dyp = ((current.y - start.y) / full.h) * 100;
+    var cropW = 100 - orig.cropL - orig.cropR;
+    var cropH = 100 - orig.cropT - orig.cropB;
+    next.cropL = Math.max(0, Math.min(100 - cropW, orig.cropL + dxp));
+    next.cropT = Math.max(0, Math.min(100 - cropH, orig.cropT + dyp));
+    next.cropR = 100 - cropW - next.cropL;
+    next.cropB = 100 - cropH - next.cropT;
+  } else {
+    var px = ((current.x - full.x) / full.w) * 100;
+    var py = ((current.y - full.y) / full.h) * 100;
+    if (handle.indexOf('l') >= 0) next.cropL = Math.max(0, Math.min(100 - minRemain - next.cropR, px));
+    if (handle.indexOf('r') >= 0) next.cropR = Math.max(0, Math.min(100 - minRemain - next.cropL, 100 - px));
+    if (handle.indexOf('t') >= 0) next.cropT = Math.max(0, Math.min(100 - minRemain - next.cropB, py));
+    if (handle.indexOf('b') >= 0) next.cropB = Math.max(0, Math.min(100 - minRemain - next.cropT, 100 - py));
+  }
+  state.bgTransform.cropL = clamp(next.cropL);
+  state.bgTransform.cropR = clamp(next.cropR);
+  state.bgTransform.cropT = clamp(next.cropT);
+  state.bgTransform.cropB = clamp(next.cropB);
 }
 
 function setBackground(state, img, prefix, render, name) {
@@ -565,6 +744,7 @@ async function loadImgManifest(gridId, onSelect, uploadInputId) {
   if (!grid) return;
   var imgList = [];
   var selFile = null;
+  var uploadInput = uploadInputId ? document.getElementById(uploadInputId) : null;
 
   function renderGrid() {
     grid.innerHTML = '';
@@ -592,6 +772,14 @@ async function loadImgManifest(gridId, onSelect, uploadInputId) {
       });
       grid.appendChild(wrap);
     });
+    if (uploadInput) {
+      var add = document.createElement('button');
+      add.type = 'button';
+      add.className = 'img-add-tile';
+      add.innerHTML = '<strong>+</strong><span>이미지</span><span>추가</span>';
+      add.addEventListener('click', function() { uploadInput.click(); });
+      grid.appendChild(add);
+    }
   }
 
   try {
@@ -621,7 +809,6 @@ async function loadImgManifest(gridId, onSelect, uploadInputId) {
     renderGrid();
   }
 
-  var uploadInput = uploadInputId ? document.getElementById(uploadInputId) : null;
   if (uploadInput) {
     uploadInput.addEventListener('change', function(e) {
       var file = e.target.files && e.target.files[0];
@@ -670,37 +857,67 @@ async function initLogoSection(rowsId, logoItems, onChange) {
 
 function renderLogoRows(container, logoItems, onChange) {
   container.innerHTML = '';
-  logoItems.forEach(function(item) {
-    var row = document.createElement('div');
-    row.className = 'logo-row' + (item.active ? ' on' : '');
-    row.innerHTML = '<div class="logo-chk">' + (item.active ? '&#10003;' : '') + '</div><div class="logo-row-name">' + item.name + '</div>';
-    row.addEventListener('click', function() {
-      item.active = !item.active;
-      if (item.active && !item._imgEl) {
-        var el = new Image();
-        el.onload = function() { item._imgEl = el; onChange(); };
-        el.src = item.url;
-      }
-      if (!item.active) item._rect = null;
+  var activeType = container.dataset.logoType || 'white';
+  var tabs = document.createElement('div');
+  tabs.className = 'logo-tabs';
+  [
+    {key: 'white', title: '흰색'},
+    {key: 'color', title: '컬러'}
+  ].forEach(function(tabInfo) {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'logo-tab' + (activeType === tabInfo.key ? ' on' : '');
+    btn.textContent = tabInfo.title;
+    btn.addEventListener('click', function() {
+      container.dataset.logoType = tabInfo.key;
       renderLogoRows(container, logoItems, onChange);
-      onChange();
     });
-    container.appendChild(row);
-    if (item.active) {
-      var sz = document.createElement('div');
-      sz.className = 'logo-size-expand';
-      sz.innerHTML = '<span class="il">크기</span><input type="range" min="3" max="60" value="' + item.size + '"><span class="val">' + item.size + '%</span>';
-      var sl = sz.querySelector('input');
-      var vl = sz.querySelector('.val');
-      sl.addEventListener('click', function(e) { e.stopPropagation(); });
-      sl.addEventListener('input', function(e) {
-        item.size = +e.target.value;
-        vl.textContent = e.target.value + '%';
+    tabs.appendChild(btn);
+  });
+  container.appendChild(tabs);
+  var groups = [
+    {key: 'white', title: '흰색 로고', items: logoItems.filter(function(item) { return item.name.indexOf('(흰색)') >= 0; })},
+    {key: 'color', title: '컬러 로고', items: logoItems.filter(function(item) { return item.name.indexOf('(흰색)') < 0; })}
+  ];
+  groups.filter(function(group) { return group.key === activeType; }).forEach(function(group) {
+    if (!group.items.length) return;
+    var title = document.createElement('div');
+    title.className = 'logo-group-title';
+    title.textContent = group.title;
+    container.appendChild(title);
+    group.items.forEach(function(item) {
+      var displayName = item.name.replace('(흰색)', '').trim();
+      var row = document.createElement('div');
+      row.className = 'logo-row' + (item.active ? ' on' : '');
+      row.innerHTML = '<div class="logo-chk">' + (item.active ? '&#10003;' : '') + '</div><div class="logo-row-name">' + displayName + '</div>';
+      row.addEventListener('click', function() {
+        item.active = !item.active;
+        if (item.active && !item._imgEl) {
+          var el = new Image();
+          el.onload = function() { item._imgEl = el; onChange(); };
+          el.src = item.url;
+        }
+        if (!item.active) item._rect = null;
+        renderLogoRows(container, logoItems, onChange);
         onChange();
       });
-      sz.addEventListener('click', function(e) { e.stopPropagation(); });
-      container.appendChild(sz);
-    }
+      container.appendChild(row);
+      if (item.active) {
+        var sz = document.createElement('div');
+        sz.className = 'logo-size-expand';
+        sz.innerHTML = '<span class="il">크기</span><input type="range" min="3" max="60" value="' + item.size + '"><span class="val">' + item.size + '%</span>';
+        var sl = sz.querySelector('input');
+        var vl = sz.querySelector('.val');
+        sl.addEventListener('click', function(e) { e.stopPropagation(); });
+        sl.addEventListener('input', function(e) {
+          item.size = +e.target.value;
+          vl.textContent = e.target.value + '%';
+          onChange();
+        });
+        sz.addEventListener('click', function(e) { e.stopPropagation(); });
+        container.appendChild(sz);
+      }
+    });
   });
 }
 
@@ -847,6 +1064,7 @@ function p1render() {
   });
   if (selBox) drawTextBox(p1Ctx, selBox, true, W, H);
   drawLogoItems(p1Ctx, p1State.logoItems, p1State.selLogoFile, W, H);
+  drawCropOverlay(p1Ctx, p1State, W, H);
 }
 
 function p1updatePanel() {
@@ -964,7 +1182,7 @@ document.getElementById('p1-del-btn').addEventListener('click', function() {
 
 (function() {
   var dragging = null;
-  var dragStartX, dragStartY, dragOrigX, dragOrigY;
+  var dragStartX, dragStartY, dragOrigX, dragOrigY, cropDragStart;
 
   function getCanvasPos(e) {
     var rect = p1Canvas.getBoundingClientRect();
@@ -978,6 +1196,36 @@ document.getElementById('p1-del-btn').addEventListener('click', function() {
   function onDown(e) {
     var pos = getCanvasPos(e);
     var pad = 20;
+    var cropHandle = hitCropHandle(p1State, p1Canvas.width, p1Canvas.height, pos.x, pos.y);
+    if (cropHandle === 'bg-move') {
+      dragging = p1State.bgTransform;
+      dragStartX = pos.x; dragStartY = pos.y;
+      dragOrigX = p1State.bgTransform.posX; dragOrigY = p1State.bgTransform.posY;
+      e.preventDefault();
+      return;
+    }
+    if (cropHandle) {
+      dragging = {type: 'crop', handle: cropHandle};
+      cropDragStart = {
+        x: pos.x,
+        y: pos.y,
+        crop: {
+          cropL: p1State.bgTransform.cropL || 0,
+          cropR: p1State.bgTransform.cropR || 0,
+          cropT: p1State.bgTransform.cropT || 0,
+          cropB: p1State.bgTransform.cropB || 0
+        }
+      };
+      e.preventDefault();
+      return;
+    }
+    if (p1State.moveMode && p1State.bgImg) {
+      dragging = p1State.bgTransform;
+      dragStartX = pos.x; dragStartY = pos.y;
+      dragOrigX = p1State.bgTransform.posX; dragOrigY = p1State.bgTransform.posY;
+      e.preventDefault();
+      return;
+    }
     for (var i = p1State.logoItems.length - 1; i >= 0; i--) {
       var item = p1State.logoItems[i];
       if (!item.active || !item._rect) continue;
@@ -1005,12 +1253,6 @@ document.getElementById('p1-del-btn').addEventListener('click', function() {
       p1State.selId = null;
       p1State.selLogoFile = null;
       p1updatePanel();
-      if (p1State.bgImg) {
-        dragging = p1State.bgTransform;
-        dragStartX = pos.x; dragStartY = pos.y;
-        dragOrigX = p1State.bgTransform.posX; dragOrigY = p1State.bgTransform.posY;
-        e.preventDefault();
-      }
       p1render();
     }
   }
@@ -1019,7 +1261,10 @@ document.getElementById('p1-del-btn').addEventListener('click', function() {
     if (!dragging) return;
     var pos = getCanvasPos(e);
     var W = p1Canvas.width, H = p1Canvas.height;
-    if (dragging === p1State.bgTransform) {
+    if (dragging.type === 'crop') {
+      applyCropDrag(p1State, dragging.handle, cropDragStart, pos, W, H);
+      updateBgControls('p1', p1State);
+    } else if (dragging === p1State.bgTransform) {
       dragging.posX = Math.max(-100, Math.min(100, dragOrigX + ((pos.x - dragStartX) / W) * 100));
       dragging.posY = Math.max(-100, Math.min(100, dragOrigY + ((pos.y - dragStartY) / H) * 100));
       updateBgControls('p1', p1State);
@@ -1031,7 +1276,7 @@ document.getElementById('p1-del-btn').addEventListener('click', function() {
     e.preventDefault();
   }
 
-  function onUp() { dragging = null; }
+  function onUp() { dragging = null; cropDragStart = null; }
 
   p1Canvas.addEventListener('mousedown', onDown);
   p1Canvas.addEventListener('mousemove', onMove);
@@ -1051,11 +1296,40 @@ function initBgControls(prefix, state, render) {
   var cropR = document.getElementById(prefix + '-bg-crop-r');
   var cropT = document.getElementById(prefix + '-bg-crop-t');
   var cropB = document.getElementById(prefix + '-bg-crop-b');
+  var moveMode = document.getElementById(prefix + '-bg-move-mode');
+  var cropMode = document.getElementById(prefix + '-bg-crop-mode');
   var reset = document.getElementById(prefix + '-bg-reset');
   if (!scale || !x || !y) return;
 
   if (uploadBtn && uploadInput) {
     uploadBtn.addEventListener('click', function() { uploadInput.click(); });
+  }
+  if (moveMode) {
+    moveMode.addEventListener('click', function() {
+      state.moveMode = !state.moveMode;
+      if (state.moveMode) state.cropMode = false;
+      moveMode.textContent = state.moveMode ? '이동 완료' : '위치 이동';
+      moveMode.classList.toggle('move-mode-on', !!state.moveMode);
+      if (cropMode) {
+        cropMode.textContent = '자르기';
+        cropMode.classList.remove('crop-mode-on');
+      }
+      render();
+    });
+  }
+  if (cropMode) {
+    cropMode.addEventListener('click', function() {
+      state.cropMode = !state.cropMode;
+      state.bgSelected = !!state.cropMode;
+      if (state.cropMode) state.moveMode = false;
+      cropMode.textContent = state.cropMode ? '자르기 완료' : '자르기';
+      cropMode.classList.toggle('crop-mode-on', !!state.cropMode);
+      if (moveMode) {
+        moveMode.textContent = '위치 이동';
+        moveMode.classList.remove('move-mode-on');
+      }
+      render();
+    });
   }
 
   function syncFromControls() {
@@ -1080,6 +1354,16 @@ function initBgControls(prefix, state, render) {
   if (reset) {
     reset.addEventListener('click', function() {
       resetBgTransform(state);
+      state.cropMode = false;
+      state.moveMode = false;
+      if (moveMode) {
+        moveMode.textContent = '위치 이동';
+        moveMode.classList.remove('move-mode-on');
+      }
+      if (cropMode) {
+        cropMode.textContent = '자르기';
+        cropMode.classList.remove('crop-mode-on');
+      }
       updateBgControls(prefix, state);
       render();
     });
@@ -1153,7 +1437,9 @@ function p2render() {
   });
   if (selBox2) drawTextBox(p2Ctx, selBox2, true, W, H);
 
-  var raw = document.getElementById('p2-list-data').value;
+  var listPanel = document.getElementById('p2-list-panel');
+  var listEnabled = listPanel && listPanel.classList.contains('on');
+  var raw = listEnabled ? document.getElementById('p2-list-data').value : '';
   var rows = parseListData(raw);
   if (rows.length) {
     var listY = (+document.getElementById('p2-list-y').value / 100) * H;
@@ -1246,6 +1532,7 @@ function p2render() {
   }
 
   drawLogoItems(p2Ctx, p2State.logoItems, p2State.selLogoFile, W, H);
+  drawCropOverlay(p2Ctx, p2State, W, H);
 }
 
 function p2updatePanel() {
@@ -1438,7 +1725,7 @@ function p2setCol(n) {
 
 (function() {
   var dragging = null;
-  var dragStartX, dragStartY, dragOrigX, dragOrigY;
+  var dragStartX, dragStartY, dragOrigX, dragOrigY, cropDragStart;
 
   function getCanvasPos(e) {
     var rect = p2Canvas.getBoundingClientRect();
@@ -1452,6 +1739,14 @@ function p2setCol(n) {
   function onDown(e) {
     var pos = getCanvasPos(e);
     var pad = 20;
+    var bgHandle = hitBgHandle(p2State, p2Canvas.width, p2Canvas.height, pos.x, pos.y);
+    if (p2State.cropMode && bgHandle) {
+      var g = getBgGeometry(p2State, p2Canvas.width, p2Canvas.height);
+      dragging = {type: 'bg-crop', handle: bgHandle};
+      cropDragStart = {x: pos.x, y: pos.y, crop: g.crop, full: g.full};
+      e.preventDefault();
+      return;
+    }
     for (var i = p2State.logoItems.length - 1; i >= 0; i--) {
       var item = p2State.logoItems[i];
       if (!item.active || !item._rect) continue;
@@ -1472,30 +1767,43 @@ function p2setCol(n) {
       dragStartX = pos.x; dragStartY = pos.y;
       dragOrigX = hit.posX; dragOrigY = hit.posY;
       p2State.selId = hit.id;
+      p2State.bgSelected = false;
       p2updatePanel();
       p2render();
       e.preventDefault();
-    } else {
+      return;
+    }
+    if (bgHandle) {
+      p2State.bgSelected = true;
       p2State.selId = null;
       p2State.selLogoFile = null;
       p2updatePanel();
-      if (p2State.bgImg) {
-        dragging = p2State.bgTransform;
-        dragStartX = pos.x; dragStartY = pos.y;
-        dragOrigX = p2State.bgTransform.posX; dragOrigY = p2State.bgTransform.posY;
-        e.preventDefault();
-      }
+      var g2 = getBgGeometry(p2State, p2Canvas.width, p2Canvas.height);
+      dragging = {type: bgHandle === 'move' ? 'bg-move' : 'bg-resize', handle: bgHandle};
+      cropDragStart = {x: pos.x, y: pos.y, scale: p2State.bgTransform.scale || 100, posX: p2State.bgTransform.posX || 0, posY: p2State.bgTransform.posY || 0, rect: g2.cropRect};
       p2render();
+      e.preventDefault();
+      return;
     }
+    p2State.selId = null;
+    p2State.selLogoFile = null;
+    p2State.bgSelected = false;
+    p2updatePanel();
+    p2render();
   }
 
   function onMove(e) {
     if (!dragging) return;
     var pos = getCanvasPos(e);
     var W = p2Canvas.width, H = p2Canvas.height;
-    if (dragging === p2State.bgTransform) {
-      dragging.posX = Math.max(-100, Math.min(100, dragOrigX + ((pos.x - dragStartX) / W) * 100));
-      dragging.posY = Math.max(-100, Math.min(100, dragOrigY + ((pos.y - dragStartY) / H) * 100));
+    if (dragging.type === 'bg-crop') {
+      applyCropDrag(p2State, dragging.handle, cropDragStart, pos, W, H);
+      updateBgControls('p2', p2State);
+    } else if (dragging.type === 'bg-move') {
+      applyBgMove(p2State, cropDragStart, pos, W, H);
+      updateBgControls('p2', p2State);
+    } else if (dragging.type === 'bg-resize') {
+      applyBgResize(p2State, dragging.handle, cropDragStart, pos);
       updateBgControls('p2', p2State);
     } else {
       dragging.posX = Math.max(0, Math.min(100, dragOrigX + ((pos.x - dragStartX) / W) * 100));
@@ -1505,10 +1813,17 @@ function p2setCol(n) {
     e.preventDefault();
   }
 
-  function onUp() { dragging = null; }
+  function onUp() { dragging = null; cropDragStart = null; }
+
+  function onHover(e) {
+    if (dragging) return;
+    var pos = getCanvasPos(e);
+    var handle = hitBgHandle(p2State, p2Canvas.width, p2Canvas.height, pos.x, pos.y);
+    p2Canvas.style.cursor = cursorForHandle(handle);
+  }
 
   p2Canvas.addEventListener('mousedown', onDown);
-  p2Canvas.addEventListener('mousemove', onMove);
+  p2Canvas.addEventListener('mousemove', function(e) { onHover(e); onMove(e); });
   p2Canvas.addEventListener('mouseup', onUp);
   p2Canvas.addEventListener('touchstart', onDown, {passive: false});
   p2Canvas.addEventListener('touchmove', onMove, {passive: false});
@@ -1518,8 +1833,12 @@ function p2setCol(n) {
 document.getElementById('p2-dl').addEventListener('click', function() {
   var prevSel = p2State.selId;
   var prevLogo = p2State.selLogoFile;
+  var prevCrop = p2State.cropMode;
+  var prevBgSel = p2State.bgSelected;
   p2State.selId = null;
   p2State.selLogoFile = null;
+  p2State.cropMode = false;
+  p2State.bgSelected = false;
   p2render();
   var link = document.createElement('a');
   link.download = 'insta-2.png';
@@ -1527,6 +1846,8 @@ document.getElementById('p2-dl').addEventListener('click', function() {
   link.click();
   p2State.selId = prevSel;
   p2State.selLogoFile = prevLogo;
+  p2State.cropMode = prevCrop;
+  p2State.bgSelected = prevBgSel;
   p2render();
 });
 
@@ -1540,10 +1861,23 @@ function switchPage(num) {
   document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
   document.getElementById('page-' + num).classList.add('active');
   document.querySelectorAll('.sidebar-item').forEach(function(n) { n.classList.remove('active'); });
-  document.getElementById('nav-p' + num).classList.add('active');
+  var nav = document.getElementById('nav-p' + num);
+  if (nav) nav.classList.add('active');
   var sidebar = document.getElementById('sidebar');
   if (sidebar) sidebar.classList.remove('open');
   if (num === 2) p2render();
+}
+
+function initListToggle() {
+  var btn = document.getElementById('p2-list-toggle');
+  var panel = document.getElementById('p2-list-panel');
+  if (!btn || !panel) return;
+  btn.addEventListener('click', function() {
+    var on = !panel.classList.contains('on');
+    panel.classList.toggle('on', on);
+    btn.textContent = on ? '명단입력 닫기' : '명단입력하기';
+    p2render();
+  });
 }
 
 // INIT
@@ -1555,6 +1889,7 @@ p1updatePanel();
 p2updatePanel();
 initBgControls('p1', p1State, p1render);
 initBgControls('p2', p2State, p2render);
+initListToggle();
 
 loadImgManifest('p1-img-grid', function(img, name) { setBackground(p1State, img, 'p1', p1render, name); }, 'p1-bg-file');
 loadImgManifest('p2-img-grid', function(img, name) { setBackground(p2State, img, 'p2', p2render, name); }, 'p2-bg-file');
