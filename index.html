@@ -23,11 +23,16 @@
 body{display:flex;height:100vh;overflow:hidden;font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--txt);font-size:14px;}
 
 /* SIDEBAR */
-.sidebar{width:160px;min-width:160px;background:#1a1a2e;color:#fff;display:flex;flex-direction:column;padding:0;overflow:hidden;flex-shrink:0;}
-.sidebar-section-title{font-size:11px;font-weight:700;color:rgba(255,255,255,.45);padding:20px 16px 8px;letter-spacing:.08em;text-transform:uppercase;}
-.sidebar-item{padding:10px 16px;cursor:pointer;font-size:13px;color:rgba(255,255,255,.75);border-left:3px solid transparent;transition:background .15s,color .15s;}
-.sidebar-item:hover{background:rgba(255,255,255,.08);color:#fff;}
-.sidebar-item.active{background:rgba(91,94,244,.25);color:#fff;border-left-color:var(--acc);font-weight:700;}
+.sidebar{width:220px;min-width:220px;background:#fff;color:#20242d;display:flex;flex-direction:column;padding:14px;border-right:1px solid #e7e9ee;overflow:hidden;flex-shrink:0;box-shadow:1px 0 14px rgba(20,28,45,.04);}
+.sidebar-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:18px;}
+.sidebar-brand{display:flex;align-items:center;gap:9px;font-size:18px;font-weight:900;color:#161b22;letter-spacing:0;}
+.brand-mark{width:30px;height:30px;border-radius:9px;background:#1fb6aa;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;}
+.mobile-menu-toggle{display:none;width:34px;height:34px;border:1px solid #e2e6ee;border-radius:8px;background:#f7f9fb;color:#303743;font-size:18px;cursor:pointer;}
+.sidebar-nav{display:flex;flex-direction:column;gap:6px;}
+.sidebar-section-title{font-size:11px;font-weight:800;color:#9aa1ad;padding:0 2px 4px;letter-spacing:.04em;text-transform:uppercase;}
+.sidebar-item{padding:12px 12px;cursor:pointer;font-size:14px;color:#454b57;border:1px solid transparent;border-radius:8px;transition:background .15s,color .15s,border-color .15s;}
+.sidebar-item:hover{background:#f4f7f9;color:#171d26;}
+.sidebar-item.active{background:#e9faf7;color:#087c72;border-color:#aee6df;font-weight:900;}
 
 /* MAIN */
 .main{flex:1;display:flex;overflow:hidden;}
@@ -51,6 +56,7 @@ body{display:flex;height:100vh;overflow:hidden;font-family:'Noto Sans KR',sans-s
 .bg-tools .ed-label{width:42px;}
 .bg-upload-row{display:flex;gap:6px;align-items:center;}
 .bg-file-name{font-size:11px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+.crop-title{font-size:11px;font-weight:800;color:#555;margin-top:4px;}
 
 /* LOGO ROWS */
 .logo-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;border:1px solid var(--bdr);margin-bottom:4px;background:#fafafa;transition:background .15s;}
@@ -115,10 +121,15 @@ canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cur
 /* MOBILE */
 @media(max-width:720px){
   body{flex-direction:column;height:auto;overflow:auto;}
-  .sidebar{width:100%;min-width:unset;flex-direction:row;height:48px;overflow-x:auto;overflow-y:hidden;flex-shrink:0;}
+  .sidebar{width:100%;min-width:unset;padding:10px 12px;border-right:none;border-bottom:1px solid #e7e9ee;overflow:visible;box-shadow:0 2px 12px rgba(20,28,45,.06);}
+  .sidebar-top{margin-bottom:0;}
+  .sidebar-brand{font-size:17px;}
+  .brand-mark{width:28px;height:28px;border-radius:8px;}
+  .mobile-menu-toggle{display:inline-flex;align-items:center;justify-content:center;}
+  .sidebar-nav{display:none;margin-top:10px;padding-top:10px;border-top:1px solid #eef1f5;}
+  .sidebar.open .sidebar-nav{display:flex;}
   .sidebar-section-title{display:none;}
-  .sidebar-item{padding:12px 16px;border-left:none;border-bottom:3px solid transparent;white-space:nowrap;}
-  .sidebar-item.active{border-bottom-color:var(--acc);border-left:none;}
+  .sidebar-item{padding:12px 12px;white-space:nowrap;}
   .main{flex-direction:column;overflow:visible;}
   .page.active{flex-direction:column;overflow:visible;}
   .left-panel{width:100%;min-width:unset;max-height:45vh;border-right:none;border-bottom:1px solid var(--bdr);}
@@ -130,10 +141,16 @@ canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cur
 </head>
 <body>
 
-<div class="sidebar">
-  <div class="sidebar-section-title">이미지만들기</div>
-  <div class="sidebar-item active" id="nav-p1" onclick="switchPage(1)">내신성적1</div>
-  <div class="sidebar-item" id="nav-p2" onclick="switchPage(2)">내신성적2</div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-top">
+    <div class="sidebar-brand"><span class="brand-mark">MT</span><span>MarketingTool</span></div>
+    <button class="mobile-menu-toggle" type="button" onclick="toggleMobileMenu()" aria-label="메뉴 열기">☰</button>
+  </div>
+  <div class="sidebar-nav">
+    <div class="sidebar-section-title">Image Tools</div>
+    <div class="sidebar-item active" id="nav-p1" onclick="switchPage(1)">이미지만들기</div>
+    <div class="sidebar-item" id="nav-p2" onclick="switchPage(2)">명단 이미지만들기</div>
+  </div>
 </div>
 
 <div class="main">
@@ -164,6 +181,27 @@ canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cur
             <span class="ed-label">세로</span>
             <input type="range" id="p1-bg-y" min="-100" max="100" value="0">
             <span class="val-span" id="p1-bg-y-v">0</span>
+          </div>
+          <div class="crop-title">자르기</div>
+          <div class="ed-row">
+            <span class="ed-label">왼쪽</span>
+            <input type="range" id="p1-bg-crop-l" min="0" max="45" value="0">
+            <span class="val-span" id="p1-bg-crop-l-v">0</span>
+          </div>
+          <div class="ed-row">
+            <span class="ed-label">오른쪽</span>
+            <input type="range" id="p1-bg-crop-r" min="0" max="45" value="0">
+            <span class="val-span" id="p1-bg-crop-r-v">0</span>
+          </div>
+          <div class="ed-row">
+            <span class="ed-label">위</span>
+            <input type="range" id="p1-bg-crop-t" min="0" max="45" value="0">
+            <span class="val-span" id="p1-bg-crop-t-v">0</span>
+          </div>
+          <div class="ed-row">
+            <span class="ed-label">아래</span>
+            <input type="range" id="p1-bg-crop-b" min="0" max="45" value="0">
+            <span class="val-span" id="p1-bg-crop-b-v">0</span>
           </div>
           <button class="btn btn-outline btn-sm" type="button" id="p1-bg-reset">배경 초기화</button>
         </div>
@@ -231,6 +269,27 @@ canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cur
             <span class="ed-label">세로</span>
             <input type="range" id="p2-bg-y" min="-100" max="100" value="0">
             <span class="val-span" id="p2-bg-y-v">0</span>
+          </div>
+          <div class="crop-title">자르기</div>
+          <div class="ed-row">
+            <span class="ed-label">왼쪽</span>
+            <input type="range" id="p2-bg-crop-l" min="0" max="45" value="0">
+            <span class="val-span" id="p2-bg-crop-l-v">0</span>
+          </div>
+          <div class="ed-row">
+            <span class="ed-label">오른쪽</span>
+            <input type="range" id="p2-bg-crop-r" min="0" max="45" value="0">
+            <span class="val-span" id="p2-bg-crop-r-v">0</span>
+          </div>
+          <div class="ed-row">
+            <span class="ed-label">위</span>
+            <input type="range" id="p2-bg-crop-t" min="0" max="45" value="0">
+            <span class="val-span" id="p2-bg-crop-t-v">0</span>
+          </div>
+          <div class="ed-row">
+            <span class="ed-label">아래</span>
+            <input type="range" id="p2-bg-crop-b" min="0" max="45" value="0">
+            <span class="val-span" id="p2-bg-crop-b-v">0</span>
           </div>
           <button class="btn btn-outline btn-sm" type="button" id="p2-bg-reset">배경 초기화</button>
         </div>
@@ -434,14 +493,18 @@ function wrapText(ctx, text, maxW) {
 }
 
 function resetBgTransform(state) {
-  state.bgTransform = {scale: 100, posX: 0, posY: 0};
+  state.bgTransform = {scale: 100, posX: 0, posY: 0, cropL: 0, cropR: 0, cropT: 0, cropB: 0};
 }
 
 function updateBgControls(prefix, state) {
-  var t = state.bgTransform || {scale: 100, posX: 0, posY: 0};
+  var t = state.bgTransform || {scale: 100, posX: 0, posY: 0, cropL: 0, cropR: 0, cropT: 0, cropB: 0};
   var scale = document.getElementById(prefix + '-bg-scale');
   var x = document.getElementById(prefix + '-bg-x');
   var y = document.getElementById(prefix + '-bg-y');
+  var cropL = document.getElementById(prefix + '-bg-crop-l');
+  var cropR = document.getElementById(prefix + '-bg-crop-r');
+  var cropT = document.getElementById(prefix + '-bg-crop-t');
+  var cropB = document.getElementById(prefix + '-bg-crop-b');
   if (!scale || !x || !y) return;
   scale.value = t.scale;
   x.value = Math.round(t.posX);
@@ -449,6 +512,16 @@ function updateBgControls(prefix, state) {
   document.getElementById(prefix + '-bg-scale-v').textContent = Math.round(t.scale);
   document.getElementById(prefix + '-bg-x-v').textContent = Math.round(t.posX);
   document.getElementById(prefix + '-bg-y-v').textContent = Math.round(t.posY);
+  if (cropL && cropR && cropT && cropB) {
+    cropL.value = Math.round(t.cropL || 0);
+    cropR.value = Math.round(t.cropR || 0);
+    cropT.value = Math.round(t.cropT || 0);
+    cropB.value = Math.round(t.cropB || 0);
+    document.getElementById(prefix + '-bg-crop-l-v').textContent = Math.round(t.cropL || 0);
+    document.getElementById(prefix + '-bg-crop-r-v').textContent = Math.round(t.cropR || 0);
+    document.getElementById(prefix + '-bg-crop-t-v').textContent = Math.round(t.cropT || 0);
+    document.getElementById(prefix + '-bg-crop-b-v').textContent = Math.round(t.cropB || 0);
+  }
 }
 
 function drawBackground(ctx, state, W, H) {
@@ -458,14 +531,24 @@ function drawBackground(ctx, state, W, H) {
     return;
   }
 
-  var t = state.bgTransform || {scale: 100, posX: 0, posY: 0};
-  var baseScale = Math.max(W / state.bgImg.naturalWidth, H / state.bgImg.naturalHeight);
+  var t = state.bgTransform || {scale: 100, posX: 0, posY: 0, cropL: 0, cropR: 0, cropT: 0, cropB: 0};
+  var cropL = Math.max(0, Math.min(45, t.cropL || 0));
+  var cropR = Math.max(0, Math.min(45, t.cropR || 0));
+  var cropT = Math.max(0, Math.min(45, t.cropT || 0));
+  var cropB = Math.max(0, Math.min(45, t.cropB || 0));
+  var sx = state.bgImg.naturalWidth * (cropL / 100);
+  var sy = state.bgImg.naturalHeight * (cropT / 100);
+  var sourceW = state.bgImg.naturalWidth * ((100 - cropL - cropR) / 100);
+  var sourceH = state.bgImg.naturalHeight * ((100 - cropT - cropB) / 100);
+  sourceW = Math.max(1, sourceW);
+  sourceH = Math.max(1, sourceH);
+  var baseScale = Math.max(W / sourceW, H / sourceH);
   var scale = baseScale * (t.scale / 100);
-  var sw = state.bgImg.naturalWidth * scale;
-  var sh = state.bgImg.naturalHeight * scale;
+  var sw = sourceW * scale;
+  var sh = sourceH * scale;
   var x = (W - sw) / 2 + (t.posX / 100) * W;
   var y = (H - sh) / 2 + (t.posY / 100) * H;
-  ctx.drawImage(state.bgImg, x, y, sw, sh);
+  ctx.drawImage(state.bgImg, sx, sy, sourceW, sourceH, x, y, sw, sh);
 }
 
 function setBackground(state, img, prefix, render, name) {
@@ -741,7 +824,7 @@ async function forceLoadFont(family, weight, size) {
 // ============================================================
 var p1State = {
   bgImg: null,
-  bgTransform: {scale: 100, posX: 0, posY: 0},
+  bgTransform: {scale: 100, posX: 0, posY: 0, cropL: 0, cropR: 0, cropT: 0, cropB: 0},
   logoItems: [],
   selLogoFile: null,
   boxes: [],
@@ -964,6 +1047,10 @@ function initBgControls(prefix, state, render) {
   var scale = document.getElementById(prefix + '-bg-scale');
   var x = document.getElementById(prefix + '-bg-x');
   var y = document.getElementById(prefix + '-bg-y');
+  var cropL = document.getElementById(prefix + '-bg-crop-l');
+  var cropR = document.getElementById(prefix + '-bg-crop-r');
+  var cropT = document.getElementById(prefix + '-bg-crop-t');
+  var cropB = document.getElementById(prefix + '-bg-crop-b');
   var reset = document.getElementById(prefix + '-bg-reset');
   if (!scale || !x || !y) return;
 
@@ -975,6 +1062,10 @@ function initBgControls(prefix, state, render) {
     state.bgTransform.scale = +scale.value;
     state.bgTransform.posX = +x.value;
     state.bgTransform.posY = +y.value;
+    state.bgTransform.cropL = cropL ? +cropL.value : 0;
+    state.bgTransform.cropR = cropR ? +cropR.value : 0;
+    state.bgTransform.cropT = cropT ? +cropT.value : 0;
+    state.bgTransform.cropB = cropB ? +cropB.value : 0;
     updateBgControls(prefix, state);
     render();
   }
@@ -982,6 +1073,10 @@ function initBgControls(prefix, state, render) {
   scale.addEventListener('input', syncFromControls);
   x.addEventListener('input', syncFromControls);
   y.addEventListener('input', syncFromControls);
+  if (cropL) cropL.addEventListener('input', syncFromControls);
+  if (cropR) cropR.addEventListener('input', syncFromControls);
+  if (cropT) cropT.addEventListener('input', syncFromControls);
+  if (cropB) cropB.addEventListener('input', syncFromControls);
   if (reset) {
     reset.addEventListener('click', function() {
       resetBgTransform(state);
@@ -1011,7 +1106,7 @@ document.getElementById('p1-dl').addEventListener('click', function() {
 // ============================================================
 var p2State = {
   bgImg: null,
-  bgTransform: {scale: 100, posX: 0, posY: 0},
+  bgTransform: {scale: 100, posX: 0, posY: 0, cropL: 0, cropR: 0, cropT: 0, cropB: 0},
   logoItems: [],
   selLogoFile: null,
   boxes: [],
@@ -1436,11 +1531,18 @@ document.getElementById('p2-dl').addEventListener('click', function() {
 });
 
 // NAVIGATION
+function toggleMobileMenu() {
+  var sidebar = document.getElementById('sidebar');
+  if (sidebar) sidebar.classList.toggle('open');
+}
+
 function switchPage(num) {
   document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
   document.getElementById('page-' + num).classList.add('active');
   document.querySelectorAll('.sidebar-item').forEach(function(n) { n.classList.remove('active'); });
   document.getElementById('nav-p' + num).classList.add('active');
+  var sidebar = document.getElementById('sidebar');
+  if (sidebar) sidebar.classList.remove('open');
   if (num === 2) p2render();
 }
 
