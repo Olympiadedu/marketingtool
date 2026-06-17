@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MarketingTool</title>
+<title>MarketTingTool</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Noto+Serif+KR:wght@400;700&family=Nanum+Gothic:wght@400;700;800&family=Nanum+Myeongjo:wght@400;700;800&family=Nanum+Gothic+Coding:wght@400;700&family=Gaegu:wght@400;700&family=Gowun+Batang:wght@400;700&family=Sunflower:wght@300;500;700&family=Hahmlet:wght@400;700;900&family=IBM+Plex+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
@@ -50,6 +50,38 @@ body{display:flex;height:100vh;overflow:hidden;font-family:'Noto Sans KR',sans-s
 .tool-section + .tool-section{margin-top:10px;}
 .tool-section .sec-title{display:flex;align-items:center;gap:6px;margin-bottom:0;color:#152033;font-size:12px;letter-spacing:0;text-transform:none;}
 .tool-section .sec-title::before{content:'';width:8px;height:8px;border-radius:50%;background:#22c7b8;display:inline-block;}
+.intro-card{border:1px solid #bfe9e3;border-radius:8px;background:linear-gradient(180deg,#f3fffd 0%,#fff 100%);padding:12px;display:flex;flex-direction:column;gap:10px;}
+.intro-title{font-size:18px;font-weight:900;color:#111827;line-height:1.15;}
+.intro-copy{font-size:12px;color:#56616f;line-height:1.45;}
+.quick-flow{display:grid;grid-template-columns:1fr;gap:6px;margin-top:2px;}
+.flow-step{display:grid;grid-template-columns:24px 1fr;gap:7px;align-items:start;border:1px solid #e1f2ef;background:#fff;border-radius:7px;padding:7px 8px;}
+.flow-num{width:24px;height:24px;border-radius:7px;background:#00a891;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;}
+.flow-title{font-size:12px;font-weight:900;color:#172033;line-height:1.2;margin-bottom:2px;}
+.flow-copy{font-size:11px;color:#657181;line-height:1.35;}
+.intro-actions{display:flex;gap:6px;}
+.intro-toggle{width:100%;border:1.5px solid #00a891;background:#fff;color:#008f7d;border-radius:7px;padding:8px 10px;font-size:12px;font-weight:900;cursor:pointer;}
+.intro-toggle.on{background:#00a891;color:#fff;}
+.example-panel{display:none;flex-direction:column;gap:8px;}
+.example-panel.on{display:flex;}
+.example-grid{display:grid;grid-template-columns:1fr;gap:7px;}
+.example-card{border:1px solid #e4edf2;border-radius:8px;background:#fff;padding:8px;display:grid;grid-template-columns:58px 1fr;gap:8px;align-items:center;}
+.example-thumb{width:58px;aspect-ratio:4/5;border-radius:6px;background:#151515;position:relative;overflow:hidden;border:1px solid #dfe8ee;}
+.example-thumb::before{content:'';position:absolute;inset:7px;border:1px solid rgba(255,214,112,.7);border-radius:50%;}
+.example-thumb::after{content:'';position:absolute;left:10px;right:10px;bottom:10px;height:5px;border-radius:99px;background:#00a891;}
+.example-thumb.list::before{border-radius:0;border:none;inset:9px;background:repeating-linear-gradient(180deg,rgba(255,255,255,.82) 0 2px,transparent 2px 10px);}
+.example-thumb.notice::before{border-radius:4px;border-color:rgba(255,255,255,.7);inset:10px 8px;}
+.example-name{font-size:12px;font-weight:900;color:#1f2937;margin-bottom:2px;}
+.example-desc{font-size:11px;color:#647182;line-height:1.35;}
+.example-flow{border-top:1px solid #e8eef3;padding-top:8px;font-size:11px;color:#5b6675;line-height:1.45;}
+.example-flow b{color:#111827;}
+.template-grid{display:grid;grid-template-columns:1fr;gap:7px;}
+.template-card{border:1px solid #dde8ef;background:#fff;border-radius:8px;padding:9px 10px;text-align:left;cursor:pointer;display:grid;grid-template-columns:34px 1fr;gap:8px;align-items:center;transition:border-color .15s,background .15s,box-shadow .15s;}
+.template-card:hover{border-color:#7ddbd2;background:#f5fffd;}
+.template-card.on{border-color:#00a891;background:#eafffb;box-shadow:0 0 0 1px rgba(0,168,145,.14) inset;}
+.template-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#fff;background:#00a891;}
+.template-card[data-template="list"] .template-icon{background:#b48a2c;}
+.template-name{font-size:12px;font-weight:900;color:#111827;margin-bottom:2px;}
+.template-desc{font-size:11px;color:#647182;line-height:1.35;}
 .img-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(74px,1fr));gap:6px;margin-bottom:4px;}
 .img-thumb-wrap{border-radius:6px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:border-color .15s;position:relative;}
 .img-thumb-wrap:hover{border-color:var(--acc);}
@@ -132,8 +164,19 @@ hr{border:none;border-top:1px solid var(--bdr);margin:2px 0;}
 canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cursor:default;height:100%;width:auto;}
 .canvas-badge{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;padding:3px 7px;border-radius:4px;pointer-events:none;}
 .drag-hint{display:none;}
-.canvas-actions{display:flex;gap:8px;align-items:center;}
+.canvas-actions{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;width:100%;}
+.download-btn{min-width:180px;padding:13px 24px;border-radius:10px;font-size:15px;font-weight:900;background:#00a891;box-shadow:0 8px 18px rgba(0,168,145,.24);}
+.download-btn:hover{background:#008f7d;box-shadow:0 10px 22px rgba(0,143,125,.28);}
+.instagram-btn{display:none!important;min-width:170px;padding:13px 22px;border-radius:10px;font-size:15px;font-weight:900;background:#e4405f;color:#fff;box-shadow:0 8px 18px rgba(228,64,95,.22);}
+.instagram-btn:hover{background:#c13584;box-shadow:0 10px 22px rgba(193,53,132,.25);}
 .hint-text{font-size:11px;color:var(--mut);}
+.ai-panel{display:flex;flex-direction:column;gap:8px;}
+.ai-note{font-size:11px;color:#657181;line-height:1.45;background:#f7fbff;border:1px solid #dbeaf7;border-radius:7px;padding:8px;}
+.ai-result{min-height:190px;font-size:12px;line-height:1.5;background:#fff;}
+.ai-actions{display:grid;grid-template-columns:1fr;gap:6px;}
+.ai-status{min-height:16px;font-size:11px;color:#657181;line-height:1.35;}
+.ai-status.err{color:#d92d20;}
+.ai-status.ok{color:#087c72;}
 
 /* P2 LIST CONTROLS */
 .list-controls{display:flex;flex-direction:column;gap:8px;}
@@ -161,18 +204,18 @@ canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cur
   .canvas-wrap{height:auto!important;width:calc(100vw - 16px)!important;max-width:calc(100vw - 16px)!important;}
   canvas{width:100%!important;height:auto!important;}
 }
+
 </style>
 </head>
 <body>
 
 <div class="sidebar" id="sidebar">
   <div class="sidebar-top">
-    <div class="sidebar-brand"><span class="brand-mark">MT</span><span>MarketingTool</span></div>
+    <div class="sidebar-brand"><span class="brand-mark">MTT</span><span>MarketTingTool</span></div>
     <button class="mobile-menu-toggle" type="button" onclick="toggleMobileMenu()" aria-label="메뉴 열기">☰</button>
   </div>
   <div class="sidebar-nav">
-    <div class="sidebar-section-title">Image Tools</div>
-    <div class="sidebar-item active" id="nav-p2" onclick="switchPage(2)">이미지만들기</div>
+    <div class="sidebar-item active">이미지만들기</div>
   </div>
 </div>
 
@@ -262,7 +305,8 @@ canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cur
         <div class="drag-hint">✥ 드래그로 이동</div>
       </div>
       <div class="canvas-actions">
-        <button class="btn btn-primary" id="p1-dl">다운로드</button>
+        <button class="btn btn-primary download-btn" id="p1-dl">PNG 다운로드</button>
+        <button class="btn instagram-btn" id="p1-ig" type="button">인스타그램 공유</button>
         <span class="hint-text">텍스트/로고/이미지를 드래그해서 위치 조정</span>
       </div>
     </div>
@@ -271,6 +315,69 @@ canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cur
   <!-- PAGE 2 -->
   <div class="page active" id="page-2">
     <div class="left-panel">
+      <div class="intro-card">
+        <div>
+          <div class="intro-title">이미지만들기</div>
+          <div class="intro-copy">학원 홍보 이미지와 성적 명단 이미지를 빠르게 제작하는 도구입니다.</div>
+        </div>
+        <div class="quick-flow">
+          <div class="flow-step">
+            <div class="flow-num">1</div>
+            <div><div class="flow-title">형태 선택</div><div class="flow-copy">자유 편집 또는 성적명단형을 고릅니다.</div></div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">2</div>
+            <div><div class="flow-title">내용 입력</div><div class="flow-copy">배경, 로고, 문구, 명단을 넣습니다.</div></div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">3</div>
+            <div><div class="flow-title">위치 조정</div><div class="flow-copy">미리보기에서 요소를 드래그해 정리합니다.</div></div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">4</div>
+            <div><div class="flow-title">다운로드 후 활용</div><div class="flow-copy">저장한 이미지를 인스타그램, 블로그, 안내문에 사용합니다.</div></div>
+          </div>
+        </div>
+        <button class="intro-toggle" type="button" id="example-toggle">결과 예시 보기</button>
+        <div class="example-panel" id="example-panel">
+          <div class="example-grid">
+            <div class="example-card">
+              <div class="example-thumb list"></div>
+              <div>
+                <div class="example-name">성적 우수자 명단</div>
+                <div class="example-desc">학교명과 이름을 붙여넣어 2열/3열 명단 이미지로 제작합니다.</div>
+              </div>
+            </div>
+            <div class="example-card">
+              <div class="example-thumb"></div>
+              <div>
+                <div class="example-name">학원 홍보 이미지</div>
+                <div class="example-desc">배경, 로고, 홍보 문구를 조합해 인스타그램용 이미지를 만듭니다.</div>
+              </div>
+            </div>
+            <div class="example-card">
+              <div class="example-thumb notice"></div>
+              <div>
+                <div class="example-name">공지/상담 안내</div>
+                <div class="example-desc">상담 전화, 모집 안내, 이벤트 문구를 넣어 PNG로 저장합니다.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tool-section">
+        <div class="sec-title">템플릿</div>
+        <div class="template-grid" id="p2-template-grid">
+          <button class="template-card on" type="button" data-template="free">
+            <span class="template-icon">F</span>
+            <span><span class="template-name">자유 편집</span><span class="template-desc">배경, 로고, 텍스트를 직접 조합해서 제작가능합니다.</span></span>
+          </button>
+          <button class="template-card" type="button" data-template="list">
+            <span class="template-icon">명</span>
+            <span><span class="template-name">성적명단형</span><span class="template-desc">리스트형 배경, 상단 제목, 2열/3열 명단 영역을 자동 배치합니다.</span></span>
+          </button>
+        </div>
+      </div>
       <div class="tool-section">
         <div class="sec-title">배경</div>
         <div class="img-grid" id="p2-img-grid"></div>
@@ -351,11 +458,11 @@ canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cur
         <button class="btn btn-outline" type="button" id="p2-list-toggle">명단 입력하기</button>
         <div class="list-panel" id="p2-list-panel">
           <div class="list-controls">
-          <textarea id="p2-list-data" style="min-height:120px" placeholder="엑셀에서 복사(Ctrl+C) 후 붙여넣기&#10;형식: 학교명[공란]이름"></textarea>
+          <textarea id="p2-list-data" style="min-height:160px" placeholder="명단 넣는 방법&#10;1. 엑셀에서 학교명 열과 이름 열, 두 칸을 함께 선택한 뒤 복사(Ctrl+C)하고 여기에 붙여넣기(Ctrl+V)&#10;   예: A열=학교명, B열=이름&#10;2. 직접 입력: 학교명[공란]이름&#10;   예: 광양중3 김OO"></textarea>
           <div class="ed-row">
             <span class="ed-label">시작위치</span>
-            <input type="range" id="p2-list-y" min="15" max="80" value="35">
-            <span class="val-span" id="p2-list-y-v">35</span>
+            <input type="range" id="p2-list-y" min="15" max="80" value="45">
+            <span class="val-span" id="p2-list-y-v">45</span>
           </div>
           <div class="ed-row">
             <span class="ed-label">행간격</span>
@@ -403,6 +510,25 @@ canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cur
           </div>
         </div>
       </div>
+      <div class="tool-section">
+        <div class="sec-title">홍보문구 생성</div>
+        <div class="ai-panel">
+          <div class="ai-note">현재 미리보기 이미지를 분석해 인스타그램용 홍보문구를 만듭니다. API 키는 <b>gemini_keys.txt</b>에 한 줄에 하나씩 입력하세요.</div>
+          <select id="ai-tone">
+            <option value="학부모가 신뢰할 수 있는 차분한 톤">신뢰감</option>
+            <option value="밝고 활기찬 홍보 톤">활기있게</option>
+            <option value="프리미엄하고 고급스러운 톤">프리미엄</option>
+            <option value="성과와 결과를 강조하는 톤">성과 강조</option>
+          </select>
+          <textarea id="ai-extra" placeholder="추가로 강조할 내용이 있으면 입력하세요.&#10;예: 중등 내신 대비, 상담 문의 유도, 특정 캠퍼스명" style="min-height:80px"></textarea>
+          <button class="btn btn-primary" id="ai-generate" type="button">홍보문구 생성</button>
+          <div class="ai-status" id="ai-status"></div>
+          <textarea class="ai-result" id="ai-result" placeholder="생성된 인스타그램 문구가 여기에 표시됩니다."></textarea>
+          <div class="ai-actions">
+            <button class="btn btn-outline" id="ai-copy" type="button">결과 복사</button>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="canvas-area">
       <div class="canvas-wrap">
@@ -411,13 +537,15 @@ canvas{display:block;border-radius:8px;box-shadow:0 4px 32px rgba(0,0,0,.18);cur
         <div class="drag-hint">✥ 드래그로 이동</div>
       </div>
       <div class="canvas-actions">
-        <button class="btn btn-primary" id="p2-dl">다운로드</button>
+        <button class="btn btn-primary download-btn" id="p2-dl">PNG 다운로드</button>
+        <button class="btn instagram-btn" id="p2-ig" type="button">인스타그램 공유</button>
         <span class="hint-text">텍스트/로고/이미지를 드래그해서 위치 조정</span>
       </div>
     </div>
   </div>
 
-</div>
+
+</div><!-- /main -->
 
 <script>
 var FONTS = [
@@ -763,13 +891,15 @@ async function loadImgManifest(gridId, onSelect, uploadInputId) {
       lbl.textContent = img.name;
       wrap.appendChild(el);
       wrap.appendChild(lbl);
-      wrap.addEventListener('click', function() {
+      function selectThisImage() {
         selFile = img.file;
         var bgImg = new Image();
         bgImg.onload = function() { onSelect(bgImg, img.name); };
         bgImg.src = img.url;
         renderGrid();
-      });
+      }
+      wrap.addEventListener('click', selectThisImage);
+      img._select = selectThisImage;
       grid.appendChild(wrap);
     });
     if (uploadInput) {
@@ -798,6 +928,17 @@ async function loadImgManifest(gridId, onSelect, uploadInputId) {
       } catch(e) { console.error('[BG ERR]', entry.file, e); return null; }
     }));
     imgList = loadedImages.filter(function(img) { return img; });
+    window.__bgManifestPickers = window.__bgManifestPickers || {};
+    window.__bgManifestPickers[gridId] = function(fileName) {
+      var target = imgList.find(function(img) { return img.file === fileName || img.name === fileName; });
+      if (!target) return false;
+      selFile = target.file;
+      var bgImg = new Image();
+      bgImg.onload = function() { onSelect(bgImg, target.name); };
+      bgImg.src = target.url;
+      renderGrid();
+      return true;
+    };
     if (imgList.length) {
       selFile = imgList[0].file;
       var bgImg0 = new Image();
@@ -1046,9 +1187,34 @@ var p1State = {
   selLogoFile: null,
   boxes: [],
   selId: null,
-  nextNum: 1
+  nextNum: 1,
+  templateKey: 'free'
 };
 
+var P2_TEMPLATES = {
+  free: {label: '자유 편집', list: null, logo: {posX: 50, posY: 88, size: 20}, boxes: []},
+  list: {
+    label: '성적명단형',
+    logo: {posX: 50, posY: 91, size: 18},
+    list: {
+      open: true,
+      y: 45,
+      gap: 66,
+      cols: 3,
+      sample: '광양중3 김OO\n전동중2 이OO\n건대부중3 박OO\n가람중3 노OO\n구의중3 문OO\n신양중3 최OO',
+      schoolSize: 22,
+      nameSize: 38,
+      schoolColor: '#c9c2b5',
+      nameColor: '#ffffff',
+      schoolBold: false,
+      nameBold: true
+    },
+    boxes: [
+      {text: '2026 내신 우수자 명단', font: 'Noto Sans KR', size: 66, color: '#ffffff', bold: true, shadow: true, posX: 50, posY: 19},
+      {text: '노력의 결과를 함께 축하합니다', font: 'Noto Sans KR', size: 30, color: '#d7b76b', bold: true, shadow: true, posX: 50, posY: 25}
+    ]
+  }
+};
 var p1Canvas = document.getElementById('cv1');
 var p1Ctx = p1Canvas.getContext('2d');
 
@@ -1370,6 +1536,60 @@ function initBgControls(prefix, state, render) {
   }
 }
 
+function todayStamp() {
+  var d = new Date();
+  var y = d.getFullYear();
+  var m = String(d.getMonth() + 1).padStart(2, '0');
+  var day = String(d.getDate()).padStart(2, '0');
+  return '' + y + m + day;
+}
+
+function downloadFileName(prefix) {
+  return prefix + '_' + todayStamp() + '.png';
+}
+
+function canvasToBlob(canvas) {
+  return new Promise(function(resolve) {
+    canvas.toBlob(function(blob) { resolve(blob); }, 'image/png', 1);
+  });
+}
+
+function downloadCanvasImage(canvas, fileName) {
+  var link = document.createElement('a');
+  link.download = fileName;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+async function shareCanvasImage(canvas, fileName) {
+  var blob = await canvasToBlob(canvas);
+  if (!blob) return false;
+  var file = new File([blob], fileName, {type: 'image/png'});
+  if (navigator.canShare && navigator.canShare({files: [file]}) && navigator.share) {
+    await navigator.share({files: [file], title: '이미지만들기', text: '제작한 이미지를 공유합니다.'});
+    return true;
+  }
+  return false;
+}
+
+async function sharePreparedImage(canvas, fileName, prepare, restore) {
+  prepare();
+  try {
+    var shared = await shareCanvasImage(canvas, fileName);
+    if (!shared) {
+      downloadCanvasImage(canvas, fileName);
+      window.open('https://www.instagram.com/', '_blank', 'noopener');
+      alert('이 브라우저에서는 직접 공유가 지원되지 않아 PNG를 저장했습니다. 열린 인스타그램에서 저장된 이미지를 업로드하세요.');
+    }
+  } catch (err) {
+    if (err && err.name === 'AbortError') return;
+    downloadCanvasImage(canvas, fileName);
+    window.open('https://www.instagram.com/', '_blank', 'noopener');
+    alert('인스타그램 공유를 바로 실행하지 못해 PNG를 저장했습니다. 저장된 이미지를 인스타그램에서 업로드하세요.');
+  } finally {
+    restore();
+  }
+}
 document.getElementById('p1-dl').addEventListener('click', function() {
   var prevSel = p1State.selId;
   var prevLogo = p1State.selLogoFile;
@@ -1377,14 +1597,31 @@ document.getElementById('p1-dl').addEventListener('click', function() {
   p1State.selLogoFile = null;
   p1render();
   var link = document.createElement('a');
-  link.download = 'insta-1.png';
+  link.download = downloadFileName('이미지만들기');
   link.href = p1Canvas.toDataURL('image/png');
   link.click();
   p1State.selId = prevSel;
   p1State.selLogoFile = prevLogo;
   p1render();
 });
-
+document.getElementById('p1-ig').addEventListener('click', function() {
+  var prevSel = p1State.selId;
+  var prevLogo = p1State.selLogoFile;
+  sharePreparedImage(
+    p1Canvas,
+    downloadFileName('이미지만들기'),
+    function() {
+      p1State.selId = null;
+      p1State.selLogoFile = null;
+      p1render();
+    },
+    function() {
+      p1State.selId = prevSel;
+      p1State.selLogoFile = prevLogo;
+      p1render();
+    }
+  );
+});
 // ============================================================
 // PAGE 2
 // ============================================================
@@ -1424,11 +1661,68 @@ function parseListData(raw) {
   return rows;
 }
 
+function setRangeValue(id, value) {
+  var el = document.getElementById(id);
+  var val = document.getElementById(id + '-v');
+  if (el) el.value = value;
+  if (val) val.textContent = value;
+}
+
+function applyListAutoSettings(rowCount) {
+  if (!rowCount) return;
+  var cols = rowCount <= 10 ? 2 : 3;
+  var nameSize = rowCount <= 6 ? 42 : rowCount <= 12 ? 36 : rowCount <= 18 ? 32 : 28;
+  var schoolSize = rowCount <= 6 ? 24 : rowCount <= 12 ? 22 : rowCount <= 18 ? 20 : 18;
+  var rowGap = rowCount <= 6 ? 82 : rowCount <= 12 ? 72 : rowCount <= 18 ? 62 : 54;
+  p2setCol(cols, true);
+  setRangeValue('p2-name-size', nameSize);
+  setRangeValue('p2-school-size', schoolSize);
+  setRangeValue('p2-row-gap', rowGap);
+}
+
+function autoTuneListFromCurrentInput() {
+  var data = document.getElementById('p2-list-data');
+  if (!data) return;
+  applyListAutoSettings(parseListData(data.value).length);
+}
+
+function fillRoundRect(ctx, x, y, w, h, r) {
+  if (ctx.roundRect) {
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, r);
+    ctx.fill();
+    return;
+  }
+  var rr = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.lineTo(x + w - rr, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+  ctx.lineTo(x + w, y + h - rr);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+  ctx.lineTo(x + rr, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+  ctx.lineTo(x, y + rr);
+  ctx.quadraticCurveTo(x, y, x + rr, y);
+  ctx.fill();
+}
+
+function drawTemplateDecor(ctx, state, W, H) {
+  var key = state.templateKey || 'free';
+  if (key === 'free') return;
+
+  ctx.save();
+  if (key === 'list') {
+    // 성적명단형은 선택한 배경 이미지를 그대로 사용합니다.
+  }
+  ctx.restore();
+}
 function p2render() {
   var W = p2Canvas.width;
   var H = p2Canvas.height;
   p2Ctx.clearRect(0, 0, W, H);
   drawBackground(p2Ctx, p2State, W, H);
+  drawTemplateDecor(p2Ctx, p2State, W, H);
 
   var selBox2 = null;
   p2State.boxes.forEach(function(b) {
@@ -1567,6 +1861,21 @@ function p2updatePanel() {
   }
 }
 
+function createP2Box(num, data) {
+  return {
+    id: 'p2b' + num,
+    text: data.text || ('텍스트 ' + num),
+    font: data.font || 'Noto Sans KR',
+    size: data.size || 72,
+    color: data.color || '#ffffff',
+    bold: data.bold !== false,
+    shadow: data.shadow !== false,
+    posX: data.posX == null ? 50 : data.posX,
+    posY: data.posY == null ? 50 : data.posY,
+    _rect: null
+  };
+}
+
 function p2addBox() {
   var num = p2State.nextNum++;
   var box = {
@@ -1584,6 +1893,125 @@ function p2addBox() {
   p2State.boxes.push(box);
   p2State.selId = box.id;
   p2updatePanel();
+  p2render();
+}
+
+function setToggleOn(id, on) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('on', !!on);
+}
+
+function setListPanelOpen(open) {
+  var panel = document.getElementById('p2-list-panel');
+  var btn = document.getElementById('p2-list-toggle');
+  if (!panel || !btn) return;
+  panel.classList.toggle('on', !!open);
+  btn.textContent = open ? '명단입력 닫기' : '명단입력하기';
+}
+
+function selectP2BackgroundByFile(fileName) {
+  if (window.__bgManifestPickers && window.__bgManifestPickers['p2-img-grid']) {
+    return window.__bgManifestPickers['p2-img-grid'](fileName);
+  }
+  return false;
+}
+
+function resetP2DefaultsForTemplate() {
+  p2State.boxes = [];
+  p2State.selId = null;
+  p2State.nextNum = 1;
+  p2State.bgSelected = false;
+  p2State.cropMode = false;
+  p2State.selLogoFile = null;
+  setListPanelOpen(false);
+  var listY = document.getElementById('p2-list-y');
+  if (listY) {
+    listY.value = 45;
+    document.getElementById('p2-list-y-v').textContent = 45;
+  }
+  var rowGap = document.getElementById('p2-row-gap');
+  if (rowGap) {
+    rowGap.value = 65;
+    document.getElementById('p2-row-gap-v').textContent = 65;
+  }
+  p2setCol(3);
+  document.getElementById('p2-school-size').value = 18;
+  document.getElementById('p2-school-size-v').textContent = 18;
+  document.getElementById('p2-name-size').value = 30;
+  document.getElementById('p2-name-size-v').textContent = 30;
+  document.getElementById('p2-school-color').value = '#aaaaaa';
+  document.getElementById('p2-name-color').value = '#ffffff';
+  setToggleOn('p2-school-bold', false);
+  setToggleOn('p2-school-shadow', false);
+  setToggleOn('p2-name-bold', true);
+  setToggleOn('p2-name-shadow', true);
+}
+
+function applyTemplateLogoPreset(tpl) {
+  if (!tpl.logo) return;
+  p2State.logoItems.forEach(function(item) {
+    if (!item.active) return;
+    item.posX = tpl.logo.posX;
+    item.posY = tpl.logo.posY;
+    item.size = tpl.logo.size;
+  });
+}
+
+async function p2applyTemplate(key) {
+  var tpl = P2_TEMPLATES[key] || P2_TEMPLATES.free;
+  p2State.templateKey = key;
+  resetP2DefaultsForTemplate();
+
+  if (key === 'list') {
+    selectP2BackgroundByFile('bg3.jpg');
+    p2State.boxes = tpl.boxes.map(function(box, idx) { return createP2Box(idx + 1, box); });
+    p2State.nextNum = p2State.boxes.length + 1;
+    p2State.selId = p2State.boxes.length ? p2State.boxes[0].id : null;
+  }
+
+  if (tpl.list) {
+    setListPanelOpen(!!tpl.list.open);
+    if (tpl.list.open) {
+      var data = document.getElementById('p2-list-data');
+      if (data && tpl.list.sample) data.value = tpl.list.sample;
+      if (tpl.list.y != null) {
+        document.getElementById('p2-list-y').value = tpl.list.y;
+        document.getElementById('p2-list-y-v').textContent = tpl.list.y;
+      }
+      if (tpl.list.gap != null) {
+        document.getElementById('p2-row-gap').value = tpl.list.gap;
+        document.getElementById('p2-row-gap-v').textContent = tpl.list.gap;
+      }
+      if (tpl.list.cols) p2setCol(tpl.list.cols);
+      if (tpl.list.schoolSize) {
+        document.getElementById('p2-school-size').value = tpl.list.schoolSize;
+        document.getElementById('p2-school-size-v').textContent = tpl.list.schoolSize;
+      }
+      if (tpl.list.nameSize) {
+        document.getElementById('p2-name-size').value = tpl.list.nameSize;
+        document.getElementById('p2-name-size-v').textContent = tpl.list.nameSize;
+      }
+      if (tpl.list.schoolColor) document.getElementById('p2-school-color').value = tpl.list.schoolColor;
+      if (tpl.list.nameColor) document.getElementById('p2-name-color').value = tpl.list.nameColor;
+      setToggleOn('p2-school-bold', tpl.list.schoolBold);
+      setToggleOn('p2-name-bold', tpl.list.nameBold);
+      setToggleOn('p2-school-shadow', true);
+      setToggleOn('p2-name-shadow', true);
+      autoTuneListFromCurrentInput();
+    }
+  }
+
+  applyTemplateLogoPreset(tpl);
+  document.querySelectorAll('.template-card').forEach(function(btn) {
+    btn.classList.toggle('on', btn.dataset.template === key);
+  });
+  await Promise.all(p2State.boxes.map(function(b) {
+    var fd = FONTS.find(function(f) { return f.f === b.font; });
+    var fw = b.bold ? (fd ? fd.w : 700) : 400;
+    return forceLoadFont(b.font, fw, b.size);
+  }));
+  p2updatePanel();
+  renderLogoRows(document.getElementById('p2-logo-rows'), p2State.logoItems, p2render);
   p2render();
 }
 
@@ -1650,7 +2078,10 @@ document.getElementById('p2-del-btn').addEventListener('click', function() {
   if (p2State.selId) p2removeBox(p2State.selId);
 });
 
-document.getElementById('p2-list-data').addEventListener('input', function() { p2render(); });
+document.getElementById('p2-list-data').addEventListener('input', function() {
+  autoTuneListFromCurrentInput();
+  p2render();
+});
 
 document.getElementById('p2-list-y').addEventListener('input', function(e) {
   document.getElementById('p2-list-y-v').textContent = e.target.value;
@@ -1718,11 +2149,11 @@ document.getElementById('p2-row-gap').addEventListener('input', function(e) {
   p2render();
 });
 
-function p2setCol(n) {
+function p2setCol(n, skipRender) {
   document.getElementById('p2-col-count').value = n;
   document.getElementById('p2-col-2').className = 'col-btn' + (n === 2 ? ' active' : '');
   document.getElementById('p2-col-3').className = 'col-btn' + (n === 3 ? ' active' : '');
-  p2render();
+  if (!skipRender) p2render();
 }
 
 (function() {
@@ -1843,7 +2274,7 @@ document.getElementById('p2-dl').addEventListener('click', function() {
   p2State.bgSelected = false;
   p2render();
   var link = document.createElement('a');
-  link.download = 'insta-2.png';
+  link.download = downloadFileName((document.getElementById('p2-list-panel').classList.contains('on') && parseListData(document.getElementById('p2-list-data').value).length) ? '성적명단' : '이미지만들기');
   link.href = p2Canvas.toDataURL('image/png');
   link.click();
   p2State.selId = prevSel;
@@ -1852,8 +2283,28 @@ document.getElementById('p2-dl').addEventListener('click', function() {
   p2State.bgSelected = prevBgSel;
   p2render();
 });
+document.getElementById('p2-ig').addEventListener('click', function() {
+  var prevSel = p2State.selId;
+  var prevLogo = p2State.selLogoFile;
+  var prevCrop = p2State.cropMode;
+  var prevBgSel = p2State.bgSelected;
+  p2State.selId = null;
+  p2State.selLogoFile = null;
+  p2State.cropMode = false;
+  p2State.bgSelected = false;
+  p2render();
+  var dataUrl = getCleanP2ImageDataUrl('image/jpeg', 0.92);
+  var link = document.createElement('a');
+  link.download = downloadFileName('이미지만들기') + '.jpg';
+  link.href = dataUrl;
+  link.click();
+  p2State.selId = prevSel;
+  p2State.selLogoFile = prevLogo;
+  p2State.cropMode = prevCrop;
+  p2State.bgSelected = prevBgSel;
+  p2render();
+});
 
-// NAVIGATION
 function toggleMobileMenu() {
   var sidebar = document.getElementById('sidebar');
   if (sidebar) sidebar.classList.toggle('open');
@@ -1882,7 +2333,277 @@ function initListToggle() {
   });
 }
 
-// INIT
+function initTemplateControls() {
+  var grid = document.getElementById('p2-template-grid');
+  if (!grid) return;
+  grid.querySelectorAll('.template-card').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      p2applyTemplate(btn.dataset.template || 'free');
+    });
+  });
+}
+
+function initExamplePanel() {
+  var btn = document.getElementById('example-toggle');
+  var panel = document.getElementById('example-panel');
+  if (!btn || !panel) return;
+  btn.addEventListener('click', function() {
+    var on = !panel.classList.contains('on');
+    panel.classList.toggle('on', on);
+    btn.classList.toggle('on', on);
+    btn.textContent = on ? '예시 닫기' : '결과 예시 보기';
+  });
+}
+
+function initCanvasSelectionClear() {
+  document.addEventListener('mousedown', function(e) {
+    if (!p2Canvas || e.target === p2Canvas) return;
+    if (p2State.bgSelected && !p2State.cropMode) {
+      p2State.bgSelected = false;
+      p2Canvas.style.cursor = 'default';
+      p2render();
+    }
+  });
+}
+
+// ── GEMINI AI PROMO ──
+var GEMINI_PROMO_MODELS = ['gemini-2.5-flash','gemini-2.0-flash','gemini-1.5-flash','gemini-1.5-flash-8b'];
+
+function setAiStatus(msg, type) {
+  var el = document.getElementById('ai-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'ai-status' + (type ? ' ' + type : '');
+}
+
+async function loadGeminiKeys() {
+  try {
+    var res = await fetch('gemini_keys.txt?_=' + Date.now());
+    if (!res.ok) return [];
+    var text = await res.text();
+    return text.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 10; });
+  } catch(e) { return []; }
+}
+
+function getCleanP2ImageDataUrl(mimeType, quality) {
+  if (!p2Canvas) return null;
+  var prevSel = p2State.selId;
+  var prevBgSel = p2State.bgSelected;
+  p2State.selId = null;
+  p2State.bgSelected = false;
+  p2render();
+  var url = p2Canvas.toDataURL(mimeType || 'image/jpeg', quality || 0.92);
+  p2State.selId = prevSel;
+  p2State.bgSelected = prevBgSel;
+  p2render();
+  return url;
+}
+
+function buildPromoPrompt() {
+  var tone = document.getElementById('ai-tone') ? document.getElementById('ai-tone').value : '학부모가 신뢰할 수 있는 차분한 톤';
+  var extra = document.getElementById('ai-extra') ? document.getElementById('ai-extra').value.trim() : '';
+  var prompt = '이 이미지를 분석해서 학원 인스타그램 홍보문구를 작성해주세요.\n\n';
+  prompt += '톤: ' + tone + '\n';
+  if (extra) prompt += '추가 요청: ' + extra + '\n';
+  prompt += '\n아래 형식을 정확히 따르세요:\n';
+  prompt += '[훅] (30자 이내, 눈길을 끄는 첫 문장)\n';
+  prompt += '[본문] (150자 이내, 핵심 홍보 내용)\n';
+  prompt += '[해시태그] (#태그1 #태그2 ... 10개 이내)\n\n';
+  prompt += '반드시 한국어로 작성하고, 위 형식 라벨([훅], [본문], [해시태그])을 그대로 사용하세요.';
+  return prompt;
+}
+
+function promoCharLength(text) {
+  return Array.from(String(text || '')).length;
+}
+
+function stripPromoLabels(text) {
+  return (text || '')
+    .replace(/^\s*[\[【\(]?(훅|Hook|HOOK)[\]】\)]?\s*[:\-]?\s*/gm, '')
+    .replace(/^\s*[\[【\(]?(본문|Body|BODY)[\]】\)]?\s*[:\-]?\s*/gm, '')
+    .replace(/^\s*[\[【\(]?(해시태그|Hashtag|HASHTAG)[\]】\)]?\s*[:\-]?\s*/gm, '')
+    .replace(/^(Step|STEP)\s*\d+[:\-\s]*/gm, '')
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/\*\*/g, '').replace(/^#+\s*/gm, '')
+    .trim();
+}
+
+function splitPromoText(text) {
+  var hook = '', body = '', tags = '';
+  var hookMatch = text.match(/[\[【\(]?훅[\]】\)]?\s*[:\-]?\s*([\s\S]*?)(?=[\[【\(]?본문[\]】\)]?|[\[【\(]?해시태그[\]】\)]?|$)/i);
+  var bodyMatch = text.match(/[\[【\(]?본문[\]】\)]?\s*[:\-]?\s*([\s\S]*?)(?=[\[【\(]?해시태그[\]】\)]?|$)/i);
+  var tagsMatch = text.match(/[\[【\(]?해시태그[\]】\)]?\s*[:\-]?\s*([\s\S]*?)$/i);
+  if (hookMatch) hook = hookMatch[1].trim();
+  if (bodyMatch) body = bodyMatch[1].trim();
+  if (tagsMatch) tags = tagsMatch[1].trim();
+  return { hook: hook, body: body, tags: tags };
+}
+
+function sentenceEndIndex(text, maxLen) {
+  var endings = /[.!?。！？\n]/g;
+  var last = -1;
+  var m;
+  while ((m = endings.exec(text)) !== null) {
+    if (m.index + 1 <= maxLen) last = m.index + 1;
+    else break;
+  }
+  return last;
+}
+
+function shortenHookBySentence(text) {
+  if (promoCharLength(text) <= 30) return text;
+  var idx = sentenceEndIndex(text, 30);
+  if (idx > 0) return text.substring(0, idx).trim();
+  var chars = Array.from(text);
+  return chars.slice(0, 30).join('');
+}
+
+function keepCompleteBody(text) {
+  if (promoCharLength(text) <= 150) return text;
+  var idx = sentenceEndIndex(text, 150);
+  if (idx > 0) return text.substring(0, idx).trim();
+  var chars = Array.from(text);
+  return chars.slice(0, 150).join('') + '…';
+}
+
+function normalizePromoParts(text) {
+  var parts = splitPromoText(text);
+  if (!parts.hook && !parts.body) {
+    var lines = text.split('\n').map(function(l) { return l.trim(); }).filter(Boolean);
+    parts.hook = lines[0] || '';
+    parts.body = lines.slice(1, -1).join('\n') || '';
+    parts.tags = lines[lines.length - 1] || '';
+  }
+  parts.hook = shortenHookBySentence(parts.hook);
+  parts.body = keepCompleteBody(parts.body);
+  return parts;
+}
+
+function formatPromoResult(text) {
+  var parts = normalizePromoParts(text);
+  var result = '';
+  if (parts.hook) result += parts.hook + '\n\n';
+  if (parts.body) result += parts.body + '\n\n';
+  if (parts.tags) result += parts.tags;
+  return result.trim();
+}
+
+function hasBrokenEnding(text) {
+  var t = text.trim();
+  if (!t) return true;
+  return !/[.!?。！？…\w가-힣]$/.test(t);
+}
+
+function getPromoValidation(text) {
+  var parts = normalizePromoParts(text);
+  return {
+    hookOk: promoCharLength(parts.hook) <= 30 && parts.hook.length > 0,
+    bodyOk: promoCharLength(parts.body) <= 150 && parts.body.length > 0,
+    tagsOk: parts.tags.includes('#'),
+    hookLen: promoCharLength(parts.hook),
+    bodyLen: promoCharLength(parts.body)
+  };
+}
+
+function isUsablePromoText(text) {
+  var v = getPromoValidation(text);
+  return v.hookOk && v.bodyOk && v.tagsOk;
+}
+
+async function callGeminiPromo(keys, imageDataUrl, prompt) {
+  var b64 = imageDataUrl.split(',')[1];
+  var mimeType = imageDataUrl.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
+  var lastErr = null;
+  for (var ki = 0; ki < keys.length; ki++) {
+    for (var mi = 0; mi < GEMINI_PROMO_MODELS.length; mi++) {
+      var model = GEMINI_PROMO_MODELS[mi];
+      try {
+        var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + keys[ki];
+        var body = {
+          contents: [{
+            parts: [
+              { inline_data: { mime_type: mimeType, data: b64 } },
+              { text: prompt }
+            ]
+          }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 800 }
+        };
+        var res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        if (!res.ok) {
+          var errText = await res.text();
+          lastErr = 'HTTP ' + res.status + ': ' + errText.substring(0, 100);
+          continue;
+        }
+        var data = await res.json();
+        var text = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) ? data.candidates[0].content.parts[0].text : null;
+        if (text && text.trim()) return { ok: true, text: text, model: model };
+        lastErr = '빈 응답';
+      } catch(e) { lastErr = e.message; }
+    }
+  }
+  return { ok: false, error: lastErr || '모든 키/모델 실패' };
+}
+
+function initAiPromoControls() {
+  var genBtn = document.getElementById('ai-generate');
+  var copyBtn = document.getElementById('ai-copy');
+  var resultEl = document.getElementById('ai-result');
+  if (!genBtn) return;
+
+  genBtn.addEventListener('click', async function() {
+    setAiStatus('API 키 로딩 중…');
+    genBtn.disabled = true;
+    try {
+      var keys = await loadGeminiKeys();
+      if (!keys.length) {
+        setAiStatus('gemini_keys.txt 파일에 API 키를 입력해주세요.', 'err');
+        return;
+      }
+      setAiStatus('이미지 캡처 중…');
+      var imageDataUrl = getCleanP2ImageDataUrl('image/jpeg', 0.92);
+      if (!imageDataUrl) {
+        setAiStatus('이미지를 먼저 로드해주세요.', 'err');
+        return;
+      }
+      var prompt = buildPromoPrompt();
+      setAiStatus('홍보문구 생성 중… (최대 30초 소요)');
+      var result = await callGeminiPromo(keys, imageDataUrl, prompt);
+      if (!result.ok) {
+        setAiStatus('오류: ' + result.error, 'err');
+        return;
+      }
+      var formatted = formatPromoResult(result.text);
+      if (resultEl) resultEl.value = formatted;
+      var v = getPromoValidation(result.text);
+      var hint = '(' + v.hookLen + '/30자, ' + v.bodyLen + '/150자) — ' + result.model;
+      setAiStatus('생성 완료 ' + hint, 'ok');
+    } catch(e) {
+      setAiStatus('오류: ' + e.message, 'err');
+    } finally {
+      genBtn.disabled = false;
+    }
+  });
+
+  if (copyBtn && resultEl) {
+    copyBtn.addEventListener('click', function() {
+      var text = resultEl.value;
+      if (!text) { setAiStatus('복사할 내용이 없습니다.', 'err'); return; }
+      navigator.clipboard.writeText(text).then(function() {
+        setAiStatus('클립보드에 복사되었습니다.', 'ok');
+      }).catch(function() {
+        resultEl.select();
+        document.execCommand('copy');
+        setAiStatus('클립보드에 복사되었습니다.', 'ok');
+      });
+    });
+  }
+}
+
+// ── INIT ──
 buildFontSelect(document.getElementById('p1-ed-font'));
 buildFontSelect(document.getElementById('p2-ed-font'));
 buildFontSelect(document.getElementById('p2-school-font'));
@@ -1892,6 +2613,10 @@ p2updatePanel();
 initBgControls('p1', p1State, p1render);
 initBgControls('p2', p2State, p2render);
 initListToggle();
+initTemplateControls();
+initExamplePanel();
+initCanvasSelectionClear();
+initAiPromoControls();
 
 loadImgManifest('p1-img-grid', function(img, name) { setBackground(p1State, img, 'p1', p1render, name); }, 'p1-bg-file');
 loadImgManifest('p2-img-grid', function(img, name) { setBackground(p2State, img, 'p2', p2render, name); }, 'p2-bg-file');
@@ -1899,6 +2624,7 @@ initLogoSection('p1-logo-rows', p1State.logoItems, p1render);
 initLogoSection('p2-logo-rows', p2State.logoItems, p2render);
 
 document.fonts.ready.then(function() { p1render(); p2render(); });
+
 </script>
 </body>
 </html>
