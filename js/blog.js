@@ -194,7 +194,10 @@ function blogBuildInputText() {
   var parts = [];
   if (inp.type)  parts.push('글 유형: ' + inp.type);
   if (inp.mood)  parts.push('글의 분위기: ' + inp.mood);
-  if (inp.refUrl)  parts.push('참고 URL: ' + inp.refUrl);
+  if (inp.refUrl) {
+    var urls = inp.refUrl.split('\n').map(function(u){ return u.trim(); }).filter(function(u){ return u; });
+    if (urls.length) parts.push('참고 URL:\n' + urls.map(function(u,i){ return (i+1)+'. '+u; }).join('\n'));
+  }
   if (inp.point)   parts.push('피하고 싶은 것: ' + inp.point);
   parts.push('---');
   // 포스팅 정보
