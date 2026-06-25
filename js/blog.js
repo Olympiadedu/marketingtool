@@ -442,7 +442,7 @@ function blogCopyPrompt(btn, idx) {
   if (!images || !images[idx]) return;
   var img = images[idx];
   var prompt = img.prompt;
-  if (img.id === 'thumbnail' && img.overlay_text) {
+  if (img.overlay_text) {
     prompt += '\n\n이미지 중앙에 한국어 텍스트를 굵고 선명한 흰색 글씨로 크게 표시해 주세요: "' + img.overlay_text + '"';
   }
   navigator.clipboard.writeText(prompt).then(function() { btn.textContent = '✅ 복사됨'; setTimeout(function() { btn.textContent = '📋 프롬프트 복사'; }, 1500); });
