@@ -1,0 +1,47 @@
+
+  <!-- PAGE MONITOR -->
+  <div class="page" id="page-monitor">
+    <div style="padding:14px 16px 10px;border-bottom:1px solid var(--bdr);background:#fff;flex-shrink:0;">
+      <div class="panel-intro-title">경쟁학원 모니터링</div>
+      <div class="panel-intro-desc">네이버 맘카페 언급 분석 · 2024.01 ~ 2026.06</div>
+    </div>
+    <div class="mon-filter-bar">
+      <div class="mon-filter-label">지역</div>
+      <div id="mon-region-group" style="display:flex;gap:6px;align-items:center;">
+        <div class="mon-pill active-region" onclick="monSetRegion(this,'전체')">전체</div>
+        <div class="mon-pill" onclick="monSetRegion(this,'광진')">광진</div>
+        <div class="mon-pill" onclick="monSetRegion(this,'성동')">성동</div>
+        <div class="mon-pill" onclick="monSetRegion(this,'동대문')">동대문</div>
+        <div class="mon-pill" onclick="monSetRegion(this,'중랑')">중랑</div>
+        <div class="mon-pill" onclick="monSetRegion(this,'중계')">중계</div>
+        <div class="mon-pill" onclick="monSetRegion(this,'미사')">미사</div>
+        <div class="mon-pill" onclick="monSetRegion(this,'송파')">송파</div>
+      </div>
+      <div class="mon-sep"></div>
+      <div class="mon-filter-label">기간</div>
+      <div id="mon-date-group" style="display:flex;gap:6px;align-items:center;">
+        <div class="mon-pill active-date" onclick="monSetDate(this,'전체')">전체 누적</div>
+        <div class="mon-pill" onclick="monSetDate(this,'2026.06')">2026.06</div>
+        <div class="mon-pill" onclick="monSetDate(this,'2026.05')">2026.05</div>
+        <div class="mon-pill" onclick="monSetDate(this,'2026.04')">2026.04</div>
+        <div class="mon-pill" onclick="monSetDate(this,'2026.03')">2026.03</div>
+      </div>
+    </div>
+    <div class="mon-main">
+      <div class="mon-left">
+        <div class="mon-left-header">
+          <div class="mon-left-header-title">학원 언급 순위</div>
+          <div class="mon-left-header-count" id="mon-list-count">전체 10개</div>
+        </div>
+        <div class="mon-list-head">
+          <span>#</span><span>학원명</span><span style="text-align:center">언급</span><span style="text-align:center">장점</span><span style="text-align:center">단점</span>
+        </div>
+        <div class="mon-list-scroll" id="mon-ac-list"></div>
+      </div>
+      <div class="mon-right">
+        <div class="mon-right-scroll" id="mon-right-panel">
+          <div class="mon-empty-right">← 학원을 선택하면 상세 내용이 표시됩니다</div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /page-monitor -->

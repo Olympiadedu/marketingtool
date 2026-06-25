@@ -1,0 +1,48 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create config.js from secrets
+        run: |
+          cat > config.js << 'ENDOFFILE'
+          var ADMIN_GAS = {
+            url:   'GAS_URL_PLACEHOLDER',
+            token: 'GAS_TOKEN_PLACEHOLDER'
+          };
+          ENDOFFILE
+          sed -i "s|GAS_URL_PLACEHOLDER|${{ secrets.GAS_URL }}|g" config.js
+          sed -i "s|GAS_TOKEN_PLACEHOLDER|${{ secrets.GAS_TOKEN }}|g" config.js
+        working-directory: ./marketingtool
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './marketingtool'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

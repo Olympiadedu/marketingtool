@@ -1,0 +1,183 @@
+
+  <!-- PAGE SETTINGS -->
+  <div class="page" id="page-settings">
+    <div class="set-content">
+
+      <!-- AI 설정 -->
+      <div class="set-tab" id="settab-ai">
+        <div class="set-page-title">AI 설정</div>
+        <div class="set-page-sub">사용할 AI 모델을 선택하고 API 키를 설정하세요</div>
+
+        <div class="set-main-body">
+          <div class="set-main-left">
+            <div class="set-card">
+              <div class="set-card-title">AI 모델 선택</div>
+              <div class="set-provider-list">
+
+                <div class="set-provider-card active" data-provider="claude" onclick="setSelectProvider('claude')">
+                  <div class="set-provider-info">
+                    <div class="set-provider-name">Anthropic Claude</div>
+                    <div class="set-provider-desc">정확하고 안전한 응답을 제공합니다.</div>
+                  </div>
+                  <div class="set-provider-check">✓</div>
+                </div>
+
+                <div class="set-provider-card" data-provider="gemini" onclick="setSelectProvider('gemini')">
+                  <div class="set-provider-info">
+                    <div class="set-provider-name">Google Gemini</div>
+                    <div class="set-provider-desc">Google의 최신 AI 모델로 한국어 지원이 우수합니다.</div>
+                  </div>
+                  <div class="set-provider-check">✓</div>
+                </div>
+
+                <div class="set-provider-card" data-provider="openai" onclick="setSelectProvider('openai')">
+                  <div class="set-provider-info">
+                    <div class="set-provider-name">OpenAI GPT</div>
+                    <div class="set-provider-desc">OpenAI의 강력한 GPT 모델들입니다.</div>
+                  </div>
+                  <div class="set-provider-check">✓</div>
+                </div>
+
+              </div>
+
+              <div class="set-provider-detail" id="setdetail-claude">
+                <div class="set-field">
+                  <label class="set-label">세부 모델</label>
+                  <select id="set-claude-model" class="set-select">
+                    <option value="claude-sonnet-4-6">claude-sonnet-4-6 (권장)</option>
+                    <option value="claude-opus-4-8">claude-opus-4-8 (최고 성능)</option>
+                    <option value="claude-haiku-4-5-20251001">claude-haiku-4-5 (빠름·저렴)</option>
+                  </select>
+                </div>
+                <div class="set-field">
+                  <label class="set-label">
+                    Anthropic API Key
+                    <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" class="set-key-link">키 발급 →</a>
+                  </label>
+                  <input id="set-claude" type="password" placeholder="sk-ant-..." class="set-input" />
+                </div>
+              </div>
+
+              <div class="set-provider-detail" id="setdetail-gemini" style="display:none;">
+                <div class="set-field">
+                  <label class="set-label">세부 모델</label>
+                  <select id="set-gemini-model" class="set-select">
+                    <option value="gemini-2.5-flash">gemini-2.5-flash (권장)</option>
+                    <option value="gemini-3.5-flash">gemini-3.5-flash</option>
+                    <option value="gemini-3-flash">gemini-3-flash</option>
+                    <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite</option>
+                    <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite (경량)</option>
+                  </select>
+                </div>
+                <div class="set-field">
+                  <label class="set-label">
+                    Google Gemini API Key
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="set-key-link">키 발급 →</a>
+                  </label>
+                  <input id="set-gemini" type="password" placeholder="AIza..." class="set-input" />
+                </div>
+              </div>
+
+              <div class="set-provider-detail" id="setdetail-openai" style="display:none;">
+                <div class="set-field">
+                  <label class="set-label">세부 모델</label>
+                  <select id="set-openai-model" class="set-select">
+                    <option value="gpt-4o">gpt-4o (권장)</option>
+                    <option value="gpt-4o-mini">gpt-4o-mini (빠름·저렴)</option>
+                    <option value="gpt-4-turbo">gpt-4-turbo</option>
+                  </select>
+                </div>
+                <div class="set-field">
+                  <label class="set-label">
+                    OpenAI API Key
+                    <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener" class="set-key-link">키 발급 →</a>
+                  </label>
+                  <input id="set-openai" type="password" placeholder="sk-..." class="set-input" />
+                </div>
+              </div>
+
+              <button class="btn btn-primary set-save-btn" onclick="settingsSave()">✓ 설정 저장</button>
+            </div>
+
+          </div>
+
+          <div class="set-main-right">
+            <div class="set-card">
+              <div class="set-guide-header"><span>ⓘ</span> API 키 발급 가이드</div>
+              <button class="set-guide-btn" id="set-guide-link-btn" onclick="setOpenGuideLink()">API 키 발급 페이지 열기 →</button>
+              <div class="set-tip">
+                <span style="color:#f59e0b;flex-shrink:0;">▲</span>
+                <span><b>보안 팁:</b> API 키는 브라우저에만 저장되며 외부로 전송되지 않습니다. 주기적으로 키를 재생성하는 것을 권장합니다.</span>
+              </div>
+              <div class="set-how-title">설정 방법</div>
+              <ol class="set-how-list">
+                <li>위 버튼을 클릭하여 API 키 발급 페이지로 이동</li>
+                <li>새로운 API 키를 생성</li>
+                <li>생성된 키를 복사하여 위 입력란에 붙여넣기</li>
+                <li>"설정 저장" 버튼을 클릭하여 저장</li>
+              </ol>
+            </div>
+
+            <div class="set-card">
+              <div class="set-card-title">현재 설정</div>
+              <div class="set-current-list">
+                <div class="set-current-row">
+                  <span class="set-current-label">활성 모델</span>
+                  <span class="set-current-val" id="cur-provider">—</span>
+                </div>
+                <div class="set-current-row">
+                  <span class="set-current-label">세부 모델</span>
+                  <span class="set-current-val" id="cur-model">—</span>
+                </div>
+                <div class="set-current-row">
+                  <span class="set-current-label">Claude 키</span>
+                  <span class="set-current-val" id="status-claude">—</span>
+                </div>
+                <div class="set-current-row">
+                  <span class="set-current-label">Gemini 키</span>
+                  <span class="set-current-val" id="status-gemini">—</span>
+                </div>
+                <div class="set-current-row">
+                  <span class="set-current-label">OpenAI 키</span>
+                  <span class="set-current-val" id="status-openai">—</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 프롬프트 설정 -->
+      <div class="set-tab" id="settab-prompt" style="display:none;">
+        <div class="set-page-title">프롬프트 설정</div>
+        <div class="set-page-sub">기본 프롬프트를 수정하면 이후 생성에 자동 반영됩니다</div>
+
+        <div class="set-prompt-body">
+          <div class="set-card">
+            <div class="set-card-title">인스타그램 홍보문구 스타일</div>
+            <div class="set-card-desc">AI가 홍보문구를 쓸 때 참고할 스타일을 자유롭게 적어주세요. 원하는 말투, 피하고 싶은 표현 등 자연어로 입력하면 됩니다.</div>
+            <div class="set-label-row">
+              <label class="set-label">스타일 지시</label>
+              <button type="button" class="set-reset-btn" id="promo-reset-btn">초기화</button>
+            </div>
+            <textarea id="promo-prompt-edit" class="set-textarea" style="min-height:200px;" placeholder="예) 너무 과장되지 않게, 진심이 느껴지는 말투로. '대박', '놀라운' 같은 표현은 피해주세요."></textarea>
+          </div>
+
+          <div class="set-card">
+            <div class="set-card-title">블로그 글쓰기 스타일</div>
+            <div class="set-card-desc">AI가 글을 쓸 때 참고할 스타일을 자유롭게 적어주세요. 원하는 말투, 이모지 사용 방식, 피하고 싶은 표현 등 자연어로 입력하면 됩니다.</div>
+            <div class="set-label-row">
+              <label class="set-label">스타일 지시</label>
+              <button type="button" class="set-reset-btn" id="blog-reset-btn">초기화</button>
+            </div>
+            <textarea id="blog-prompt-edit" class="set-textarea" style="min-height:200px;" placeholder="예) 너무 딱딱하지 않게, 학부모 눈높이에서 공감가는 말투로 써주세요. 이모지는 적당히 쓰고, '지금 바로', '강력 추천' 같은 광고성 표현은 피해주세요."></textarea>
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;">
+            <button class="btn btn-primary" onclick="settingsSave()">✓ 설정 저장</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>

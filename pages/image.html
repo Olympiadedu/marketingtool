@@ -1,0 +1,304 @@
+
+  <!-- PAGE 1 -->
+  <div class="page" id="page-1">
+    <div class="left-panel">
+      <div class="tool-section">
+        <div class="sec-title">배경 이미지</div>
+        <div class="img-grid" id="p1-img-grid"></div>
+        <div class="bg-tools">
+          <div class="bg-upload-row">
+            <button class="btn btn-outline btn-sm" type="button" id="p1-bg-upload">+ 이미지 추가</button>
+            <span class="bg-file-name" id="p1-bg-file-name">기본 배경</span>
+            <input type="file" id="p1-bg-file" accept="image/*" style="display:none">
+          </div>
+          <div class="ed-row">
+            <span class="ed-label">확대</span>
+            <input type="range" id="p1-bg-scale" min="80" max="250" value="100">
+            <span class="val-span" id="p1-bg-scale-v">100</span>
+          </div>
+          <div class="ed-row">
+            <span class="ed-label">가로</span>
+            <input type="range" id="p1-bg-x" min="-100" max="100" value="0">
+            <span class="val-span" id="p1-bg-x-v">0</span>
+          </div>
+          <div class="ed-row">
+            <span class="ed-label">세로</span>
+            <input type="range" id="p1-bg-y" min="-100" max="100" value="0">
+            <span class="val-span" id="p1-bg-y-v">0</span>
+          </div>
+          <button class="btn btn-outline btn-sm" type="button" id="p1-bg-move-mode">위치 이동</button>
+          <button class="btn btn-outline btn-sm" type="button" id="p1-bg-crop-mode">자르기</button>
+          <div class="crop-overlay-note">이미지 이동/조절은 클릭 후 드래그, 자르기는 자르기 버튼을 누른 뒤 조절하세요.</div>
+          <div class="ed-row crop-range-row">
+            <span class="ed-label">왼쪽</span>
+            <input type="range" id="p1-bg-crop-l" min="0" max="97" value="0">
+            <span class="val-span" id="p1-bg-crop-l-v">0</span>
+          </div>
+          <div class="ed-row crop-range-row">
+            <span class="ed-label">오른쪽</span>
+            <input type="range" id="p1-bg-crop-r" min="0" max="97" value="0">
+            <span class="val-span" id="p1-bg-crop-r-v">0</span>
+          </div>
+          <div class="ed-row crop-range-row">
+            <span class="ed-label">위</span>
+            <input type="range" id="p1-bg-crop-t" min="0" max="97" value="0">
+            <span class="val-span" id="p1-bg-crop-t-v">0</span>
+          </div>
+          <div class="ed-row crop-range-row">
+            <span class="ed-label">아래</span>
+            <input type="range" id="p1-bg-crop-b" min="0" max="97" value="0">
+            <span class="val-span" id="p1-bg-crop-b-v">0</span>
+          </div>
+          <button class="btn btn-outline btn-sm" type="button" id="p1-bg-reset">배경 초기화</button>
+        </div>
+      </div>
+      <div>
+        <div class="sec-title">로고</div>
+        <div id="p1-logo-rows"></div>
+      </div>
+      <hr>
+      <button class="btn btn-primary" id="p1-add-btn" onclick="p1addBox()">+ 텍스트 추가</button>
+      <div class="box-list" id="p1-box-list"></div>
+      <div class="editor" id="p1-editor" style="display:none">
+        <div class="editor-title">텍스트 편집</div>
+        <textarea id="p1-ed-text" placeholder="텍스트 입력..."></textarea>
+        <select id="p1-ed-font"></select>
+        <div class="ed-row compact-slider">
+          <span class="ed-label">크기</span>
+          <input type="range" id="p1-ed-size" min="12" max="100" value="72">
+          <span class="val-span" id="p1-ed-size-v">72</span>
+        </div>
+        <div class="ed-row">
+          <input type="color" id="p1-ed-color" value="#ffffff">
+          <button class="toggle-btn on" id="p1-ed-bold">굵게</button>
+          <button class="toggle-btn on" id="p1-ed-shadow">그림자</button>
+        </div>
+        <button class="btn btn-danger btn-sm" id="p1-del-btn">삭제</button>
+      </div>
+    </div>
+    <div class="canvas-right">
+      <div class="canvas-header">
+        <div class="canvas-header-left">
+          <div class="canvas-title">자유 편집</div>
+          <div class="canvas-desc">배경·로고·텍스트를 조합해 인스타그램용 이미지를 제작합니다</div>
+        </div>
+      </div>
+      <div class="canvas-area">
+        <div class="canvas-wrap">
+          <canvas id="cv1" width="1080" height="1350"></canvas>
+          <div class="canvas-badge">1080 × 1350</div>
+          <div class="drag-hint">✥ 드래그로 이동</div>
+        </div>
+        <div class="canvas-actions">
+          <button class="btn btn-primary download-btn" id="p1-dl">PNG 다운로드</button>
+          <button class="btn instagram-btn" id="p1-ig" type="button">인스타그램 공유</button>
+          <span class="hint-text">텍스트/로고/이미지를 드래그해서 위치 조정</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 2 -->
+  <div class="page active" id="page-2">
+    <div class="left-panel-wrap">
+    <div class="left-panel mode-list" id="image-left-panel">
+      <div class="panel-intro list-only">
+        <div class="panel-intro-title">성적우수 이미지</div>
+        <div class="panel-intro-desc">배경을 고르고 합격자 명단을 붙여넣으면<br>인스타그램 이미지가 완성됩니다</div>
+      </div>
+      <div class="panel-intro free-only" style="display:none">
+        <div class="panel-intro-title">자유 편집</div>
+        <div class="panel-intro-desc">배경·로고·텍스트를 자유롭게 배치해<br>나만의 이미지를 제작합니다</div>
+      </div>
+      <!-- ① 배경 -->
+      <div class="tool-section free-only" style="display:none">
+        <div class="template-grid" id="p2-template-grid" style="display:none">
+          <button class="template-card on" type="button" data-template="free"><span class="template-icon">F</span><span><span class="template-name">자유 편집</span></span></button>
+          <button class="template-card" type="button" data-template="list"><span class="template-icon">명</span><span><span class="template-name">성적명단형</span></span></button>
+        </div>
+      </div>
+      <div class="tool-section">
+        <div class="step-label list-only">① 배경 선택</div>
+        <div class="sec-title free-only">배경</div>
+        <div class="img-grid" id="p2-img-grid"></div>
+        <div class="bg-tools">
+          <div class="bg-upload-row">
+            <button class="btn btn-outline btn-sm" type="button" id="p2-bg-upload">+ 이미지 추가</button>
+            <span class="bg-file-name" id="p2-bg-file-name">기본 배경</span>
+            <input type="file" id="p2-bg-file" accept="image/*" style="display:none">
+          </div>
+          <button class="collapse-toggle" type="button" id="p2-bg-detail-toggle" onclick="toggleCollapse('p2-bg-detail','p2-bg-detail-toggle')">배경 세부 조정 ▾</button>
+          <div id="p2-bg-detail" style="display:none">
+            <div class="ed-row">
+              <span class="ed-label">확대</span>
+              <input type="range" id="p2-bg-scale" min="80" max="250" value="100">
+              <span class="val-span" id="p2-bg-scale-v">100</span>
+            </div>
+            <div class="ed-row">
+              <span class="ed-label">가로</span>
+              <input type="range" id="p2-bg-x" min="-100" max="100" value="0">
+              <span class="val-span" id="p2-bg-x-v">0</span>
+            </div>
+            <div class="ed-row">
+              <span class="ed-label">세로</span>
+              <input type="range" id="p2-bg-y" min="-100" max="100" value="0">
+              <span class="val-span" id="p2-bg-y-v">0</span>
+            </div>
+            <div class="ed-row crop-range-row">
+              <span class="ed-label">왼쪽</span>
+              <input type="range" id="p2-bg-crop-l" min="0" max="97" value="0">
+              <span class="val-span" id="p2-bg-crop-l-v">0</span>
+            </div>
+            <div class="ed-row crop-range-row">
+              <span class="ed-label">오른쪽</span>
+              <input type="range" id="p2-bg-crop-r" min="0" max="97" value="0">
+              <span class="val-span" id="p2-bg-crop-r-v">0</span>
+            </div>
+            <div class="ed-row crop-range-row">
+              <span class="ed-label">위</span>
+              <input type="range" id="p2-bg-crop-t" min="0" max="97" value="0">
+              <span class="val-span" id="p2-bg-crop-t-v">0</span>
+            </div>
+            <div class="ed-row crop-range-row">
+              <span class="ed-label">아래</span>
+              <input type="range" id="p2-bg-crop-b" min="0" max="97" value="0">
+              <span class="val-span" id="p2-bg-crop-b-v">0</span>
+            </div>
+            <button class="btn btn-outline btn-sm" type="button" id="p2-bg-reset">배경 초기화</button>
+          </div>
+        </div>
+      </div>
+      <!-- ② 텍스트 편집 -->
+      <div class="tool-section">
+        <div class="step-label list-only">② 제목 텍스트 편집</div>
+        <div class="sec-title free-only">텍스트</div>
+        <button class="btn btn-primary list-only" id="p2-add-btn" onclick="p2addBox()">+ 텍스트 추가</button>
+        <div class="box-list" id="p2-box-list"></div>
+        <div class="editor" id="p2-editor" style="display:none">
+          <div class="editor-title">텍스트 편집</div>
+          <textarea id="p2-ed-text" placeholder="텍스트 입력..."></textarea>
+          <select id="p2-ed-font"></select>
+          <div class="ed-row compact-slider">
+            <span class="ed-label">크기</span>
+            <input type="range" id="p2-ed-size" min="12" max="100" value="72">
+            <span class="val-span" id="p2-ed-size-v">72</span>
+          </div>
+          <div class="ed-row">
+            <input type="color" id="p2-ed-color" value="#ffffff">
+            <button class="toggle-btn on" id="p2-ed-bold">굵게</button>
+            <button class="toggle-btn on" id="p2-ed-shadow">그림자</button>
+          </div>
+          <button class="btn btn-danger btn-sm" id="p2-del-btn">삭제</button>
+        </div>
+      </div>
+      <!-- ③ 명단 입력 -->
+      <div class="tool-section list-only">
+        <div class="step-label" style="justify-content:space-between;">
+          <span>③ 명단 입력</span>
+          <div style="display:flex;gap:4px;align-items:center;">
+            <button class="col-btn" id="p2-col-2" onclick="p2setCol(2)">2열</button>
+            <button class="col-btn active" id="p2-col-3" onclick="p2setCol(3)">3열</button>
+            <input type="hidden" id="p2-col-count" value="3">
+          </div>
+        </div>
+        <div class="list-controls">
+          <textarea id="p2-list-data" style="min-height:160px" placeholder="올림중3	김올림&#10;올피중1	박올림&#10;유투중2	이유투&#10;(엑셀에서 복사해서 붙여넣기 가능)"></textarea>
+        </div>
+        <button class="collapse-toggle" type="button" id="p2-style-detail-toggle" onclick="toggleCollapse('p2-style-detail','p2-style-detail-toggle')" style="margin-top:8px">글자 스타일 조정 ▾</button>
+        <div id="p2-style-detail" style="display:none">
+          <div style="padding-top:10px">
+            <div class="sec-title">학교명 스타일</div>
+            <select id="p2-school-font"></select>
+            <div class="ed-row" style="margin-top:6px">
+              <span class="ed-label">크기</span>
+              <input type="range" id="p2-school-size" min="12" max="100" value="18">
+              <span class="val-span" id="p2-school-size-v">18</span>
+            </div>
+            <div class="ed-row" style="margin-top:4px">
+              <input type="color" id="p2-school-color" value="#aaaaaa">
+              <button class="toggle-btn" id="p2-school-bold">굵게</button>
+              <button class="toggle-btn" id="p2-school-shadow">그림자</button>
+            </div>
+          </div>
+          <hr>
+          <div>
+            <div class="sec-title">이름 스타일</div>
+            <select id="p2-name-font"></select>
+            <div class="ed-row" style="margin-top:6px">
+              <span class="ed-label">크기</span>
+              <input type="range" id="p2-name-size" min="16" max="100" value="30">
+              <span class="val-span" id="p2-name-size-v">30</span>
+            </div>
+            <div class="ed-row" style="margin-top:4px">
+              <input type="color" id="p2-name-color" value="#ffffff">
+              <button class="toggle-btn on" id="p2-name-bold">굵게</button>
+              <button class="toggle-btn on" id="p2-name-shadow">그림자</button>
+            </div>
+          </div>
+          <hr>
+          <div>
+            <div class="sec-title">명단 위치</div>
+            <div class="ed-row">
+              <span class="ed-label">시작위치</span>
+              <input type="range" id="p2-list-y" min="15" max="80" value="45">
+              <span class="val-span" id="p2-list-y-v">45</span>
+            </div>
+            <div class="ed-row">
+              <span class="ed-label">행간격</span>
+              <input type="range" id="p2-row-gap" min="40" max="120" value="65">
+              <span class="val-span" id="p2-row-gap-v">65</span>
+            </div>
+          </div>
+        </div>
+        <div class="list-panel" id="p2-list-panel" style="display:none"></div>
+      </div>
+      <!-- ④ 로고 -->
+      <div class="tool-section">
+        <div class="step-label list-only">④ 로고 선택</div>
+        <div class="sec-title free-only">로고</div>
+        <div id="p2-logo-rows"></div>
+      </div>
+      <div class="tool-section">
+        <div class="sec-title">홍보문구 생성</div>
+        <div class="ai-panel">
+          <div class="ai-note">현재 미리보기 이미지를 분석해 인스타그램용 홍보문구를 만듭니다. API 키는 사이드바 하단 <b>API 설정</b>에서 입력하세요.</div>
+          <select id="ai-tone">
+            <option value="학부모가 신뢰할 수 있는 차분한 톤">신뢰감</option>
+            <option value="밝고 활기찬 홍보 톤">활기있게</option>
+            <option value="프리미엄하고 고급스러운 톤">프리미엄</option>
+            <option value="성과와 결과를 강조하는 톤">성과 강조</option>
+          </select>
+          <textarea id="ai-extra" placeholder="추가로 강조할 내용이 있으면 입력하세요.&#10;예: 중등 내신 대비, 상담 문의 유도, 특정 캠퍼스명" style="min-height:80px"></textarea>
+          <button class="btn btn-primary" id="ai-generate" type="button">홍보문구 생성</button>
+          <div class="ai-status" id="ai-status"></div>
+          <textarea class="ai-result" id="ai-result" placeholder="생성된 인스타그램 문구가 여기에 표시됩니다."></textarea>
+          <div class="ai-actions">
+            <button class="btn btn-outline" id="ai-copy" type="button">결과 복사</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+    <div class="canvas-right">
+      <div class="canvas-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="canvas-header-left">
+          <div class="canvas-title" id="p2-canvas-title">성적우수 이미지</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button id="p2-undo-btn" title="실행취소 (Ctrl+Z)" style="padding:7px 14px;border:1px solid var(--bdr);border-radius:8px;background:#fff;font-size:12px;font-weight:700;cursor:pointer;color:#374151;">↩ 취소</button>
+          <button id="p2-redo-btn" title="다시실행 (Ctrl+Y)" style="padding:7px 14px;border:1px solid var(--bdr);border-radius:8px;background:#fff;font-size:12px;font-weight:700;cursor:pointer;color:#374151;">↪ 다시</button>
+          <button class="btn btn-primary download-btn" id="p2-dl" style="padding:7px 18px;font-size:13px;min-width:auto;">PNG 다운로드</button>
+        </div>
+      </div>
+      <div class="canvas-area">
+        <div class="canvas-wrap">
+          <canvas id="cv2" width="1080" height="1350"></canvas>
+          <div class="canvas-badge">1080 × 1350</div>
+          <div class="drag-hint">✥ 드래그로 이동</div>
+        </div>
+        <div class="canvas-actions">
+          <button class="btn instagram-btn" id="p2-ig" type="button">인스타그램 공유</button>
+        </div>
+      </div>
+    </div>
+  </div>

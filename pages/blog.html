@@ -1,0 +1,202 @@
+
+  <!-- PAGE BLOG -->
+  <div class="page" id="page-blog">
+    <div class="blog-left-wrap">
+    <div class="blog-left" id="blog-left-panel">
+
+      <div class="panel-intro">
+        <div class="panel-intro-title">블로그 작성</div>
+        <div class="panel-intro-desc">주제와 키워드만 입력하면 네이버 블로그에 바로 붙여넣을 수 있는 완성 글을 생성합니다.</div>
+      </div>
+      <!-- 학원 프로필 -->
+      <div class="tool-section" id="blog-academy-section">
+        <div class="step-label" style="cursor:pointer;margin-bottom:0;" onclick="toggleBlogAcademy()">
+          <span>① 학원 프로필</span>
+          <span id="blog-academy-status" style="margin-left:auto;font-size:10px;font-weight:600;color:var(--acc);">처음 한 번만 입력</span>
+          <span id="blog-academy-toggle" style="font-size:10px;color:var(--mut);">▲</span>
+        </div>
+        <div id="blog-academy-body" style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+          <div class="blog-form-grid">
+            <div>
+              <label class="blog-label">학원명 (풀네임) *</label>
+              <input class="blog-input" id="acad-name" type="text" placeholder="예) 올림피아드교육 유투엠 수학학원" oninput="saveAcademyProfile()" />
+            </div>
+            <div>
+              <label class="blog-label">단축명</label>
+              <input class="blog-input" id="acad-short" type="text" placeholder="예) 유투엠" oninput="saveAcademyProfile()" />
+            </div>
+          </div>
+          <div class="blog-form-grid">
+            <div>
+              <label class="blog-label">과목</label>
+              <input class="blog-input" id="acad-subject" type="text" placeholder="예) 수학" oninput="saveAcademyProfile()" />
+            </div>
+            <div>
+              <label class="blog-label">주요 대상</label>
+              <input class="blog-input" id="acad-target" type="text" placeholder="예) 초·중·고 학부모" oninput="saveAcademyProfile()" />
+            </div>
+          </div>
+          <div class="blog-form-grid">
+            <div>
+              <label class="blog-label">핵심 슬로건</label>
+              <input class="blog-input" id="acad-slogan" type="text" placeholder="예) 말하는 수학" oninput="saveAcademyProfile()" />
+            </div>
+            <div>
+              <label class="blog-label">웹사이트</label>
+              <input class="blog-input" id="acad-website" type="text" placeholder="예) www.u2math.co.kr" oninput="saveAcademyProfile()" />
+            </div>
+          </div>
+          <div class="blog-form-grid">
+            <div>
+              <label class="blog-label">연락처</label>
+              <input class="blog-input" id="acad-phone" type="text" placeholder="예) 02-000-0000" oninput="saveAcademyProfile()" />
+            </div>
+            <div>
+              <label class="blog-label">네이버지도 링크</label>
+              <input class="blog-input" id="acad-map" type="text" placeholder="naver.me/..." oninput="saveAcademyProfile()" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 1 — 글 작성 정보 -->
+      <div id="blog-step1-panel">
+        <div class="tool-section">
+          <div class="step-label">② 글 작성 정보</div>
+          <div id="blog-alert1" class="blog-alert err"></div>
+
+          <!-- 핵심 입력 -->
+          <div class="blog-form-grid">
+            <div>
+              <label class="blog-label">글 유형</label>
+              <select class="blog-input blog-select" id="blog-type">
+                <option value="교육칼럼">교육칼럼·학습법</option>
+                <option value="입시정보">입시정보·전형</option>
+                <option value="학원홍보">학원홍보·캠퍼스</option>
+                <option value="합격인터뷰">합격생 인터뷰</option>
+                <option value="수학정보">수학 정보</option>
+                <option value="이벤트안내">이벤트 안내</option>
+                <option value="학원공지">학원 공지</option>
+              </select>
+            </div>
+            <div>
+              <label class="blog-label">글의 분위기</label>
+              <select class="blog-input blog-select" id="blog-mood">
+                <option value="차분하고 신뢰감 있는">차분한·신뢰감</option>
+                <option value="친근하고 공감가는">친근한·공감</option>
+                <option value="전문적이고 정보 중심의">전문적·정보형</option>
+                <option value="설득력 있고 참여를 유도하는">설득적·참여유도형</option>
+                <option value="따뜻하고 응원하는">따뜻한·응원형</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="blog-form-row">
+            <label class="blog-label">주제 <span class="blog-required">*</span></label>
+            <input class="blog-input" id="blog-topic" type="text" placeholder="중학교 1학년 수학 선행학습, 꼭 해야 할까?" />
+          </div>
+
+          <div class="blog-form-grid">
+            <div>
+              <label class="blog-label">타겟 독자층</label>
+              <input class="blog-input" id="blog-target" type="text" placeholder="초등 고학년 자녀를 둔 학부모" />
+            </div>
+            <div>
+              <label class="blog-label">목표 분량</label>
+              <select class="blog-input blog-select" id="blog-length">
+                <option value="1000">1,000자</option>
+                <option value="1500" selected>1,500자 (보통)</option>
+                <option value="2000">2,000자</option>
+                <option value="2500">2,500자 (길게)</option>
+                <option value="3000">3,000자 이상</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="blog-form-row">
+            <label class="blog-label">SEO 키워드 <span class="blog-label-hint">쉼표로 구분</span></label>
+            <input class="blog-input" id="blog-keywords" type="text" placeholder="중학수학선행, 초등수학, 수학학원추천" />
+          </div>
+
+          <div class="blog-form-row">
+            <label class="blog-label">핵심 메시지 <span class="blog-label-hint">전달하고 싶은 방향</span></label>
+            <textarea class="blog-input blog-textarea" id="blog-core" placeholder="무작정 선행보다 개념 이해가 먼저임을 강조하고, 상담 연결로 마무리 원합니다."></textarea>
+          </div>
+
+          <!-- 차별화 옵션 (접기/펼치기) -->
+          <div class="blog-option-toggle" onclick="toggleBlogOptions()">
+            <span id="blog-option-arrow">▶</span>
+            <span>차별화 옵션</span>
+            <span class="blog-label-hint" style="margin-left:4px;">같은 주제라도 글이 달라집니다</span>
+          </div>
+          <div id="blog-options-body" style="display:none;margin-top:8px;display:flex;flex-direction:column;gap:10px;">
+            <div class="blog-form-row" style="margin-bottom:0">
+              <label class="blog-label">강조할 실제 상황</label>
+              <input class="blog-input" id="blog-situation" type="text" placeholder="중1 첫 시험 앞두고 불안해하는 학생, 초5 연산 실수가 반복되는 경우" />
+            </div>
+            <div class="blog-form-row" style="margin-bottom:0">
+              <label class="blog-label">이번 글만의 차별화 포인트</label>
+              <input class="blog-input" id="blog-diff" type="text" placeholder="선생님 직접 경험담 포함, 통계 데이터 활용, 학부모 공감 스토리 중심" />
+            </div>
+            <div class="blog-form-row" style="margin-bottom:0">
+              <label class="blog-label">피하고 싶은 표현</label>
+              <input class="blog-input" id="blog-avoid" type="text" placeholder="뻔한 홍보 문구, 과장된 추천 표현, 반복되는 인사말" />
+            </div>
+          </div>
+
+        </div>
+
+        <div class="blog-loading" id="blog-loading1"><div class="blog-spinner"></div><span>초안을 생성 중이에요... <span class="blog-loading-model"></span></span></div>
+        <button class="btn btn-primary" id="btn-draft" style="width:100%;padding:12px;" onclick="blogGenerateDraft()">🚀 초안 생성</button>
+      </div>
+
+    </div><!-- /blog-left -->
+    </div><!-- /blog-left-wrap -->
+
+    <div class="blog-right">
+      <div class="blog-panel show" id="blog-right-step1">
+        <div class="blog-card" style="border-color:var(--acc-border);background:var(--acc-light);">
+          <div style="font-size:13px;font-weight:900;color:var(--txt);margin-bottom:8px;">블로그 글 어떻게 만들어지나요?</div>
+          <div style="font-size:12px;color:var(--mut);line-height:1.7;">왼쪽에서 정보를 입력하면<br>① 논리적인 초안 구조 제안<br>② 사용자 확인·수정<br>③ 완성 본문 + 이미지 프롬프트 생성</div>
+        </div>
+        <div class="blog-card">
+          <div style="font-size:12px;font-weight:700;color:var(--txt);margin-bottom:6px;">복사 붙여넣기 팁</div>
+          <div style="font-size:12px;color:var(--mut);line-height:1.6;">[복사] 버튼은 서식 없는 순수 텍스트만 복사합니다.<br>네이버 SmartEditor에 붙여넣어도 폰트·스타일이 깨지지 않습니다.</div>
+        </div>
+        <div class="blog-card">
+          <div style="font-size:12px;font-weight:700;color:var(--txt);margin-bottom:6px;">API 키 필요</div>
+          <div style="font-size:12px;color:var(--mut);line-height:1.5;">좌측 하단 <strong>API 설정</strong>에서 Claude 또는 Gemini 키를 입력하세요. Claude 키가 있으면 Claude를, 없으면 Gemini를 사용합니다.</div>
+        </div>
+      </div>
+      <div class="blog-panel" id="blog-right-step2">
+        <div class="tool-section">
+          <div class="step-label">③ 초안 검토</div>
+          <div id="blog-alert2" class="blog-alert err"></div>
+          <div id="blog-outline-edit-container"></div>
+          <div class="blog-form-row" style="margin-bottom:0">
+            <label class="blog-label">추가 수정 요청 (선택)</label>
+            <textarea class="blog-input blog-textarea" id="blog-notes" style="min-height:56px" placeholder="예) 톤을 더 가볍게, 2번 섹션에 수치 추가"></textarea>
+          </div>
+        </div>
+        <div class="blog-loading" id="blog-loading2"><div class="blog-spinner"></div><span>완성본을 작성 중이에요... <span class="blog-loading-model"></span></span></div>
+        <button class="btn btn-primary" style="width:100%" onclick="blogFinalize(this)">✨ 최종 본문 완성</button>
+      </div>
+      <div class="blog-panel" id="blog-right-step3">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+          <div style="font-size:14px;font-weight:700;color:#172033;">④ 완성 &amp; 복사</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="bc-btn" id="blog-tab-post-btn" onclick="blogSwitchTab('post')" style="background:var(--acc);color:#fff;border-color:var(--acc);">본문</button>
+            <button class="bc-btn" id="blog-tab-img-btn" onclick="blogSwitchTab('images')">이미지·프롬프트</button>
+            <button class="btn btn-primary" onclick="blogCopyAll(this)" style="font-size:11px;padding:5px 10px;">📋 전체 복사</button>
+            <button class="btn btn-outline" onclick="blogGoStep(2)" style="font-size:11px;padding:5px 10px;">← 다시 수정</button>
+          </div>
+        </div>
+        <div id="blog-alert3" class="blog-alert ok"></div>
+        <div id="blog-post-container"></div>
+        <div id="blog-img-container" style="display:none">
+          <div style="font-size:12px;color:#56616f;margin-bottom:10px;">썸네일은 <strong>필수</strong>, 본문 이미지는 꼭 필요한 위치에만 배치됩니다. OpenAI 키 설정 시 직접 생성 가능합니다.</div>
+          <div class="bimg-grid" id="blog-img-grid"></div>
+        </div>
+      </div>
+    </div><!-- /blog-right -->
+  </div><!-- /page-blog -->
