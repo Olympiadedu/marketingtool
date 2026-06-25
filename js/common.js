@@ -176,6 +176,31 @@ async function gasSavePost(data) {
   }).catch(function() {});
 }
 
+function _gasSetTestStatus(msg, ok) {
+  var el = document.getElementById('gas-test-status');
+  if (el) { el.textContent = msg; el.style.color = ok === true ? '#16a34a' : ok === false ? '#ef4444' : 'var(--mut)'; }
+}
+
+async function gasTestSave() {
+  var cfg = getGasConfig();
+  if (!cfg.url || !cfg.token) { _gasSetTestStatus('⚠️ GAS URL/토큰 없음', false); return; }
+  _gasSetTestStatus('전송 중...', null);
+  try {
+    await gasSavePost({ type: '테스트', mood: '', title: '[테스트] 연동확인', topic: '연동테스트', keywords: 'test', tags: '테스트', body: '구글시트 연동 테스트 데이터입니다.' });
+    _gasSetTestStatus('✅ 저장 전송 완료 (시트에서 확인하세요)', true);
+  } catch(e) { _gasSetTestStatus('❌ ' + e.message, false); }
+}
+
+async function gasTestFetch() {
+  var cfg = getGasConfig();
+  if (!cfg.url || !cfg.token) { _gasSetTestStatus('⚠️ GAS URL/토큰 없음', false); return; }
+  _gasSetTestStatus('조회 중...', null);
+  try {
+    var posts = await gasGetRecentPosts(1);
+    _gasSetTestStatus('✅ 조회 성공 — 저장된 글 ' + posts.length + '건 확인', true);
+  } catch(e) { _gasSetTestStatus('❌ ' + e.message, false); }
+}
+
 async function gasGetRecentPosts(n) {
   var cfg = getGasConfig();
   if (!cfg.url || !cfg.token) return [];
