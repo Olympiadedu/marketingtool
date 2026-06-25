@@ -30,6 +30,12 @@ jobs:
         run: |
           printf 'var ADMIN_GAS = { url: "%s", token: "%s" };\n' "${GAS_URL}" "${GAS_TOKEN}" > config.js
 
+      - name: Verify config.js
+        run: |
+          echo "=== config.js content (secrets masked) ==="
+          cat config.js | sed 's/https:[^"]*/"[URL]"/g' | sed 's/token: "[^"]*"/token: "[TOKEN]"/g'
+          echo "=== file size: $(wc -c < config.js) bytes ==="
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
