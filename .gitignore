@@ -1,1 +1,6 @@
 config.js
+.claude/
+DB.xlsx
+mon_data_new.js
+mon_data_preview.json
+monitor_functions.js

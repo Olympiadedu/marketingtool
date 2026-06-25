@@ -235,7 +235,7 @@ canvas{display:block;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,.15);cu
 
 /* ── 경쟁학원 모니터링 ── */
 #page-monitor{flex:1;flex-direction:column;overflow:hidden;height:100%;}
-.mon-filter-bar{background:var(--sur);border-bottom:1px solid var(--bdr);padding:10px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0;flex-wrap:wrap;}
+.mon-filter-bar{background:var(--sur);border-bottom:1px solid var(--bdr);padding:10px 20px;display:flex;align-items:flex-start;gap:12px;flex-shrink:0;flex-wrap:wrap;}
 .mon-filter-label{font-size:11px;font-weight:700;color:var(--mut);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;}
 .mon-pill{font-size:13px;padding:5px 14px;border-radius:99px;border:1px solid var(--bdr);background:var(--sur);color:var(--mut);cursor:pointer;transition:all .15s;white-space:nowrap;}
 .mon-pill:hover{border-color:var(--acc);color:var(--acc);}
