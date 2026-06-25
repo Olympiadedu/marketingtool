@@ -194,7 +194,8 @@ function blogBuildInputText() {
   var parts = [];
   if (inp.type)  parts.push('글 유형: ' + inp.type);
   if (inp.mood)  parts.push('글의 분위기: ' + inp.mood);
-  if (inp.point) parts.push('피하고 싶은 것: ' + inp.point);
+  if (inp.refUrl)  parts.push('참고 URL: ' + inp.refUrl);
+  if (inp.point)   parts.push('피하고 싶은 것: ' + inp.point);
   parts.push('---');
   // 포스팅 정보
   if (inp.topic)     parts.push('주제: ' + inp.topic);
@@ -215,6 +216,7 @@ async function blogGenerateDraft() {
   blogState.inputs = {
     type:     (document.getElementById('blog-type')     || {}).value || '',
     mood:     (document.getElementById('blog-mood')     || {}).value || '',
+    refUrl:   (document.getElementById('blog-ref-url')  || {}).value.trim() || '',
     point:    (document.getElementById('blog-point')    || {}).value.trim() || '',
     topic:    topic,
     target:   (document.getElementById('blog-target')   || {}).value.trim() || '',
