@@ -192,12 +192,9 @@ function applyAcademyVars(template) {
 function blogBuildInputText() {
   var inp = blogState.inputs || {};
   var parts = [];
-  // 변형 요소 (유사도 방지)
-  if (inp.type)      parts.push('글 유형: ' + inp.type);
-  if (inp.mood)      parts.push('글의 분위기: ' + inp.mood);
-  if (inp.situation) parts.push('강조할 실제 상황: ' + inp.situation);
-  if (inp.diff)      parts.push('차별화 포인트: ' + inp.diff);
-  if (inp.avoid)     parts.push('피하고 싶은 표현: ' + inp.avoid);
+  if (inp.type)  parts.push('글 유형: ' + inp.type);
+  if (inp.mood)  parts.push('글의 분위기: ' + inp.mood);
+  if (inp.point) parts.push('이 글만의 포인트: ' + inp.point);
   parts.push('---');
   // 포스팅 정보
   if (inp.topic)     parts.push('주제: ' + inp.topic);
@@ -216,16 +213,14 @@ async function blogGenerateDraft() {
   if (!claudeKey && !geminiKey) { blogShowAlert('1', 'API 설정에서 Claude 또는 Gemini 키를 먼저 입력해주세요.'); return; }
   blogHideAlert('1');
   blogState.inputs = {
-    type:      (document.getElementById('blog-type')      || {}).value || '',
-    mood:      (document.getElementById('blog-mood')      || {}).value || '',
-    situation: (document.getElementById('blog-situation') || {}).value.trim() || '',
-    diff:      (document.getElementById('blog-diff')      || {}).value.trim() || '',
-    avoid:     (document.getElementById('blog-avoid')     || {}).value.trim() || '',
-    topic:     topic,
-    target:    (document.getElementById('blog-target')    || {}).value.trim() || '',
-    length:    (document.getElementById('blog-length')    || {}).value || '1500',
-    keywords:  (document.getElementById('blog-keywords')  || {}).value.trim() || '',
-    core:      (document.getElementById('blog-core')      || {}).value.trim() || ''
+    type:     (document.getElementById('blog-type')     || {}).value || '',
+    mood:     (document.getElementById('blog-mood')     || {}).value || '',
+    point:    (document.getElementById('blog-point')    || {}).value.trim() || '',
+    topic:    topic,
+    target:   (document.getElementById('blog-target')   || {}).value.trim() || '',
+    length:   (document.getElementById('blog-length')   || {}).value || '1500',
+    keywords: (document.getElementById('blog-keywords') || {}).value.trim() || '',
+    core:     (document.getElementById('blog-core')     || {}).value.trim() || ''
   };
   var btn = document.getElementById('btn-draft');
   btn.disabled = true;

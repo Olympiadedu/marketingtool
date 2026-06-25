@@ -123,25 +123,9 @@
             <textarea class="blog-input blog-textarea" id="blog-core" placeholder="무작정 선행보다 개념 이해가 먼저임을 강조하고, 상담 연결로 마무리 원합니다."></textarea>
           </div>
 
-          <!-- 차별화 옵션 (접기/펼치기) -->
-          <div class="blog-option-toggle" onclick="toggleBlogOptions()">
-            <span id="blog-option-arrow">▶</span>
-            <span>차별화 옵션</span>
-            <span class="blog-label-hint" style="margin-left:4px;">같은 주제라도 글이 달라집니다</span>
-          </div>
-          <div id="blog-options-body" style="display:none;margin-top:8px;display:flex;flex-direction:column;gap:10px;">
-            <div class="blog-form-row" style="margin-bottom:0">
-              <label class="blog-label">강조할 실제 상황</label>
-              <input class="blog-input" id="blog-situation" type="text" placeholder="중1 첫 시험 앞두고 불안해하는 학생, 초5 연산 실수가 반복되는 경우" />
-            </div>
-            <div class="blog-form-row" style="margin-bottom:0">
-              <label class="blog-label">이번 글만의 차별화 포인트</label>
-              <input class="blog-input" id="blog-diff" type="text" placeholder="선생님 직접 경험담 포함, 통계 데이터 활용, 학부모 공감 스토리 중심" />
-            </div>
-            <div class="blog-form-row" style="margin-bottom:0">
-              <label class="blog-label">피하고 싶은 표현</label>
-              <input class="blog-input" id="blog-avoid" type="text" placeholder="뻔한 홍보 문구, 과장된 추천 표현, 반복되는 인사말" />
-            </div>
+          <div class="blog-form-row">
+            <label class="blog-label">이 글만의 포인트 <span class="blog-label-hint">상황·사례·강조점 (선택)</span></label>
+            <input class="blog-input" id="blog-point" type="text" placeholder="중1 첫 시험 앞두고 불안한 학생, 선생님 경험담 포함, 통계 데이터 활용" />
           </div>
 
         </div>
