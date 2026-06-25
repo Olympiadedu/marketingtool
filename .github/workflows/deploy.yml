@@ -27,7 +27,8 @@ jobs:
         env:
           GAS_URL: ${{ secrets.GAS_URL }}
           GAS_TOKEN: ${{ secrets.GAS_TOKEN }}
-        run: echo "var ADMIN_GAS = { url: '${GAS_URL}', token: '${GAS_TOKEN}' };" > config.js
+        run: |
+          printf 'var ADMIN_GAS = { url: "%s", token: "%s" };\n' "${GAS_URL}" "${GAS_TOKEN}" > config.js
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
