@@ -27,7 +27,7 @@ var BLOG_DRAFT_STYLE_DEFAULT = [
   '이모지: 단락마다 1~2개 자연스럽게 사용',
   '광고 티가 나는 표현("지금 바로", "놓치지 마세요", "강력 추천" 등)은 반복하지 않기',
   '학부모가 공감할 상황에서 시작해서 학원의 해결책으로 자연스럽게 연결',
-  'SEO 키워드는 제목과 첫 단락에 자연스럽게 포함',
+  '검색 키워드는 제목과 첫 단락에 자연스럽게 포함',
   '글마다 구체적인 상황, 사례, 시기를 달리해서 비슷한 글이 반복되지 않도록'
 ].join('\n');
 
@@ -194,13 +194,13 @@ function blogBuildInputText() {
   var parts = [];
   if (inp.type)  parts.push('글 유형: ' + inp.type);
   if (inp.mood)  parts.push('글의 분위기: ' + inp.mood);
-  if (inp.point) parts.push('이 글만의 포인트: ' + inp.point);
+  if (inp.point) parts.push('피하고 싶은 것: ' + inp.point);
   parts.push('---');
   // 포스팅 정보
   if (inp.topic)     parts.push('주제: ' + inp.topic);
   if (inp.target)    parts.push('타겟 독자: ' + inp.target);
   if (inp.length)    parts.push('목표 분량: ' + inp.length + '자 (공백 제외)');
-  if (inp.keywords)  parts.push('SEO 키워드: ' + inp.keywords);
+  if (inp.keywords)  parts.push('검색 키워드: ' + inp.keywords);
   if (inp.core)      parts.push('핵심 메시지: ' + inp.core);
   return parts.join('\n');
 }
