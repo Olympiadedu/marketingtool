@@ -46,7 +46,7 @@ function getBlogDraftSystem(type) {
     .replace('{{USER_STYLE}}', userStyle);
 }
 
-var BLOG_FINAL_SYSTEM = '당신은 {{학원명}} 공식 블로그 전문 에디터입니다.\n제공된 초안과 변형 요소를 바탕으로 완성된 네이버 블로그 본문을 작성합니다.\n\n## [브랜드 정보]\n- 학원명: {{학원명}} (단축명: {{단축명}})\n- 슬로건: "{{슬로건}}"\n- 과목: {{과목}}\n- 주요 대상: {{대상}}\n- 웹사이트: {{웹사이트}}\n\n## [말투 & 표현 규칙]\n- 경칭: 학부모 → "학부모님", 학생 → "학생들", "우리 학생들"\n- 어미: 격식체+친근 혼합 ("~합니다", "~해요", "~이에요", "~이랍니다")\n- 이모지: 단락당 1~2개 자연스럽게 (💚💡📚✨ 등)\n- 줄바꿈: 모바일 가독성 위해 2~3문장 후 빈 줄\n- SEO 키워드: 원형 그대로 제목·첫 단락에 자연스럽게\n\n## [유사도 방지]\n- 초안에서 선택한 구조 유형을 유지합니다.\n- "주목해 주세요", "꼭 확인해 보세요", "적극 추천합니다", "지금 바로", "고민이신 학부모님이라면" 같은 표현은 한 글에 1회 이상 반복하지 않습니다.\n- 이번 글만의 구체적 상황·사례·포인트가 본문에 명확히 드러나야 합니다.\n\n## [AI 티 방지 규칙 — 반드시 준수]\nS1 절대 금지 (한 번이라도 나오면 수정):\n- 연결어미 뒤 쉼표 금지: "하지만," "그리고," "그러나," → 쉼표 삭제\n- AI 상투구 금지: "결론적으로", "혁신적인", "시대가 도래했다", "주목할 만하다", "~의 가능성을 열어준다", "새로운 패러다임"\n- 번역투 금지: "~에 대해" → "~를", "~를 통해" → "~로", "가지고 있다" → "있다", 이중 피동("~되어지다")\n\nS2 같은 패턴 3회 이상 금지:\n- 볼드(**) 남용 — 단락당 1곳 이하\n- 정도부사 반복 — "매우", "정말", "굉장히" 연속 사용 금지\n- 문두 접속사 남발 — "하지만", "그러나", "이는", "즉" 연속 금지\n- 기계적 나열 — "첫째/둘째/셋째" → 산문으로 녹이기\n- 헤징 과다 — "~할 수 있을 것으로 보인다", "~라고 할 수 있다" 반복 금지\n- "~것이다", "~할 필요가 있다" 반복 금지\n\n리듬: 단문(10자 이하)과 장문(30자 이상)을 섞어 단조로움 방지. 종결어미 다양화(~합니다 / ~해요 / ~이에요 / ~이랍니다 골고루).\n\n## [글 마지막 연락처 블록]\n글 마지막에 아래 형식으로 연락처 블록을 반드시 포함합니다.\n{{학원명}}\n📞 {{연락처}}\n🗺️ 네이버지도: {{지도링크}}\n🌐 {{웹사이트}}\n연락처나 링크가 비어 있는 항목은 생략합니다.\n\n반드시 아래 JSON 형식으로만 응답하세요.\n\n{"title":"최종 포스팅 제목 (25~45자, SEO 키워드 앞부분)","intro":"도입부 본문 (초안 도입부 기반, 이번 글 방식으로 시작)","sections":[{"heading":"소제목","body":"완성된 본문 내용. 줄바꿈은 \\n\\n 사용"}],"conclusion":"마무리 본문 + CTA 블록 (CTA 유형에 따라 작성)","tags":["태그1","태그2","태그3","태그4","태그5"],"images":[{"id":"thumbnail","placement":"포스팅 최상단 썸네일","placement_detail":"글 제목 바로 아래 대표 이미지","prompt":"Warm and inviting Korean private academy blog thumbnail. [Subject] Two Korean middle school students sitting at clean wooden desks, intensely focused on open textbooks, a passionate teacher pointing to explanations on a whiteboard behind them. [Setting] Bright modern Korean classroom, large windows with warm natural daylight streaming in, neat bookshelves and organized study materials visible in background. [Style] Photorealistic editorial photography, crisp sharp focus on students. [Lighting] Soft warm natural light from left-side windows, gentle diffused shadows, bright airy feel. [Colors] Warm cream and soft teal palette with white accents — clean, professional, welcoming. [Composition] Medium shot from slightly elevated angle, subjects placed in lower half or sides of frame, upper-center area intentionally left with soft blurred or simple background. [Details] Students in school uniforms, pencils and color-coded notebooks on desks, engaged and focused expressions, calm study atmosphere. Keep the central horizontal band of the image visually clean and uncluttered — no faces, hands, or busy details in that zone, as Korean text will be overlaid there. Square 1:1 format.","overlay_text":"썸네일 텍스트 문구","description":"썸네일 필수 이미지"},{"id":"body_1","placement":"삽입 위치","placement_detail":"이 이미지가 필요한 이유와 위치","prompt":"A detailed realistic scene directly illustrating the specific topic and message of this blog section. [Subject] Clearly describe the central subject — people, objects, or scenario that best represents this section content. [Setting] Specific realistic environment or background that fits the section context and Korean private academy theme. [Style] Photorealistic photography or clean professional digital illustration with editorial quality. [Lighting] Soft natural or warm studio lighting, bright and clear. [Colors] Consistent warm academic tones — cream, teal, soft blues — matching a professional educational atmosphere. [Composition] Clear purposeful focal point, balanced framing, uncluttered background that emphasizes the subject. [Details] Include specific realistic details relevant to the section: props, expressions, actions, environmental elements that reinforce the message. No text, words, letters, or signs visible anywhere in image. Square 1:1 format.","overlay_text":null,"description":"이미지 설명"}]}\n\n이미지 규칙: thumbnail 1개 필수. 본문 이미지 1~3개. 모두 1:1 정사각형.\nprompt 작성 필수 규칙 — 반드시 영어로, 최소 120단어 이상. DALL-E 3 최적화 구조를 반드시 준수할 것: [Subject] → [Setting] → [Style] → [Lighting] → [Colors] → [Composition] → [Details] → Square 1:1 format.\nthumbnail prompt 마지막 필수 지시: Keep the central horizontal band of the image visually clean and simple — no faces or busy details there, as Korean text will be overlaid. Subjects should be placed in lower portion or sides of frame.\n본문 이미지 prompt 마지막 필수 지시: No text or writing visible anywhere in image.\n블로그 글의 해당 섹션 주제와 내용을 정확히 반영하여 구체적이고 사실적으로 작성할 것. 추상적·일반적 표현 금지.\n글자 수: 요청된 분량에 맞게 (공백 제외)';
+var BLOG_FINAL_SYSTEM = '당신은 {{학원명}} 공식 블로그 전문 에디터입니다.\n제공된 초안과 변형 요소를 바탕으로 완성된 네이버 블로그 본문을 작성합니다.\n\n## [브랜드 정보]\n- 학원명: {{학원명}} (단축명: {{단축명}})\n- 슬로건: "{{슬로건}}"\n- 과목: {{과목}}\n- 주요 대상: {{대상}}\n- 웹사이트: {{웹사이트}}\n\n## [말투 & 표현 규칙]\n- 경칭: 학부모 → "학부모님", 학생 → "학생들", "우리 학생들"\n- 어미: 격식체+친근 혼합 ("~합니다", "~해요", "~이에요", "~이랍니다")\n- 이모지: 단락당 1~2개 자연스럽게 (💚💡📚✨ 등)\n- 줄바꿈: 모바일 가독성 위해 2~3문장 후 빈 줄\n- SEO 키워드: 원형 그대로 제목·첫 단락에 자연스럽게\n\n## [유사도 방지]\n- 초안에서 선택한 구조 유형을 유지합니다.\n- "주목해 주세요", "꼭 확인해 보세요", "적극 추천합니다", "지금 바로", "고민이신 학부모님이라면" 같은 표현은 한 글에 1회 이상 반복하지 않습니다.\n- 이번 글만의 구체적 상황·사례·포인트가 본문에 명확히 드러나야 합니다.\n\n## [AI 티 방지 규칙 — 반드시 준수]\nS1 절대 금지 (한 번이라도 나오면 수정):\n- 연결어미 뒤 쉼표 금지: "하지만," "그리고," "그러나," → 쉼표 삭제\n- AI 상투구 금지: "결론적으로", "혁신적인", "시대가 도래했다", "주목할 만하다", "~의 가능성을 열어준다", "새로운 패러다임"\n- 번역투 금지: "~에 대해" → "~를", "~를 통해" → "~로", "가지고 있다" → "있다", 이중 피동("~되어지다")\n\nS2 같은 패턴 3회 이상 금지:\n- 볼드(**) 남용 — 단락당 1곳 이하\n- 정도부사 반복 — "매우", "정말", "굉장히" 연속 사용 금지\n- 문두 접속사 남발 — "하지만", "그러나", "이는", "즉" 연속 금지\n- 기계적 나열 — "첫째/둘째/셋째" → 산문으로 녹이기\n- 헤징 과다 — "~할 수 있을 것으로 보인다", "~라고 할 수 있다" 반복 금지\n- "~것이다", "~할 필요가 있다" 반복 금지\n\n리듬: 단문(10자 이하)과 장문(30자 이상)을 섞어 단조로움 방지. 종결어미 다양화(~합니다 / ~해요 / ~이에요 / ~이랍니다 골고루).\n\n## [글 마지막 연락처 블록]\n글 마지막에 아래 형식으로 연락처 블록을 반드시 포함합니다.\n{{학원명}}\n📞 {{연락처}}\n🗺️ 네이버지도: {{지도링크}}\n🌐 {{웹사이트}}\n연락처나 링크가 비어 있는 항목은 생략합니다.\n\n반드시 아래 JSON 형식으로만 응답하세요.\n\n{"title":"최종 포스팅 제목 (25~45자, SEO 키워드 앞부분)","intro":"도입부 본문 (초안 도입부 기반, 이번 글 방식으로 시작)","sections":[{"heading":"소제목","body":"완성된 본문 내용. 줄바꿈은 \\n\\n 사용"}],"conclusion":"마무리 본문 + CTA 블록 (CTA 유형에 따라 작성)","tags":["태그1","태그2","태그3","태그4","태그5"],"images":[{"id":"thumbnail","placement":"포스팅 최상단 썸네일","placement_detail":"글 제목 바로 아래 대표 이미지","prompt":"Warm and inviting Korean private academy blog thumbnail. [Subject] Two Korean middle school students sitting at clean wooden desks, intensely focused on open textbooks, a passionate teacher pointing to explanations on a whiteboard behind them. [Setting] Bright modern Korean classroom, large windows with warm natural daylight streaming in, neat bookshelves and organized study materials visible in background. [Style] Photorealistic editorial photography, crisp sharp focus on students. [Lighting] Soft warm natural light from left-side windows, gentle diffused shadows, bright airy feel. [Colors] Warm cream and soft teal palette with white accents — clean, professional, welcoming. [Composition] Medium shot from slightly elevated angle, subjects placed in lower half or sides of frame, upper-center area intentionally left with soft blurred or simple background. [Details] Students in school uniforms, pencils and color-coded notebooks on desks, engaged and focused expressions, calm study atmosphere. Keep the central horizontal band of the image visually clean and uncluttered — no faces, hands, or busy details in that zone, as Korean text will be overlaid there. Square 1:1 format.","overlay_text":"썸네일 텍스트 문구","description":"이 썸네일이 표현하는 장면과 분위기를 한국어로 2~3문장으로 설명"},{"id":"body_1","placement":"삽입 위치","placement_detail":"이 이미지가 필요한 이유와 위치","prompt":"A detailed realistic scene directly illustrating the specific topic and message of this blog section. [Subject] Clearly describe the central subject — people, objects, or scenario that best represents this section content. [Setting] Specific realistic environment or background that fits the section context and Korean private academy theme. [Style] Photorealistic photography or clean professional digital illustration with editorial quality. [Lighting] Soft natural or warm studio lighting, bright and clear. [Colors] Consistent warm academic tones — cream, teal, soft blues — matching a professional educational atmosphere. [Composition] Clear purposeful focal point, balanced framing, uncluttered background that emphasizes the subject. [Details] Include specific realistic details relevant to the section: props, expressions, actions, environmental elements that reinforce the message. No text, words, letters, or signs visible anywhere in image. Square 1:1 format.","overlay_text":null,"description":"이미지 설명"}]}\n\n이미지 규칙: thumbnail 1개 필수. 본문 이미지 1~3개. 모두 1:1 정사각형.\nprompt 작성 필수 규칙 — 반드시 영어로, 최소 120단어 이상. DALL-E 3 최적화 구조를 반드시 준수할 것: [Subject] → [Setting] → [Style] → [Lighting] → [Colors] → [Composition] → [Details] → Square 1:1 format.\nthumbnail prompt 마지막 필수 지시: Keep the central horizontal band of the image visually clean and simple — no faces or busy details there, as Korean text will be overlaid. Subjects should be placed in lower portion or sides of frame.\n본문 이미지 prompt 마지막 필수 지시: No text or writing visible anywhere in image.\n블로그 글의 해당 섹션 주제와 내용을 정확히 반영하여 구체적이고 사실적으로 작성할 것. 추상적·일반적 표현 금지.\n글자 수: 요청된 분량에 맞게 (공백 제외)';
 
 function autoResizeBlogTextarea(el) {
   el.style.height = 'auto';
@@ -377,10 +377,72 @@ function blogRenderImages(images) {
   c.innerHTML = images.map(function(img, i) {
     var isThumb = img.id === 'thumbnail';
     var badge = isThumb ? '<span class="bimg-badge thumb">🖼️ 썸네일 (필수)</span>' : '<span class="bimg-badge body-img">📍 본문 삽입</span>';
-    var overlayRow = img.overlay_text ? '<div class="bimg-overlay">💬 텍스트 오버레이: <strong>' + blogEsc(img.overlay_text) + '</strong></div>' : '';
+    var overlayRow = img.overlay_text ? '<div class="bimg-overlay">💬 오버레이 텍스트: <strong>' + blogEsc(img.overlay_text) + '</strong></div>' : '';
     var genBtn = openaiKey ? '<button class="bimg-gen-btn" onclick="blogGenImage(this,' + i + ')">🎨 이미지 생성</button>' : '';
-    return '<div class="bimg-card' + (isThumb ? ' is-thumb' : '') + '" id="bimg-card-' + i + '"><div class="bimg-preview" id="bimg-preview-' + i + '">🖼️<br><span style="font-size:11px">' + (isThumb ? '썸네일' : '본문 이미지') + '</span></div><div class="bimg-info">' + badge + '<div class="bimg-placement">' + blogEsc(img.placement) + '</div><div class="bimg-detail">' + blogEsc(img.placement_detail) + '</div>' + overlayRow + '<div class="bimg-prompt">' + blogEsc(img.prompt) + '</div><div class="bimg-actions"><button class="blog-copy-btn" style="flex:1" onclick="blogCopyPrompt(this,' + i + ')">📋 프롬프트 복사</button>' + genBtn + '</div></div></div>';
+    return '<div class="bimg-card' + (isThumb ? ' is-thumb' : '') + '" id="bimg-card-' + i + '">'
+      + '<div class="bimg-preview" id="bimg-preview-' + i + '">🖼️<br><span style="font-size:11px">' + (isThumb ? '썸네일' : '본문 이미지') + '</span></div>'
+      + '<div class="bimg-info">'
+        + badge
+        + '<div class="bimg-placement">' + blogEsc(img.placement) + '</div>'
+        + overlayRow
+        + '<div class="bimg-description" id="bimg-desc-' + i + '">' + blogEsc(img.description || '') + '</div>'
+        + '<button class="bimg-toggle-btn" onclick="blogTogglePrompt(this,' + i + ')">프롬프트 보기 ▼</button>'
+        + '<div class="bimg-prompt" id="bimg-prompt-' + i + '" style="display:none">' + blogEsc(img.prompt) + '</div>'
+        + '<div class="bimg-actions" id="bimg-actions-' + i + '">'
+          + '<button class="blog-copy-btn" onclick="blogCopyPrompt(this,' + i + ')">📋 복사</button>'
+          + '<button class="bimg-regen-btn" onclick="blogRegenImagePrompt(this,' + i + ')">🔄 재생성</button>'
+          + genBtn
+        + '</div>'
+      + '</div>'
+      + '</div>';
   }).join('');
+}
+
+function blogTogglePrompt(btn, idx) {
+  var el = document.getElementById('bimg-prompt-' + idx);
+  if (!el) return;
+  var isOpen = el.style.display !== 'none';
+  el.style.display = isOpen ? 'none' : 'block';
+  btn.textContent = isOpen ? '프롬프트 보기 ▼' : '프롬프트 접기 ▲';
+}
+
+async function blogRegenImagePrompt(btn, idx) {
+  var images = blogState.result && blogState.result.images;
+  if (!images || !images[idx]) return;
+  var img = images[idx];
+  var result = blogState.result;
+  btn.disabled = true; btn.textContent = '생성 중...';
+  var isThumb = img.id === 'thumbnail';
+  var thumbRule = isThumb
+    ? 'Keep the central horizontal band clean — no faces or busy details there, as Korean text will be overlaid. Subjects should be placed in lower portion or sides of frame.'
+    : 'No text or writing visible anywhere in image.';
+  var systemPrompt = '당신은 블로그 이미지 프롬프트 전문가입니다.\n아래 블로그 내용과 이미지 슬롯 정보를 바탕으로 새로운 이미지 프롬프트를 생성하세요.\n\n반드시 아래 JSON 형식으로만 응답하세요:\n{"prompt":"영어 120단어 이상. [Subject]→[Setting]→[Style]→[Lighting]→[Colors]→[Composition]→[Details]→Square 1:1 format. ' + thumbRule + '","description":"이 이미지가 표현하는 내용을 한국어로 2~3문장"}';
+  var userContent = '블로그 제목: ' + (result.title || '') + '\n'
+    + '이미지 슬롯: ' + img.id + ' (' + img.placement + ')\n'
+    + '배치 목적: ' + (img.placement_detail || '') + '\n'
+    + (img.overlay_text ? '오버레이 텍스트: ' + img.overlay_text + '\n' : '')
+    + '\n블로그 내용:\n'
+    + (result.intro ? result.intro.substring(0, 150) + '\n' : '')
+    + (result.sections || []).map(function(s) { return (s.heading || '') + ': ' + (s.body || '').substring(0, 80); }).join('\n')
+    + '\n\n이전 프롬프트와 다른 방향으로 새 이미지 프롬프트를 생성해주세요.';
+  try {
+    var raw = await blogCall(systemPrompt, userContent, 800);
+    var parsed = blogParseJson(raw);
+    if (!parsed.prompt) throw new Error('프롬프트 생성 실패');
+    blogState.result.images[idx].prompt = parsed.prompt;
+    if (parsed.description) blogState.result.images[idx].description = parsed.description;
+    var promptEl = document.getElementById('bimg-prompt-' + idx);
+    if (promptEl) promptEl.textContent = parsed.prompt;
+    var descEl = document.getElementById('bimg-desc-' + idx);
+    if (descEl) descEl.textContent = parsed.description || '';
+    btn.textContent = '✅ 완료';
+    setTimeout(function() { btn.textContent = '🔄 재생성'; }, 2000);
+  } catch(e) {
+    alert('오류: ' + e.message);
+    btn.textContent = '🔄 재생성';
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 async function blogGenImage(btn, idx) {
