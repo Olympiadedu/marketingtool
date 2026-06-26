@@ -239,8 +239,15 @@ async function blogGenerateDraft() {
       if (similarPosts.length > 0) {
         var recentSummary = '\n\n[유사 글 목록 — 아래와 유사한 제목·구조·도입부·표현은 반드시 피할 것]\n';
         recentSummary += similarPosts.map(function(p, i) {
-          return (i+1) + '. [' + p.type + '] ' + p.title + (p.keywords ? ' (키워드: ' + p.keywords + ')' : '');
+          return (i+1) + '. [' + p.type + '][구조: ' + (p.structure || '미기록') + '] ' + p.title + (p.keywords ? ' (키워드: ' + p.keywords + ')' : '');
         }).join('\n');
+        var usedStructures = [];
+        similarPosts.forEach(function(p) {
+          if (p.structure && usedStructures.indexOf(p.structure) < 0) usedStructures.push(p.structure);
+        });
+        if (usedStructures.length > 0) {
+          recentSummary += '\n\n이미 사용된 구조 유형: ' + usedStructures.join(', ') + '\n위 구조 유형은 이번 글에서 반드시 사용하지 말 것. structure 필드에 선택한 새 구조 유형명을 반드시 명시할 것.';
+        }
         systemPrompt += recentSummary;
       }
     }
@@ -330,13 +337,14 @@ async function blogFinalize(triggerBtn) {
     });
     if (result.conclusion) bodyParts.push(result.conclusion);
     gasSavePost({
-      type:     blogState.inputs.type     || '',
-      mood:     blogState.inputs.mood     || '',
-      title:    result.title              || '',
-      topic:    blogState.inputs.topic    || '',
-      keywords: blogState.inputs.keywords || '',
-      tags:     (result.tags || []).join(', '),
-      body:     bodyParts.join('\n\n')
+      type:      blogState.inputs.type                              || '',
+      mood:      blogState.inputs.mood                             || '',
+      title:     result.title                                      || '',
+      topic:     blogState.inputs.topic                            || '',
+      keywords:  blogState.inputs.keywords                         || '',
+      tags:      (result.tags || []).join(', '),
+      body:      bodyParts.join('\n\n'),
+      structure: blogState.draft && blogState.draft.structure      || ''
     });
   } catch(e) {
     blogShowAlert('2', e.message || '오류가 발생했습니다.');
