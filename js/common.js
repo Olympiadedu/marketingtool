@@ -158,15 +158,16 @@ async function gasSavePost(data) {
   // GET 방식으로 저장 (CORS 문제 없음)
   // 본문이 길어 GET URL 한계 초과 가능 → POST no-cors로 전송
   var payload = {
-    token:    cfg.token,
-    action:   'save',
-    type:     data.type     || '',
-    mood:     data.mood     || '',
-    title:    data.title    || '',
-    topic:    data.topic    || '',
-    keywords: data.keywords || '',
-    tags:     data.tags     || '',
-    body:     data.body     || ''
+    token:     cfg.token,
+    action:    'save',
+    type:      data.type      || '',
+    mood:      data.mood      || '',
+    title:     data.title     || '',
+    topic:     data.topic     || '',
+    keywords:  data.keywords  || '',
+    tags:      data.tags      || '',
+    body:      data.body      || '',
+    structure: data.structure || ''
   };
   fetch(cfg.url, {
     method: 'POST',
