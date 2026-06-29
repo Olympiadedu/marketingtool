@@ -32,7 +32,7 @@ var BLOG_DRAFT_STYLE_DEFAULT = [
 ].join('\n');
 
 // ── 코드 고정 기술 프롬프트 (편집 불가, 자동 조립) ──────────────
-var BLOG_DRAFT_TECHNICAL = '당신은 {{학원명}} 공식 블로그 전문 에디터입니다.\n\n## [학원 정보]\n- 학원명: {{학원명}} (단축명: {{단축명}})\n- 슬로건: "{{슬로건}}"\n- 과목: {{과목}}\n- 주요 대상: {{대상}}\n- 웹사이트: {{웹사이트}}\n\n{{TYPE_RULES}}\n\n## [원장님 글쓰기 스타일 지시]\n{{USER_STYLE}}\n\n## [출력 형식]\n반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 포함하지 마세요.\n\n{"title":"포스팅 제목 (25~45자, SEO 키워드 앞부분 배치)","structure":"선택한 구조 유형명","intro":"도입부 (2~3문장)","sections":[{"heading":"소제목","summary":"이 섹션에서 다룰 내용 요약 (3~5문장)"}],"conclusion":"마무리 멘트 (1~2문장)","tags":["키워드태그1","키워드태그2","키워드태그3"]}\n\n규칙: 섹션 2~4개 / 브랜드 슬로건 자연스럽게 녹여낼 것';
+var BLOG_DRAFT_TECHNICAL = '당신은 {{학원명}} 공식 블로그 전문 에디터입니다.\n\n## [학원 정보]\n- 학원명: {{학원명}} (단축명: {{단축명}})\n- 슬로건: "{{슬로건}}"\n- 과목: {{과목}}\n- 주요 대상: {{대상}}\n- 웹사이트: {{웹사이트}}\n\n{{TYPE_RULES}}\n\n## [원장님 글쓰기 스타일 지시]\n{{USER_STYLE}}\n\n## [출력 형식]\n반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 포함하지 마세요.\n\n{"title":"포스팅 제목 (25~45자, SEO 키워드 앞부분 배치)","structure":"선택한 구조 유형명","intro":"도입부 (2~3문장)","sections":[{"heading":"소제목","summary":"이 섹션에서 다룰 내용 요약 (3~5문장)","role":"이 섹션이 글 전체에서 맡는 역할 (예: 공감 형성, 문제 제기, 원인 분석, 해결책 제시, 신뢰 근거, 학원 연결)"}],"conclusion":"마무리 멘트 (1~2문장)","ctaDirection":"결론에서 독자를 어떻게 행동으로 유도할지 방향 (예: 상담 전화 유도, 진단평가 안내, 방문 권유)","tags":["키워드태그1","키워드태그2","키워드태그3"]}\n\n규칙: 섹션 2~4개 / 브랜드 슬로건 자연스럽게 녹여낼 것 / 각 섹션 role은 서로 달라야 하며 글의 논리 흐름을 만들 것';
 
 // 하위 호환용
 var BLOG_DRAFT_BASE = BLOG_DRAFT_STYLE_DEFAULT;
@@ -295,18 +295,26 @@ function blogRenderOutline(draft) {
 }
 
 function blogReadOutline() {
+  var draft = blogState.draft || {};
+  var origSections = draft.sections || [];
   var sections = [];
   var i = 0;
   while (document.getElementById('bedit-s' + i + '-heading')) {
-    sections.push({ heading: document.getElementById('bedit-s' + i + '-heading').value, summary: document.getElementById('bedit-s' + i + '-summary').value });
+    sections.push({
+      heading: document.getElementById('bedit-s' + i + '-heading').value,
+      summary: document.getElementById('bedit-s' + i + '-summary').value,
+      role: (origSections[i] && origSections[i].role) || ''
+    });
     i++;
   }
   return {
-    title: document.getElementById('bedit-title') ? document.getElementById('bedit-title').value : blogState.draft.title,
-    intro: document.getElementById('bedit-intro') ? document.getElementById('bedit-intro').value : blogState.draft.intro,
-    sections: sections.length ? sections : blogState.draft.sections,
-    conclusion: document.getElementById('bedit-conclusion') ? document.getElementById('bedit-conclusion').value : blogState.draft.conclusion,
-    tags: blogState.draft.tags
+    title: document.getElementById('bedit-title') ? document.getElementById('bedit-title').value : draft.title,
+    structure: draft.structure || '',
+    intro: document.getElementById('bedit-intro') ? document.getElementById('bedit-intro').value : draft.intro,
+    sections: sections.length ? sections : origSections,
+    conclusion: document.getElementById('bedit-conclusion') ? document.getElementById('bedit-conclusion').value : draft.conclusion,
+    ctaDirection: draft.ctaDirection || '',
+    tags: draft.tags
   };
 }
 
@@ -320,8 +328,14 @@ async function blogFinalize(triggerBtn) {
   var btn = triggerBtn || null; if (btn) btn.disabled = true;
   document.getElementById('blog-loading2').classList.add('show');
   try {
-    var userMsg = '아래 초안을 바탕으로 완성된 블로그 본문을 작성해주세요.\n\n원본 입력:\n' + blogBuildInputText() + '\n\n확정 초안:\n' + JSON.stringify(updatedDraft, null, 2);
-    if (notes) userMsg += '\n\n추가 요청:\n' + notes;
+    var userMsg = '[최초 입력값]\n' + blogBuildInputText()
+      + '\n\n[확정된 글 설계도]\n' + JSON.stringify(updatedDraft, null, 2)
+      + '\n\n[추가 수정 요청]\n' + (notes || '없음')
+      + '\n\n작성 지시:\n'
+      + '- 각 section의 role을 따라 본문의 논리 흐름을 구성한다. summary를 단순히 늘리지 말고 role에 맞는 완성 글로 재작성한다.\n'
+      + '- structure(구조 유형)를 유지한다.\n'
+      + '- 결론은 ctaDirection 방향으로 마무리한다.\n'
+      + '- 추가 수정 요청이 설계도와 충돌하지 않는 한 설계도를 유지한다.';
     var raw = await blogCall(applyAcademyVars(BLOG_FINAL_SYSTEM), userMsg, 4096);
     var result = blogParseJson(raw);
     blogState.result = result;
@@ -344,7 +358,7 @@ async function blogFinalize(triggerBtn) {
       keywords:  blogState.inputs.keywords                         || '',
       tags:      (result.tags || []).join(', '),
       body:      bodyParts.join('\n\n'),
-      structure: blogState.draft && blogState.draft.structure      || ''
+      structure: updatedDraft.structure                            || ''
     });
   } catch(e) {
     blogShowAlert('2', e.message || '오류가 발생했습니다.');
@@ -373,7 +387,7 @@ function blogRenderImages(images) {
   var c = document.getElementById('blog-img-grid');
   if (!c) return;
   if (!images || !images.length) { c.innerHTML = '<p style="color:#9aa1ad;font-size:13px;">생성된 이미지 정보가 없습니다.</p>'; return; }
-  var openaiKey = localStorage.getItem('mtt_openai_key') || '';
+  var openaiKey = getApiKey('openai');
   c.innerHTML = images.map(function(img, i) {
     var isThumb = img.id === 'thumbnail';
     var badge = isThumb ? '<span class="bimg-badge thumb">🖼️ 썸네일 (필수)</span>' : '<span class="bimg-badge body-img">📍 본문 삽입</span>';
@@ -446,7 +460,7 @@ async function blogRegenImagePrompt(btn, idx) {
 }
 
 async function blogGenImage(btn, idx) {
-  var openaiKey = localStorage.getItem('mtt_openai_key') || '';
+  var openaiKey = getApiKey('openai');
   var images = blogState.result && blogState.result.images;
   if (!images || !images[idx] || !openaiKey) return;
   btn.disabled = true; btn.textContent = '생성 중...';
