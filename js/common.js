@@ -24,7 +24,7 @@ function showPage(id) {
   document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
   document.querySelectorAll('.sidebar-item').forEach(function(i) { i.classList.remove('active'); });
   // 설정 서브메뉴는 설정 계열이 아닐 때 닫기
-  if (id !== 'settings-ai' && id !== 'settings-prompt') {
+  if (id !== 'settings-ai' && id !== 'settings-prompt' && id !== 'settings-instagram') {
     var subnav = document.getElementById('sidebar-subnav-settings');
     if (subnav) subnav.style.display = 'none';
   }
@@ -50,21 +50,22 @@ function showPage(id) {
     if (navBlog) navBlog.classList.add('active');
     initAcademyProfile();
     blogGoStep(blogState.step || 1);
-  } else if (id === 'settings-ai' || id === 'settings-prompt') {
+  } else if (id === 'settings-ai' || id === 'settings-prompt' || id === 'settings-instagram') {
     document.getElementById('page-settings').classList.add('active');
     var navSettings = document.getElementById('nav-settings');
     if (navSettings) navSettings.classList.add('active');
     var subnav = document.getElementById('sidebar-subnav-settings');
     if (subnav) subnav.style.display = '';
-    var sub = id === 'settings-ai' ? 'ai' : 'prompt';
-    ['ai','prompt'].forEach(function(t) {
+    var sub = id === 'settings-ai' ? 'ai' : id === 'settings-prompt' ? 'prompt' : 'instagram';
+    ['ai','prompt','instagram'].forEach(function(t) {
       var ni = document.getElementById('nav-settings-' + t);
       if (ni) ni.classList.toggle('active', t === sub);
       var ti = document.getElementById('settab-' + t);
       if (ti) ti.style.display = (t === sub) ? '' : 'none';
     });
     if (sub === 'ai') settingsInit();
-    else settingsInitPrompt();
+    else if (sub === 'prompt') settingsInitPrompt();
+    else settingsInitInstagram();
   } else if (id === 'monitor') {
     document.getElementById('page-monitor').classList.add('active');
     var navMon = document.getElementById('nav-monitor');
@@ -321,6 +322,8 @@ function settingsUpdateStatus() {
       el.className = 'set-current-val none';
     }
   });
+  if (typeof _igUpdateStatus === 'function') _igUpdateStatus();
+  if (typeof igShowSection === 'function') igShowSection();
   settingsUpdateCurrent();
 }
 
@@ -354,6 +357,36 @@ function settingsSave() {
   if (promoEl && promoEl.value.trim()) localStorage.setItem('mtt_promo_prompt', promoEl.value.trim());
   var blogEl = document.getElementById('blog-prompt-edit');
   if (blogEl && blogEl.value.trim()) localStorage.setItem('mtt_blog_prompt', blogEl.value.trim());
+  // 인스타그램 설정 저장
+  var igUserId = document.getElementById('set-ig-user-id');
+  var igToken = document.getElementById('set-ig-token');
+  var githubToken = document.getElementById('set-github-token');
+  if (igUserId)    { var v = igUserId.value.trim();    if (v) localStorage.setItem('mtt_ig_user_id', v);    else localStorage.removeItem('mtt_ig_user_id'); }
+  if (igToken)     { var v = igToken.value.trim();     if (v) localStorage.setItem('mtt_ig_token', v);      else localStorage.removeItem('mtt_ig_token'); }
+  if (githubToken) { var v = githubToken.value.trim(); if (v) localStorage.setItem('mtt_github_token', v);  else localStorage.removeItem('mtt_github_token'); }
   settingsUpdateStatus();
   showToast('설정이 저장되었습니다');
+}
+
+function settingsInitInstagram() {
+  var igUserId    = document.getElementById('set-ig-user-id');
+  var igToken     = document.getElementById('set-ig-token');
+  var githubToken = document.getElementById('set-github-token');
+  if (igUserId)    igUserId.value    = localStorage.getItem('mtt_ig_user_id')   || '';
+  if (igToken)     igToken.value     = localStorage.getItem('mtt_ig_token')     || '';
+  if (githubToken) githubToken.value = localStorage.getItem('mtt_github_token') || '';
+  _igUpdateStatus();
+}
+
+function _igUpdateStatus() {
+  function mark(id, key) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var val = localStorage.getItem(key);
+    el.textContent = (val && val.length > 3) ? '✓ 설정됨' : '× 미설정';
+    el.className = 'set-current-val ' + ((val && val.length > 3) ? 'ok' : 'none');
+  }
+  mark('status-ig-user-id',    'mtt_ig_user_id');
+  mark('status-ig-token',      'mtt_ig_token');
+  mark('status-github-token',  'mtt_github_token');
 }

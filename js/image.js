@@ -2385,3 +2385,185 @@ p2render();
   });
 })();
 
+// ── 인스타그램 게시 ──────────────────────────────────────────────────
+
+var IG_GITHUB_OWNER = 'Olympiadedu';
+var IG_GITHUB_REPO  = 'MarketingTool';
+var IG_GITHUB_BRANCH = 'main';
+
+function igGetCreds() {
+  return {
+    userId:      localStorage.getItem('mtt_ig_user_id')    || '',
+    token:       localStorage.getItem('mtt_ig_token')      || '',
+    githubToken: localStorage.getItem('mtt_github_token')  || ''
+  };
+}
+
+function igSetStatus(msg, type) {
+  var el = document.getElementById('ig-post-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'ai-status' + (type ? ' ' + type : '');
+}
+
+function igShowSection() {
+  var creds = igGetCreds();
+  var sec = document.getElementById('ig-post-section');
+  if (sec) sec.style.display = (creds.userId && creds.token && creds.githubToken) ? '' : 'none';
+}
+
+async function igUploadToGitHub(blob) {
+  var creds = igGetCreds();
+  var fileName = 'temp/ig_' + Date.now() + '.jpg';
+  var apiUrl = 'https://api.github.com/repos/' + IG_GITHUB_OWNER + '/' + IG_GITHUB_REPO + '/contents/' + fileName;
+
+  // Blob → base64
+  var base64 = await new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function() { resolve(reader.result.split(',')[1]); };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+
+  var res = await fetch(apiUrl, {
+    method: 'PUT',
+    headers: {
+      'Authorization': 'Bearer ' + creds.githubToken,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      message: 'temp: instagram upload',
+      content: base64,
+      branch: IG_GITHUB_BRANCH
+    })
+  });
+  if (!res.ok) {
+    var err = await res.json().catch(function() { return {}; });
+    throw new Error('GitHub 업로드 실패: ' + (err.message || res.status));
+  }
+  var data = await res.json();
+  var sha = data.content && data.content.sha;
+  var rawUrl = 'https://raw.githubusercontent.com/' + IG_GITHUB_OWNER + '/' + IG_GITHUB_REPO + '/' + IG_GITHUB_BRANCH + '/' + fileName;
+  return { url: rawUrl, sha: sha, path: fileName };
+}
+
+async function igDeleteFromGitHub(path, sha) {
+  var creds = igGetCreds();
+  var apiUrl = 'https://api.github.com/repos/' + IG_GITHUB_OWNER + '/' + IG_GITHUB_REPO + '/contents/' + path;
+  await fetch(apiUrl, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': 'Bearer ' + creds.githubToken,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      message: 'temp: cleanup instagram upload',
+      sha: sha,
+      branch: IG_GITHUB_BRANCH
+    })
+  });
+}
+
+async function igCreateContainer(userId, token, imageUrl, caption) {
+  var params = new URLSearchParams({
+    image_url: imageUrl,
+    caption: caption || '',
+    access_token: token
+  });
+  var res = await fetch('https://graph.instagram.com/v19.0/' + userId + '/media', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString()
+  });
+  var data = await res.json();
+  if (!res.ok || data.error) throw new Error('컨테이너 생성 실패: ' + (data.error && data.error.message || res.status));
+  return data.id;
+}
+
+async function igPublishContainer(userId, token, creationId) {
+  var params = new URLSearchParams({
+    creation_id: creationId,
+    access_token: token
+  });
+  var res = await fetch('https://graph.instagram.com/v19.0/' + userId + '/media_publish', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString()
+  });
+  var data = await res.json();
+  if (!res.ok || data.error) throw new Error('게시 실패: ' + (data.error && data.error.message || res.status));
+  return data.id;
+}
+
+async function igPostCurrentImage() {
+  var creds = igGetCreds();
+  if (!creds.userId || !creds.token || !creds.githubToken) {
+    igSetStatus('⚠️ 설정 → 인스타그램 연동에서 토큰/ID/GitHub 토큰을 먼저 입력하세요.', 'err');
+    return;
+  }
+
+  var btn = document.getElementById('ig-post-btn');
+  if (btn) btn.disabled = true;
+  var ghFile = null;
+
+  try {
+    igSetStatus('이미지 캡처 중…');
+    var prevSel = p2State.selId;
+    var prevLogo = p2State.selLogoFile;
+    var prevCrop = p2State.cropMode;
+    var prevBgSel = p2State.bgSelected;
+    p2State.selId = null; p2State.selLogoFile = null;
+    p2State.cropMode = false; p2State.bgSelected = false;
+    p2render();
+    var blob = await canvasToBlob(p2Canvas);
+    p2State.selId = prevSel; p2State.selLogoFile = prevLogo;
+    p2State.cropMode = prevCrop; p2State.bgSelected = prevBgSel;
+    p2render();
+
+    igSetStatus('GitHub에 이미지 업로드 중…');
+    ghFile = await igUploadToGitHub(blob);
+
+    // GitHub CDN 캐시 반영 대기
+    await new Promise(function(r) { setTimeout(r, 4000); });
+
+    var caption = (document.getElementById('ai-result') || {}).value || '';
+    igSetStatus('인스타그램 미디어 컨테이너 생성 중…');
+    var creationId = await igCreateContainer(creds.userId, creds.token, ghFile.url, caption);
+
+    // Instagram이 이미지 처리 완료할 때까지 대기 (최대 30초)
+    igSetStatus('인스타그램 이미지 처리 중… (최대 30초)');
+    var ready = false;
+    for (var i = 0; i < 10; i++) {
+      await new Promise(function(r) { setTimeout(r, 3000); });
+      var statusRes = await fetch('https://graph.instagram.com/v19.0/' + creationId + '?fields=status_code&access_token=' + creds.token);
+      var statusData = await statusRes.json();
+      var statusCode = statusData.status_code;
+      if (statusCode === 'FINISHED') { ready = true; break; }
+      if (statusCode === 'ERROR') throw new Error('Instagram 이미지 처리 실패 (ERROR)');
+      igSetStatus('인스타그램 이미지 처리 중… (' + (i + 1) * 3 + '초)');
+    }
+    if (!ready) throw new Error('Instagram 이미지 처리 시간 초과. 잠시 후 다시 시도하세요.');
+
+    igSetStatus('게시 중…');
+    var postId = await igPublishContainer(creds.userId, creds.token, creationId);
+
+    igSetStatus('✅ 게시 완료! 임시 파일 정리 중…', 'ok');
+    await igDeleteFromGitHub(ghFile.path, ghFile.sha);
+    igSetStatus('✅ 게시 완료!', 'ok');
+  } catch(e) {
+    // 게시 실패해도 임시 파일 정리 시도
+    if (ghFile) igDeleteFromGitHub(ghFile.path, ghFile.sha).catch(function() {});
+    igSetStatus('❌ ' + e.message, 'err');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+(function() {
+  igShowSection();
+
+  var postBtn = document.getElementById('ig-post-btn');
+  if (postBtn) postBtn.addEventListener('click', igPostCurrentImage);
+
+})();
+
