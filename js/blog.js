@@ -122,6 +122,40 @@ function blogCleanJson(text) {
   return m ? m[0] : s;
 }
 
+// 잘린 JSON 복구 — 미완성 문자열·배열·객체를 닫아 파싱 가능하게 만듦
+function blogRepairJson(text) {
+  var s = text.trim().replace(/^```json\s*/,'').replace(/^```\s*/,'').trim();
+  var start = s.indexOf('{');
+  if (start < 0) return null;
+  s = s.slice(start);
+  var out = '';
+  var stack = [];      // 열린 괄호 추적: '{' 또는 '['
+  var inStr = false;
+  var esc = false;
+  for (var i = 0; i < s.length; i++) {
+    var ch = s[i];
+    out += ch;
+    if (inStr) {
+      if (esc) { esc = false; }
+      else if (ch === '\\') { esc = true; }
+      else if (ch === '"') { inStr = false; }
+      continue;
+    }
+    if (ch === '"') { inStr = true; }
+    else if (ch === '{' || ch === '[') { stack.push(ch); }
+    else if (ch === '}' || ch === ']') { stack.pop(); }
+  }
+  // 문자열이 열린 채로 끝났으면 닫기
+  if (inStr) out += '"';
+  // 트레일링 쉼표 제거
+  out = out.replace(/,\s*$/, '');
+  // 열린 괄호들 역순으로 닫기
+  for (var j = stack.length - 1; j >= 0; j--) {
+    out += (stack[j] === '{') ? '}' : ']';
+  }
+  try { return JSON.parse(out); } catch(e) { return null; }
+}
+
 function blogParseJson(text) {
   var cleaned = blogCleanJson(text);
   try { return JSON.parse(cleaned); } catch(e1) {}
@@ -336,8 +370,21 @@ async function blogFinalize(triggerBtn) {
       + '- structure(구조 유형)를 유지한다.\n'
       + '- 결론은 ctaDirection 방향으로 마무리한다.\n'
       + '- 추가 수정 요청이 설계도와 충돌하지 않는 한 설계도를 유지한다.';
-    var raw = await blogCall(applyAcademyVars(BLOG_FINAL_SYSTEM), userMsg, 4096);
-    var result = blogParseJson(raw);
+    var raw = await blogCall(applyAcademyVars(BLOG_FINAL_SYSTEM), userMsg, 8192);
+    var result;
+    try {
+      result = blogParseJson(raw);
+    } catch(parseErr) {
+      // 응답이 잘려 파싱 실패 → 더 큰 토큰으로 1회 재시도
+      raw = await blogCall(applyAcademyVars(BLOG_FINAL_SYSTEM), userMsg, 16000);
+      try {
+        result = blogParseJson(raw);
+      } catch(parseErr2) {
+        // 재시도도 실패 → 잘린 JSON 복구 시도 (최후의 안전망)
+        result = blogRepairJson(raw);
+        if (!result) throw parseErr2;
+      }
+    }
     blogState.result = result;
     blogRenderPost(result);
     blogRenderImages(result.images || []);
