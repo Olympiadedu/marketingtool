@@ -215,7 +215,7 @@ function blogRenderProfileSelect(profiles, activeId) {
   var sel = document.getElementById('blog-profile-select');
   if (!sel) return;
   sel.innerHTML = profiles.map(function(p) {
-    return '<option value="' + p.id + '"' + (p.id === activeId ? ' selected' : '') + '>' + blogEsc(p.name || '이름 없는 프로필') + '</option>';
+    return '<option value="' + p.id + '"' + (p.id === activeId ? ' selected' : '') + '>' + blogEsc(p.name) + '</option>';
   }).join('');
 }
 
