@@ -214,6 +214,20 @@ async function gasGetRecentPosts(n) {
   } catch(e) { return []; }
 }
 
+// 네이버 블로그 URL의 본문을 GAS 경유로 수집 (브라우저 CORS 우회, 참고 URL 기능용)
+// GAS 미설정/실패/네이버 블로그가 아닌 경우 null 반환 — 호출부에서 조용히 폴백 처리
+async function gasFetchNaverBlogContent(url) {
+  var cfg = getGasConfig();
+  if (!cfg.url || !cfg.token) return null;
+  if (!/blog\.naver\.com/.test(url)) return null;
+  try {
+    var reqUrl = cfg.url + '?action=fetchNaverBlog&token=' + encodeURIComponent(cfg.token) + '&url=' + encodeURIComponent(url);
+    var res = await fetch(reqUrl);
+    var json = await res.json();
+    return (json && json.ok && json.content) ? json.content : null;
+  } catch(e) { return null; }
+}
+
 async function gasTestConnection() {
   var urlEl = document.getElementById('set-gas-url');
   var tokenEl = document.getElementById('set-gas-token');

@@ -2,9 +2,14 @@ var blogState = { draft: null, result: null, step: 1 };
 // 모델은 설정 페이지의 getModel('claude') 로 동적 참조
 var BLOG_GEMINI_FALLBACK = ['gemini-2.5-flash','gemini-3.5-flash','gemini-3-flash','gemini-3.1-flash-lite','gemini-2.5-flash-lite'];
 
+// ── 교육청 표시광고 심의 대상 금지어 (감지 시 대체 표현으로 필터링) ──
+// 복합어(선행학습)를 먼저 검사해야 "사전학습학습" 같은 중복 치환을 피할 수 있음 — 순서 중요
+var BLOG_BANNED_WORDS = ['선행학습', '선행', '예비'];
+var BLOG_WORD_REPLACEMENTS = { '선행학습': '사전학습', '선행': '사전', '예비': '신입' };
+
 // ── 유형별 특화 프롬프트 ──────────────────────────────────────────
 var BLOG_TYPE_RULES = {
-  '교육칼럼': '## [글 유형: 교육칼럼·학습법]\n제목 패턴: "[올림피아드교육 교육칼럼] [주제]" 또는 "[학습 키워드], [결과/효과]"\n권장 구조(하나 선택):\n- 고민해결형: 학부모·학생 고민 → 원인/배경 → 해결 방법 → 학원 철학 연결 → CTA\n- 비교설명형: 일반적 방식 → 놓치기 쉬운 점 → 더 나은 접근 → CTA\n- 스토리텔링형: 공감 상황 → 전환점 → 변화·성과 → 브랜드 메시지 → CTA\n특화 지시: 학원 슬로건·교육 철학을 자연스럽게 녹일 것. 교과서식 결론("열심히 하면 됩니다") 금지.',
+  '교육칼럼': '## [글 유형: 교육칼럼·학습법]\n제목 패턴: "[올림피아드교육 교육칼럼] [주제]" 또는 "[학습 키워드], [결과/효과]"\n권장 구조(하나 선택):\n- 고민해결형: 학부모·학생 고민 → 원인/배경 → 해결 방법 → 학원 철학 연결 → CTA\n- 비교설명형: 일반적 방식 → 놓치기 쉬운 점 → 더 나은 접근 → CTA\n- 스토리텔링형: 공감 상황 → 전환점 → 변화·성과 → 브랜드 메시지 → CTA\n특화 지시: 학원 주요 키워드·교육 철학을 자연스럽게 녹일 것. 교과서식 결론("열심히 하면 됩니다") 금지.',
 
   '입시정보': '## [글 유형: 입시정보·전형]\n제목 패턴: "[연도]학년도 [학교명] 입학 전형! [핵심 정보 2~3가지] 🔎"\n권장 구조: 핵심 요약(✅ 항목) → 모집인원·일정 → 지원자격 → 전형방법 → 최근 경쟁률 → CTA\n특화 지시: 정확한 숫자·날짜 우선. 핵심 요약 블록(✅)으로 한눈에 파악 가능하게. 학원 연결은 마지막에만.',
 
@@ -32,7 +37,7 @@ var BLOG_DRAFT_STYLE_DEFAULT = [
 ].join('\n');
 
 // ── 코드 고정 기술 프롬프트 (편집 불가, 자동 조립) ──────────────
-var BLOG_DRAFT_TECHNICAL = '당신은 {{학원명}} 공식 블로그 전문 에디터입니다.\n\n## [학원 정보]\n- 학원명: {{학원명}} (단축명: {{단축명}})\n- 슬로건: "{{슬로건}}"\n- 과목: {{과목}}\n- 주요 대상: {{대상}}\n- 웹사이트: {{웹사이트}}\n\n{{TYPE_RULES}}\n\n## [원장님 글쓰기 스타일 지시]\n{{USER_STYLE}}\n\n## [출력 형식]\n반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 포함하지 마세요.\n\n{"title":"포스팅 제목 (25~45자, SEO 키워드 앞부분 배치)","structure":"선택한 구조 유형명","intro":"도입부 (2~3문장)","sections":[{"heading":"소제목","summary":"이 섹션에서 다룰 내용 요약 (3~5문장)","role":"이 섹션이 글 전체에서 맡는 역할 (예: 공감 형성, 문제 제기, 원인 분석, 해결책 제시, 신뢰 근거, 학원 연결)"}],"conclusion":"마무리 멘트 (1~2문장)","ctaDirection":"결론에서 독자를 어떻게 행동으로 유도할지 방향 (예: 상담 전화 유도, 진단평가 안내, 방문 권유)","tags":["키워드태그1","키워드태그2","키워드태그3"]}\n\n규칙: 섹션 2~4개 / 브랜드 슬로건 자연스럽게 녹여낼 것 / 각 섹션 role은 서로 달라야 하며 글의 논리 흐름을 만들 것';
+var BLOG_DRAFT_TECHNICAL = '당신은 {{학원명}} 공식 블로그 전문 에디터입니다.\n\n## [학원 정보]\n- 학원명: {{학원명}}\n- 주요 키워드: {{키워드}}\n- 과목: {{과목}}\n- 주요 대상: {{대상}}\n- 웹사이트: {{웹사이트}}\n\n{{TYPE_RULES}}\n\n## [원장님 글쓰기 스타일 지시]\n{{USER_STYLE}}\n\n## [출력 형식]\n반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 포함하지 마세요.\n\n{"title":"포스팅 제목 (25~45자, SEO 키워드 앞부분 배치)","structure":"선택한 구조 유형명","intro":"도입부 (2~3문장)","sections":[{"heading":"소제목","summary":"이 섹션에서 다룰 내용 요약 (3~5문장)","role":"이 섹션이 글 전체에서 맡는 역할 (예: 공감 형성, 문제 제기, 원인 분석, 해결책 제시, 신뢰 근거, 학원 연결)"}],"conclusion":"마무리 멘트 (1~2문장)","ctaDirection":"결론 CTA 방향 — 반드시 아래 3가지 중 하나만 선택: 상담 신청 / 학력진단평가 신청 / 설명회 참석. 글의 주제·맥락에 가장 적합한 것 하나를 선택할 것","tags":["키워드태그1","키워드태그2","키워드태그3"]}\n\n규칙: 섹션 2~4개 / 학원 주요 키워드를 자연스럽게 녹여낼 것 / 각 섹션 role은 서로 달라야 하며 글의 논리 흐름을 만들 것';
 
 // 하위 호환용
 var BLOG_DRAFT_BASE = BLOG_DRAFT_STYLE_DEFAULT;
@@ -46,7 +51,7 @@ function getBlogDraftSystem(type) {
     .replace('{{USER_STYLE}}', userStyle);
 }
 
-var BLOG_FINAL_SYSTEM = '당신은 {{학원명}} 공식 블로그 전문 에디터입니다.\n제공된 초안과 변형 요소를 바탕으로 완성된 네이버 블로그 본문을 작성합니다.\n\n## [브랜드 정보]\n- 학원명: {{학원명}} (단축명: {{단축명}})\n- 슬로건: "{{슬로건}}"\n- 과목: {{과목}}\n- 주요 대상: {{대상}}\n- 웹사이트: {{웹사이트}}\n\n## [말투 & 표현 규칙]\n- 경칭: 학부모 → "학부모님", 학생 → "학생들", "우리 학생들"\n- 어미: 격식체+친근 혼합 ("~합니다", "~해요", "~이에요", "~이랍니다")\n- 이모지: 단락당 1~2개 자연스럽게 (💚💡📚✨ 등)\n- 줄바꿈: 모바일 가독성 위해 2~3문장 후 빈 줄\n- SEO 키워드: 원형 그대로 제목·첫 단락에 자연스럽게\n\n## [유사도 방지]\n- 초안에서 선택한 구조 유형을 유지합니다.\n- "주목해 주세요", "꼭 확인해 보세요", "적극 추천합니다", "지금 바로", "고민이신 학부모님이라면" 같은 표현은 한 글에 1회 이상 반복하지 않습니다.\n- 이번 글만의 구체적 상황·사례·포인트가 본문에 명확히 드러나야 합니다.\n\n## [AI 티 방지 규칙 — 반드시 준수]\nS1 절대 금지 (한 번이라도 나오면 수정):\n- 연결어미 뒤 쉼표 금지: "하지만," "그리고," "그러나," → 쉼표 삭제\n- AI 상투구 금지: "결론적으로", "혁신적인", "시대가 도래했다", "주목할 만하다", "~의 가능성을 열어준다", "새로운 패러다임"\n- 번역투 금지: "~에 대해" → "~를", "~를 통해" → "~로", "가지고 있다" → "있다", 이중 피동("~되어지다")\n\nS2 같은 패턴 3회 이상 금지:\n- 볼드(**) 남용 — 단락당 1곳 이하\n- 정도부사 반복 — "매우", "정말", "굉장히" 연속 사용 금지\n- 문두 접속사 남발 — "하지만", "그러나", "이는", "즉" 연속 금지\n- 기계적 나열 — "첫째/둘째/셋째" → 산문으로 녹이기\n- 헤징 과다 — "~할 수 있을 것으로 보인다", "~라고 할 수 있다" 반복 금지\n- "~것이다", "~할 필요가 있다" 반복 금지\n\n리듬: 단문(10자 이하)과 장문(30자 이상)을 섞어 단조로움 방지. 종결어미 다양화(~합니다 / ~해요 / ~이에요 / ~이랍니다 골고루).\n\n## [글 마지막 연락처 블록]\n글 마지막에 아래 형식으로 연락처 블록을 반드시 포함합니다.\n{{학원명}}\n📞 {{연락처}}\n🗺️ 네이버지도: {{지도링크}}\n🌐 {{웹사이트}}\n연락처나 링크가 비어 있는 항목은 생략합니다.\n\n반드시 아래 JSON 형식으로만 응답하세요.\n\n{"title":"최종 포스팅 제목 (25~45자, SEO 키워드 앞부분)","intro":"도입부 본문 (초안 도입부 기반, 이번 글 방식으로 시작)","sections":[{"heading":"소제목","body":"완성된 본문 내용. 줄바꿈은 \\n\\n 사용"}],"conclusion":"마무리 본문 + CTA 블록 (CTA 유형에 따라 작성)","tags":["태그1","태그2","태그3","태그4","태그5"],"images":[{"id":"thumbnail","placement":"포스팅 최상단 썸네일","placement_detail":"글 제목 바로 아래 대표 이미지","prompt":"Warm and inviting Korean private academy blog thumbnail. [Subject] Two Korean middle school students sitting at clean wooden desks, intensely focused on open textbooks, a passionate teacher pointing to explanations on a whiteboard behind them. [Setting] Bright modern Korean classroom, large windows with warm natural daylight streaming in, neat bookshelves and organized study materials visible in background. [Style] Photorealistic editorial photography, crisp sharp focus on students. [Lighting] Soft warm natural light from left-side windows, gentle diffused shadows, bright airy feel. [Colors] Warm cream and soft teal palette with white accents — clean, professional, welcoming. [Composition] Medium shot from slightly elevated angle, subjects placed in lower half or sides of frame, upper-center area intentionally left with soft blurred or simple background. [Details] Students in school uniforms, pencils and color-coded notebooks on desks, engaged and focused expressions, calm study atmosphere. Keep the central horizontal band of the image visually clean and uncluttered — no faces, hands, or busy details in that zone, as Korean text will be overlaid there. Square 1:1 format.","overlay_text":"썸네일 텍스트 문구","description":"이 썸네일이 표현하는 장면과 분위기를 한국어로 2~3문장으로 설명"},{"id":"body_1","placement":"삽입 위치","placement_detail":"이 이미지가 필요한 이유와 위치","prompt":"A detailed realistic scene directly illustrating the specific topic and message of this blog section. [Subject] Clearly describe the central subject — people, objects, or scenario that best represents this section content. [Setting] Specific realistic environment or background that fits the section context and Korean private academy theme. [Style] Photorealistic photography or clean professional digital illustration with editorial quality. [Lighting] Soft natural or warm studio lighting, bright and clear. [Colors] Consistent warm academic tones — cream, teal, soft blues — matching a professional educational atmosphere. [Composition] Clear purposeful focal point, balanced framing, uncluttered background that emphasizes the subject. [Details] Include specific realistic details relevant to the section: props, expressions, actions, environmental elements that reinforce the message. No text, words, letters, or signs visible anywhere in image. Square 1:1 format.","overlay_text":null,"description":"이미지 설명"}]}\n\n이미지 규칙: thumbnail 1개 필수. 본문 이미지 1~3개. 모두 1:1 정사각형.\nprompt 작성 필수 규칙 — 반드시 영어로, 최소 120단어 이상. DALL-E 3 최적화 구조를 반드시 준수할 것: [Subject] → [Setting] → [Style] → [Lighting] → [Colors] → [Composition] → [Details] → Square 1:1 format.\nthumbnail prompt 마지막 필수 지시: Keep the central horizontal band of the image visually clean and simple — no faces or busy details there, as Korean text will be overlaid. Subjects should be placed in lower portion or sides of frame.\n본문 이미지 prompt 마지막 필수 지시: No text or writing visible anywhere in image.\n블로그 글의 해당 섹션 주제와 내용을 정확히 반영하여 구체적이고 사실적으로 작성할 것. 추상적·일반적 표현 금지.\n글자 수: 요청된 분량에 맞게 (공백 제외)';
+var BLOG_FINAL_SYSTEM = '당신은 {{학원명}} 공식 블로그 전문 에디터입니다.\n제공된 초안과 변형 요소를 바탕으로 완성된 네이버 블로그 본문을 작성합니다.\n\n## [브랜드 정보]\n- 학원명: {{학원명}}\n- 주요 키워드: {{키워드}}\n- 과목: {{과목}}\n- 주요 대상: {{대상}}\n- 웹사이트: {{웹사이트}}\n\n## [말투 & 표현 규칙]\n- 경칭: 학부모 → "학부모님", 학생 → "학생들", "우리 학생들"\n- 어미: 격식체+친근 혼합 ("~합니다", "~해요", "~이에요", "~이랍니다")\n- 이모지: 단락당 1~2개 자연스럽게 (💚💡📚✨ 등)\n- 줄바꿈: 모바일 가독성 위해 2~3문장 후 빈 줄\n- SEO 키워드: 원형 그대로 제목·첫 단락에 자연스럽게\n\n## [유사도 방지]\n- 초안에서 선택한 구조 유형을 유지합니다.\n- "주목해 주세요", "꼭 확인해 보세요", "적극 추천합니다", "지금 바로", "고민이신 학부모님이라면" 같은 표현은 한 글에 1회 이상 반복하지 않습니다.\n- 이번 글만의 구체적 상황·사례·포인트가 본문에 명확히 드러나야 합니다.\n\n## [AI 티 방지 규칙 — 반드시 준수]\nS1 절대 금지 (한 번이라도 나오면 수정):\n- 연결어미 뒤 쉼표 금지: "하지만," "그리고," "그러나," → 쉼표 삭제\n- AI 상투구 금지: "결론적으로", "혁신적인", "시대가 도래했다", "주목할 만하다", "~의 가능성을 열어준다", "새로운 패러다임"\n- 번역투 금지: "~에 대해" → "~를", "~를 통해" → "~로", "가지고 있다" → "있다", 이중 피동("~되어지다")\n\nS2 같은 패턴 3회 이상 금지:\n- 볼드(**) 남용 — 단락당 1곳 이하\n- 정도부사 반복 — "매우", "정말", "굉장히" 연속 사용 금지\n- 문두 접속사 남발 — "하지만", "그러나", "이는", "즉" 연속 금지\n- 기계적 나열 — "첫째/둘째/셋째" → 산문으로 녹이기\n- 헤징 과다 — "~할 수 있을 것으로 보인다", "~라고 할 수 있다" 반복 금지\n- "~것이다", "~할 필요가 있다" 반복 금지\n\n리듬: 단문(10자 이하)과 장문(30자 이상)을 섞어 단조로움 방지. 종결어미 다양화(~합니다 / ~해요 / ~이에요 / ~이랍니다 골고루).\n\n## [금지 표현 — 교육청 표시광고 심의 대상]\n아래 단어는 제목·본문·태그 어디에도 어떤 형태로도 사용하지 않습니다. 반드시 대체 표현으로 재구성합니다.\n- "선행" (선행학습 등 포함) → "사전학습" 등으로 대체\n- "예비" (예비중1 등 포함) → "신입" 또는 문맥에 맞게 자연스럽게 재구성\n\n## [글 마지막 연락처 블록]\n글 마지막에 아래 형식으로 연락처 블록을 반드시 포함합니다.\n{{학원명}}\n📞 {{연락처}}\n🗺️ 네이버지도: {{지도링크}}\n🌐 {{웹사이트}}\n연락처나 링크가 비어 있는 항목은 생략합니다.\n\n반드시 아래 JSON 형식으로만 응답하세요.\n\n{"title":"최종 포스팅 제목 (25~45자, SEO 키워드 앞부분)","intro":"도입부 본문 (초안 도입부 기반, 이번 글 방식으로 시작)","sections":[{"heading":"소제목","body":"완성된 본문 내용. 줄바꿈은 \\n\\n 사용"}],"conclusion":"마무리 본문 + CTA 블록 (CTA 유형에 따라 작성)","tags":["태그1","태그2","태그3","태그4","태그5"],"images":[{"id":"thumbnail","placement":"포스팅 최상단 썸네일","placement_detail":"글 제목 바로 아래 대표 이미지","prompt":"Warm and inviting Korean private academy blog thumbnail. [Subject] Two Korean middle school students sitting at clean wooden desks, intensely focused on open textbooks, a passionate teacher pointing to explanations on a whiteboard behind them. [Setting] Bright modern Korean classroom, large windows with warm natural daylight streaming in, neat bookshelves and organized study materials visible in background. [Style] Photorealistic editorial photography, crisp sharp focus on students. [Lighting] Soft warm natural light from left-side windows, gentle diffused shadows, bright airy feel. [Colors] Warm cream and soft teal palette with white accents — clean, professional, welcoming. [Composition] Medium shot from slightly elevated angle, subjects placed in lower half or sides of frame, upper-center area intentionally left with soft blurred or simple background. [Details] Students in school uniforms, pencils and color-coded notebooks on desks, engaged and focused expressions, calm study atmosphere. Keep the central horizontal band of the image visually clean and uncluttered — no faces, hands, or busy details in that zone, as Korean text will be overlaid there. Square 1:1 format.","overlay_text":"썸네일 텍스트 문구","description":"이 썸네일이 표현하는 장면과 분위기를 한국어로 2~3문장으로 설명"},{"id":"body_1","placement":"삽입 위치","placement_detail":"이 이미지가 필요한 이유와 위치","prompt":"A detailed realistic scene directly illustrating the specific topic and message of this blog section. [Subject] Clearly describe the central subject — people, objects, or scenario that best represents this section content. [Setting] Specific realistic environment or background that fits the section context and Korean private academy theme. [Style] Photorealistic photography or clean professional digital illustration with editorial quality. [Lighting] Soft natural or warm studio lighting, bright and clear. [Colors] Consistent warm academic tones — cream, teal, soft blues — matching a professional educational atmosphere. [Composition] Clear purposeful focal point, balanced framing, uncluttered background that emphasizes the subject. [Details] Include specific realistic details relevant to the section: props, expressions, actions, environmental elements that reinforce the message. No text, words, letters, or signs visible anywhere in image. Square 1:1 format.","overlay_text":null,"description":"이미지 설명"}]}\n\n이미지 규칙: thumbnail 1개 필수. 본문 이미지 1~3개. 모두 1:1 정사각형.\nprompt 작성 필수 규칙 — 반드시 영어로, 최소 120단어 이상. DALL-E 3 최적화 구조를 반드시 준수할 것: [Subject] → [Setting] → [Style] → [Lighting] → [Colors] → [Composition] → [Details] → Square 1:1 format.\nthumbnail prompt 마지막 필수 지시: Keep the central horizontal band of the image visually clean and simple — no faces or busy details there, as Korean text will be overlaid. Subjects should be placed in lower portion or sides of frame.\n본문 이미지 prompt 마지막 필수 지시: No text or writing visible anywhere in image.\n블로그 글의 해당 섹션 주제와 내용을 정확히 반영하여 구체적이고 사실적으로 작성할 것. 추상적·일반적 표현 금지.\n글자 수: 요청된 분량에 맞게 (공백 제외)';
 
 function autoResizeBlogTextarea(el) {
   el.style.height = 'auto';
@@ -163,36 +168,138 @@ function blogParseJson(text) {
   throw new Error('JSON 파싱 실패');
 }
 
-function loadAcademyProfile() {
-  try { return JSON.parse(localStorage.getItem('mtt_academy_profile') || '{}'); } catch(e) { return {}; }
+var BLOG_PROFILE_FIELDS = ['name','subject','target','keywords','website','phone','map'];
+
+function blogGenProfileId() {
+  return 'p_' + Math.random().toString(36).slice(2, 10);
 }
 
-function saveAcademyProfile() {
-  var p = {
-    name:    (document.getElementById('acad-name')    || {}).value || '',
-    short:   (document.getElementById('acad-short')   || {}).value || '',
-    subject: (document.getElementById('acad-subject') || {}).value || '',
-    target:  (document.getElementById('acad-target')  || {}).value || '',
-    slogan:  (document.getElementById('acad-slogan')  || {}).value || '',
-    website: (document.getElementById('acad-website') || {}).value || '',
-    phone:   (document.getElementById('acad-phone')   || {}).value || '',
-    map:     (document.getElementById('acad-map')     || {}).value || ''
-  };
-  localStorage.setItem('mtt_academy_profile', JSON.stringify(p));
+// ── 프로필 목록 관리 (다중 학원 지원) ──────────────────────────────
+function loadAcademyProfiles() {
+  var raw = localStorage.getItem('mtt_academy_profiles');
+  if (raw) {
+    try { var arr = JSON.parse(raw); if (Array.isArray(arr)) return arr; } catch(e) {}
+  }
+  // 마이그레이션: 기존 단일 프로필(mtt_academy_profile)이 있으면 배열로 변환
+  var legacy = null;
+  try { legacy = JSON.parse(localStorage.getItem('mtt_academy_profile') || 'null'); } catch(e) {}
+  // 구버전 필드(단축명 short, 슬로건 slogan) → 신규 필드로 이전 (슬로건 텍스트를 키워드로 승계)
+  var profiles = (legacy && legacy.name) ? [Object.assign({ id: blogGenProfileId() }, legacy, { keywords: legacy.keywords || legacy.slogan || '' })] : [];
+  profiles.forEach(function(p) { delete p.short; delete p.slogan; });
+  localStorage.setItem('mtt_academy_profiles', JSON.stringify(profiles));
+  return profiles;
+}
+
+function saveAcademyProfiles(profiles) {
+  localStorage.setItem('mtt_academy_profiles', JSON.stringify(profiles));
+}
+
+function getActiveProfileId() {
+  return localStorage.getItem('mtt_academy_active_id') || '';
+}
+
+function setActiveProfileId(id) {
+  localStorage.setItem('mtt_academy_active_id', id);
+}
+
+// 현재 활성 프로필 반환 (applyAcademyVars 등 기존 코드 호환용 진입점)
+function loadAcademyProfile() {
+  var profiles = loadAcademyProfiles();
+  if (!profiles.length) return {};
+  var activeId = getActiveProfileId();
+  var p = profiles.filter(function(x) { return x.id === activeId; })[0];
+  return p || profiles[0];
+}
+
+function blogRenderProfileSelect(profiles, activeId) {
+  var sel = document.getElementById('blog-profile-select');
+  if (!sel) return;
+  sel.innerHTML = profiles.map(function(p) {
+    return '<option value="' + p.id + '"' + (p.id === activeId ? ' selected' : '') + '>' + blogEsc(p.name || '이름 없는 프로필') + '</option>';
+  }).join('');
+}
+
+function blogLoadProfileToForm(p) {
+  BLOG_PROFILE_FIELDS.forEach(function(k) {
+    var el = document.getElementById('acad-' + k);
+    if (el) el.value = p[k] || '';
+  });
   var statusEl = document.getElementById('blog-academy-status');
   if (statusEl) statusEl.textContent = p.name ? '✓ 설정됨' : '처음 한 번만 입력';
 }
 
-function initAcademyProfile() {
-  var p = loadAcademyProfile();
-  var fields = ['name','short','subject','target','slogan','website','phone','map'];
-  fields.forEach(function(k) {
-    var el = document.getElementById('acad-' + k);
-    if (el && p[k]) el.value = p[k];
+// 폼 입력 시 현재 활성 프로필에 저장
+function saveAcademyProfile() {
+  var profiles = loadAcademyProfiles();
+  var activeId = getActiveProfileId();
+  var idx = -1;
+  for (var i = 0; i < profiles.length; i++) { if (profiles[i].id === activeId) { idx = i; break; } }
+  var p = { id: activeId || blogGenProfileId() };
+  BLOG_PROFILE_FIELDS.forEach(function(k) {
+    p[k] = (document.getElementById('acad-' + k) || {}).value || '';
   });
+  if (idx >= 0) profiles[idx] = p; else profiles.push(p);
+  saveAcademyProfiles(profiles);
+  setActiveProfileId(p.id);
+  blogRenderProfileSelect(profiles, p.id);
   var statusEl = document.getElementById('blog-academy-status');
-  if (statusEl && p.name) statusEl.textContent = '✓ 설정됨';
-  if (p.name) {
+  if (statusEl) statusEl.textContent = p.name ? '✓ 설정됨' : '처음 한 번만 입력';
+}
+
+// 저장 버튼 클릭 — 즉시 저장 + 잠깐 피드백 표시 후 원래 상태 문구로 복귀
+function blogSaveProfileClick() {
+  saveAcademyProfile();
+  var statusEl = document.getElementById('blog-academy-status');
+  if (!statusEl) return;
+  var restore = statusEl.textContent;
+  statusEl.textContent = '✓ 저장되었습니다';
+  setTimeout(function() { statusEl.textContent = restore; }, 1500);
+}
+
+function blogSelectProfile(id) {
+  setActiveProfileId(id);
+  blogLoadProfileToForm(loadAcademyProfile());
+}
+
+function blogAddProfile() {
+  var profiles = loadAcademyProfiles();
+  var p = { id: blogGenProfileId() };
+  BLOG_PROFILE_FIELDS.forEach(function(k) { p[k] = ''; });
+  profiles.push(p);
+  saveAcademyProfiles(profiles);
+  setActiveProfileId(p.id);
+  blogRenderProfileSelect(profiles, p.id);
+  blogLoadProfileToForm(p);
+  var nameInput = document.getElementById('acad-name');
+  if (nameInput) nameInput.focus();
+}
+
+function blogDeleteProfile() {
+  var profiles = loadAcademyProfiles();
+  if (profiles.length <= 1) { alert('최소 1개의 프로필은 유지해야 합니다.'); return; }
+  var activeId = getActiveProfileId();
+  var p = profiles.filter(function(x) { return x.id === activeId; })[0];
+  if (!confirm((p && p.name ? p.name : '이 프로필') + '을(를) 삭제하시겠습니까?')) return;
+  profiles = profiles.filter(function(x) { return x.id !== activeId; });
+  saveAcademyProfiles(profiles);
+  setActiveProfileId(profiles[0].id);
+  blogRenderProfileSelect(profiles, profiles[0].id);
+  blogLoadProfileToForm(profiles[0]);
+}
+
+function initAcademyProfile() {
+  var profiles = loadAcademyProfiles();
+  if (!profiles.length) {
+    var p = { id: blogGenProfileId() };
+    BLOG_PROFILE_FIELDS.forEach(function(k) { p[k] = ''; });
+    profiles = [p];
+    saveAcademyProfiles(profiles);
+    setActiveProfileId(p.id);
+  }
+  if (!getActiveProfileId()) setActiveProfileId(profiles[0].id);
+  blogRenderProfileSelect(profiles, getActiveProfileId());
+  blogLoadProfileToForm(loadAcademyProfile());
+  if (loadAcademyProfile().name) {
     var body = document.getElementById('blog-academy-body');
     if (body) body.style.display = 'none';
     var tog = document.getElementById('blog-academy-toggle');
@@ -213,9 +320,8 @@ function applyAcademyVars(template) {
   var p = loadAcademyProfile();
   return template
     .replace(/\{\{학원명\}\}/g,   p.name    || '학원')
-    .replace(/\{\{단축명\}\}/g,   p.short   || p.name || '학원')
     .replace(/\{\{운영사\}\}/g,   p.company || '')
-    .replace(/\{\{슬로건\}\}/g,   p.slogan  || '')
+    .replace(/\{\{키워드\}\}/g,   p.keywords || '')
     .replace(/\{\{과목\}\}/g,     p.subject || '수학')
     .replace(/\{\{대상\}\}/g,     p.target  || '학부모·학생')
     .replace(/\{\{웹사이트\}\}/g, p.website || '')
@@ -230,7 +336,17 @@ function blogBuildInputText() {
   if (inp.mood)  parts.push('글의 분위기: ' + inp.mood);
   if (inp.refUrl) {
     var urls = inp.refUrl.split('\n').map(function(u){ return u.trim(); }).filter(function(u){ return u; });
-    if (urls.length) parts.push('참고 URL:\n' + urls.map(function(u,i){ return (i+1)+'. '+u; }).join('\n'));
+    if (urls.length) {
+      var refContents = inp.refContents || {};
+      var refLines = urls.map(function(u, i) {
+        var excerpt = refContents[u];
+        if (excerpt) {
+          return (i+1) + '. ' + u + '\n   [본문 발췌 — 참고용, 그대로 베끼지 말고 주제·스타일 참고만 할 것]\n   ' + excerpt.replace(/\n/g, '\n   ');
+        }
+        return (i+1) + '. ' + u;
+      });
+      parts.push('참고 URL:\n' + refLines.join('\n'));
+    }
   }
   if (inp.point)   parts.push('피하고 싶은 것: ' + inp.point);
   parts.push('---');
@@ -241,6 +357,41 @@ function blogBuildInputText() {
   if (inp.keywords)  parts.push('검색 키워드: ' + inp.keywords);
   if (inp.core)      parts.push('핵심 메시지: ' + inp.core);
   return parts.join('\n');
+}
+
+function blogShowFreeAlert(msg) {
+  var el = document.getElementById('blog-free-alert');
+  if (el) { el.textContent = msg; el.className = 'blog-alert err show'; }
+}
+function blogHideFreeAlert() {
+  var el = document.getElementById('blog-free-alert');
+  if (el) { el.className = 'blog-alert err'; el.textContent = ''; }
+}
+
+// 자유 서술 → AI 분석 (보조 기능) — 기존 주제/키워드 입력을 대체하지 않고 자동 채움만 수행
+async function blogAnalyzeFreeText(btn) {
+  var input = (document.getElementById('blog-free-desc') || {}).value || '';
+  input = input.trim();
+  if (!input) { blogShowFreeAlert('자유 서술 내용을 입력해주세요.'); return; }
+  var claudeKey = getApiKey('claude');
+  var geminiKey = getApiKey('gemini');
+  if (!claudeKey && !geminiKey) { blogShowFreeAlert('API 설정에서 Claude 또는 Gemini 키를 먼저 입력해주세요.'); return; }
+  blogHideFreeAlert();
+  var orig = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = '분석 중...'; }
+  try {
+    var systemPrompt = '당신은 블로그 기획 보조 도구입니다. 사용자의 자유 서술을 분석해 블로그 글 작성에 필요한 핵심 정보를 추출합니다.\n\n반드시 아래 JSON 형식으로만 응답하세요.\n{"topic":"글의 핵심 주제 한 문장 (25~50자)","keywords":"검색 키워드 3~5개, 쉼표로 구분"}';
+    var raw = await blogCall(systemPrompt, input, 500);
+    var parsed = blogParseJson(raw);
+    if (parsed.topic) document.getElementById('blog-topic').value = parsed.topic;
+    if (parsed.keywords) document.getElementById('blog-keywords').value = parsed.keywords;
+    if (btn) { btn.textContent = '✅ 반영됨'; setTimeout(function() { btn.textContent = orig; }, 1500); }
+  } catch(e) {
+    blogShowFreeAlert(e.message || '분석 중 오류가 발생했습니다.');
+    if (btn) btn.textContent = orig;
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 async function blogGenerateDraft() {
@@ -263,8 +414,22 @@ async function blogGenerateDraft() {
   };
   var btn = document.getElementById('btn-draft');
   btn.disabled = true;
-  document.getElementById('blog-loading1').classList.add('show');
+  var loadingEl = document.getElementById('blog-loading1');
+  loadingEl.classList.add('show');
   try {
+    // 참고 URL 중 네이버 블로그는 GAS 경유로 본문 발췌 수집 (실패 시 URL만 사용, 조용히 폴백)
+    if (blogState.inputs.refUrl) {
+      var loadingText = loadingEl.querySelector('.blog-loading-label');
+      if (loadingText) loadingText.textContent = '참고 URL 확인 중...';
+      var refUrls = blogState.inputs.refUrl.split('\n').map(function(u){ return u.trim(); }).filter(function(u){ return u; });
+      var refContents = {};
+      await Promise.all(refUrls.map(async function(u) {
+        var content = await gasFetchNaverBlogContent(u);
+        if (content) refContents[u] = content.substring(0, 700);
+      }));
+      blogState.inputs.refContents = refContents;
+      if (loadingText) loadingText.textContent = '초안을 생성 중이에요...';
+    }
     // 구글 시트에서 유사 글 조회 → 유사 방지 지시 삽입
     var allPosts = await gasGetRecentPosts(50);
     var systemPrompt = applyAcademyVars(getBlogDraftSystem(blogState.inputs.type));
@@ -385,9 +550,11 @@ async function blogFinalize(triggerBtn) {
         if (!result) throw parseErr2;
       }
     }
+    var bannedFound = blogFilterBannedWords(result);
     blogState.result = result;
     blogRenderPost(result);
     blogRenderImages(result.images || []);
+    blogShowFilterNotice(bannedFound);
     blogGoStep(3);
     // 구글 시트에 저장 (fire-and-forget)
     var bodyParts = [];
@@ -413,6 +580,40 @@ async function blogFinalize(triggerBtn) {
     if (btn) btn.disabled = false;
     document.getElementById('blog-loading2').classList.remove('show');
   }
+}
+
+// 금지어(선행/예비 등) 감지 및 대체 표현으로 치환 — 안전망 (프롬프트 지시가 새더라도 여기서 걸러짐)
+function blogFilterBannedWords(result) {
+  var found = [];
+  function scan(str) {
+    if (!str) return str;
+    var out = str;
+    BLOG_BANNED_WORDS.forEach(function(w) {
+      if (out.indexOf(w) >= 0) {
+        if (found.indexOf(w) < 0) found.push(w);
+        var repl = BLOG_WORD_REPLACEMENTS[w] || '';
+        out = out.split(w).join(repl);
+      }
+    });
+    return out;
+  }
+  result.title = scan(result.title);
+  result.intro = scan(result.intro);
+  (result.sections || []).forEach(function(s) {
+    s.heading = scan(s.heading);
+    s.body = scan(s.body);
+  });
+  result.conclusion = scan(result.conclusion);
+  result.tags = (result.tags || []).map(scan);
+  return found;
+}
+
+function blogShowFilterNotice(words) {
+  var el = document.getElementById('blog-filter-notice');
+  if (!el) return;
+  if (!words || !words.length) { el.style.display = 'none'; return; }
+  el.textContent = '⚠️ \'' + words.join('\', \'') + '\' 표현은 교육청 표시·광고 심의 대상이 될 수 있어 자동으로 대체 표현으로 필터링되었습니다.';
+  el.style.display = 'block';
 }
 
 function blogRenderPost(result) {

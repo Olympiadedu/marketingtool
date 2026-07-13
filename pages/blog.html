@@ -16,46 +16,48 @@
           <span id="blog-academy-toggle" style="font-size:10px;color:var(--mut);">▲</span>
         </div>
         <div id="blog-academy-body" style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+          <div style="display:flex;gap:6px;align-items:center;">
+            <select class="blog-input blog-select" id="blog-profile-select" style="flex:1" onchange="blogSelectProfile(this.value)"></select>
+            <button class="btn btn-outline" style="font-size:11px;padding:6px 10px;white-space:nowrap;" onclick="blogAddProfile()">+ 새 프로필</button>
+            <button class="btn btn-outline" style="font-size:11px;padding:6px 10px;white-space:nowrap;" onclick="blogDeleteProfile()">삭제</button>
+          </div>
           <div class="blog-form-grid">
             <div>
               <label class="blog-label">학원명 (풀네임) *</label>
-              <input class="blog-input" id="acad-name" type="text" placeholder="예) 올림피아드교육 유투엠 수학학원" oninput="saveAcademyProfile()" />
+              <input class="blog-input" id="acad-name" type="text" placeholder="예) 올림피아드교육 유투엠 수학학원" />
             </div>
             <div>
-              <label class="blog-label">단축명</label>
-              <input class="blog-input" id="acad-short" type="text" placeholder="예) 유투엠" oninput="saveAcademyProfile()" />
+              <label class="blog-label">학원 주요키워드</label>
+              <input class="blog-input" id="acad-keywords" type="text" placeholder="예) 말하는 수학, 소수정예, 1:1 맞춤형" />
             </div>
           </div>
           <div class="blog-form-grid">
             <div>
               <label class="blog-label">과목</label>
-              <input class="blog-input" id="acad-subject" type="text" placeholder="예) 수학" oninput="saveAcademyProfile()" />
+              <input class="blog-input" id="acad-subject" type="text" placeholder="예) 수학" />
             </div>
             <div>
               <label class="blog-label">주요 대상</label>
-              <input class="blog-input" id="acad-target" type="text" placeholder="예) 초·중·고 학부모" oninput="saveAcademyProfile()" />
+              <input class="blog-input" id="acad-target" type="text" placeholder="예) 초·중·고 학부모" />
             </div>
           </div>
           <div class="blog-form-grid">
-            <div>
-              <label class="blog-label">핵심 슬로건</label>
-              <input class="blog-input" id="acad-slogan" type="text" placeholder="예) 말하는 수학" oninput="saveAcademyProfile()" />
-            </div>
             <div>
               <label class="blog-label">웹사이트</label>
-              <input class="blog-input" id="acad-website" type="text" placeholder="예) www.u2math.co.kr" oninput="saveAcademyProfile()" />
+              <input class="blog-input" id="acad-website" type="text" placeholder="예) www.u2math.co.kr" />
+            </div>
+            <div>
+              <label class="blog-label">연락처</label>
+              <input class="blog-input" id="acad-phone" type="text" placeholder="예) 02-000-0000" />
             </div>
           </div>
           <div class="blog-form-grid">
             <div>
-              <label class="blog-label">연락처</label>
-              <input class="blog-input" id="acad-phone" type="text" placeholder="예) 02-000-0000" oninput="saveAcademyProfile()" />
-            </div>
-            <div>
               <label class="blog-label">네이버지도 링크</label>
-              <input class="blog-input" id="acad-map" type="text" placeholder="naver.me/..." oninput="saveAcademyProfile()" />
+              <input class="blog-input" id="acad-map" type="text" placeholder="naver.me/..." />
             </div>
           </div>
+          <button class="btn btn-primary" style="align-self:flex-start;font-size:12px;padding:7px 16px;" onclick="blogSaveProfileClick()">💾 저장</button>
         </div>
       </div>
 
@@ -64,6 +66,14 @@
         <div class="tool-section">
           <div class="step-label">② 글 작성 정보</div>
           <div id="blog-alert1" class="blog-alert err"></div>
+
+          <!-- 자유 서술 → AI 분석 (보조 기능) -->
+          <div style="border:1.5px dashed var(--acc-border);background:var(--acc-light);padding:12px;border-radius:9px;margin-bottom:14px;">
+            <label class="blog-label" style="font-size:12px;color:var(--acc);font-weight:800;">✨ 자유 서술로 빠르게 채우기 (선택)</label>
+            <textarea class="blog-input blog-textarea" id="blog-free-desc" style="min-height:64px;margin-top:6px;" placeholder="예) 중1 올라가기 전에 선행보다 개념 정리가 중요하다는 내용으로 학부모 대상 글 쓰고 싶어요"></textarea>
+            <div id="blog-free-alert" class="blog-alert err" style="margin-top:6px;"></div>
+            <button class="btn btn-outline" style="margin-top:8px;font-size:12px;padding:6px 14px;" onclick="blogAnalyzeFreeText(this)">🔍 AI 분석해서 아래 채우기</button>
+          </div>
 
           <!-- 핵심 입력 -->
           <div class="blog-form-grid">
@@ -130,12 +140,12 @@
 
           <div class="blog-form-row">
             <label class="blog-label">피하고 싶은 것 <span class="blog-label-hint">표현·구조·내용 (선택)</span></label>
-            <textarea class="blog-input blog-textarea" id="blog-point" style="min-height:72px;" placeholder="뻔한 홍보 문구, 지난번 글과 비슷한 구조, 과장된 추천 표현"></textarea>
+            <textarea class="blog-input blog-textarea" id="blog-point" style="min-height:72px;" placeholder="뻔한 홍보 문구, 지난번 글과 비슷한 구조, 과장된 추천 표현">선행, 예비</textarea>
           </div>
 
         </div>
 
-        <div class="blog-loading" id="blog-loading1"><div class="blog-spinner"></div><span>초안을 생성 중이에요... <span class="blog-loading-model"></span></span></div>
+        <div class="blog-loading" id="blog-loading1"><div class="blog-spinner"></div><span><span class="blog-loading-label">초안을 생성 중이에요...</span> <span class="blog-loading-model"></span></span></div>
         <button class="btn btn-primary" id="btn-draft" style="width:100%;padding:12px;" onclick="blogGenerateDraft()">🚀 초안 생성</button>
       </div>
 
@@ -181,6 +191,7 @@
           </div>
         </div>
         <div id="blog-alert3" class="blog-alert ok"></div>
+        <div id="blog-filter-notice" class="blog-alert warn" style="display:none"></div>
         <div id="blog-post-container"></div>
         <div id="blog-img-container" style="display:none">
           <div style="font-size:12px;color:#56616f;margin-bottom:10px;">썸네일은 <strong>필수</strong>, 본문 이미지는 꼭 필요한 위치에만 배치됩니다. OpenAI 키 설정 시 직접 생성 가능합니다.</div>

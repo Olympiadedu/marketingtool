@@ -233,6 +233,7 @@ canvas{display:block;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,.15);cu
 .blog-alert.show{display:block;}
 .blog-alert.err{background:#fef2f2;color:#dc2626;border:1px solid #fecaca;}
 .blog-alert.ok{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;}
+.blog-alert.warn{background:#fffbeb;color:#92400e;border:1px solid #fde68a;}
 .blog-panel{display:none;flex-direction:column;gap:16px;}
 .blog-panel.show{display:flex;}
 
@@ -299,7 +300,9 @@ canvas{display:block;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,.15);cu
 .mon-active-tag-pill.neg{background:#111;color:#fff;}
 .mon-post-item{display:flex;align-items:flex-start;justify-content:space-between;padding:11px 14px;border-bottom:1px solid #f0f1f2;gap:12px;}
 .mon-post-item:last-child{border-bottom:none;}
-.mon-post-txt{font-size:12.5px;color:#111;line-height:1.65;flex:1;}
+.mon-post-content{flex:1;min-width:0;}
+.mon-post-txt{font-size:12.5px;color:#111;line-height:1.65;}
+.mon-post-body{font-size:12px;color:#6b7280;line-height:1.6;margin-top:5px;padding-top:5px;border-top:1px solid #f0f1f2;word-break:break-all;}
 .mon-post-link{font-size:11.5px;color:var(--acc);white-space:nowrap;text-decoration:none;flex-shrink:0;font-weight:600;}
 .mon-post-link:hover{text-decoration:underline;}
 .mon-empty-right{flex:1;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:13px;}
