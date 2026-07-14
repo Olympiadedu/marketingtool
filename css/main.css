@@ -317,11 +317,11 @@ canvas{display:block;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,.15);cu
 
 /* ── 설정 페이지 ── */
 #page-settings{flex:1;overflow-y:auto;}
-.set-content{padding:28px 32px;max-width:1000px;}
+.set-content{padding:28px 32px;width:100%;max-width:1500px;}
 .set-tab{}
 .set-page-title{font-size:20px;font-weight:900;color:var(--txt);letter-spacing:-.02em;margin-bottom:4px;}
 .set-page-sub{font-size:13px;color:var(--mut);margin-bottom:24px;}
-.set-main-body{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start;}
+.set-main-body{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;}
 .set-prompt-body{display:flex;flex-direction:column;gap:16px;}
 .set-main-left,.set-main-right{display:flex;flex-direction:column;gap:16px;}
 .set-card{background:#fff;border:1px solid var(--bdr);border-radius:12px;padding:20px 22px;display:flex;flex-direction:column;gap:14px;}
