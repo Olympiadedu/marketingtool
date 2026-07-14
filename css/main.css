@@ -98,6 +98,7 @@ body{display:flex;height:100vh;overflow:hidden;font-family:'Noto Sans KR',sans-s
 
 /* ── BUTTONS ── */
 .btn{display:inline-flex;align-items:center;justify-content:center;padding:9px 16px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all .15s;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
 .btn-primary{background:#111827;color:#fff;}
 .btn-primary:hover{background:#1f2937;}
 .btn-outline{background:#fff;color:#374151;border:1.5px solid #d1d5db;}

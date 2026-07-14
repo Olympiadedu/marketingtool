@@ -51,7 +51,7 @@ function getBlogDraftSystem(type) {
     .replace('{{USER_STYLE}}', userStyle);
 }
 
-var BLOG_FINAL_SYSTEM = '당신은 {{학원명}} 공식 블로그 전문 에디터입니다.\n제공된 초안과 변형 요소를 바탕으로 완성된 네이버 블로그 본문을 작성합니다.\n\n## [브랜드 정보]\n- 학원명: {{학원명}}\n- 주요 키워드: {{키워드}}\n- 과목: {{과목}}\n- 주요 대상: {{대상}}\n- 웹사이트: {{웹사이트}}\n\n## [말투 & 표현 규칙]\n- 경칭: 학부모 → "학부모님", 학생 → "학생들", "우리 학생들"\n- 어미: 격식체+친근 혼합 ("~합니다", "~해요", "~이에요", "~이랍니다")\n- 이모지: 단락당 1~2개 자연스럽게 (💚💡📚✨ 등)\n- 줄바꿈: 모바일 가독성 위해 2~3문장 후 빈 줄\n- SEO 키워드: 원형 그대로 제목·첫 단락에 자연스럽게\n\n## [유사도 방지]\n- 초안에서 선택한 구조 유형을 유지합니다.\n- "주목해 주세요", "꼭 확인해 보세요", "적극 추천합니다", "지금 바로", "고민이신 학부모님이라면" 같은 표현은 한 글에 1회 이상 반복하지 않습니다.\n- 이번 글만의 구체적 상황·사례·포인트가 본문에 명확히 드러나야 합니다.\n\n## [AI 티 방지 규칙 — 반드시 준수]\nS1 절대 금지 (한 번이라도 나오면 수정):\n- 연결어미 뒤 쉼표 금지: "하지만," "그리고," "그러나," → 쉼표 삭제\n- AI 상투구 금지: "결론적으로", "혁신적인", "시대가 도래했다", "주목할 만하다", "~의 가능성을 열어준다", "새로운 패러다임"\n- 번역투 금지: "~에 대해" → "~를", "~를 통해" → "~로", "가지고 있다" → "있다", 이중 피동("~되어지다")\n\nS2 같은 패턴 3회 이상 금지:\n- 볼드(**) 남용 — 단락당 1곳 이하\n- 정도부사 반복 — "매우", "정말", "굉장히" 연속 사용 금지\n- 문두 접속사 남발 — "하지만", "그러나", "이는", "즉" 연속 금지\n- 기계적 나열 — "첫째/둘째/셋째" → 산문으로 녹이기\n- 헤징 과다 — "~할 수 있을 것으로 보인다", "~라고 할 수 있다" 반복 금지\n- "~것이다", "~할 필요가 있다" 반복 금지\n\n리듬: 단문(10자 이하)과 장문(30자 이상)을 섞어 단조로움 방지. 종결어미 다양화(~합니다 / ~해요 / ~이에요 / ~이랍니다 골고루).\n\n## [금지 표현 — 교육청 표시광고 심의 대상]\n아래 단어는 제목·본문·태그 어디에도 어떤 형태로도 사용하지 않습니다. 반드시 대체 표현으로 재구성합니다.\n- "선행" (선행학습 등 포함) → "사전학습" 등으로 대체\n- "예비" (예비중1 등 포함) → "신입" 또는 문맥에 맞게 자연스럽게 재구성\n\n## [글 마지막 연락처 블록]\n글 마지막에 아래 형식으로 연락처 블록을 반드시 포함합니다.\n{{학원명}}\n📞 {{연락처}}\n🗺️ 네이버지도: {{지도링크}}\n🌐 {{웹사이트}}\n연락처나 링크가 비어 있는 항목은 생략합니다.\n\n반드시 아래 JSON 형식으로만 응답하세요.\n\n{"title":"최종 포스팅 제목 (25~45자, SEO 키워드 앞부분)","intro":"도입부 본문 (초안 도입부 기반, 이번 글 방식으로 시작)","sections":[{"heading":"소제목","body":"완성된 본문 내용. 줄바꿈은 \\n\\n 사용"}],"conclusion":"마무리 본문 + CTA 블록 (CTA 유형에 따라 작성)","tags":["태그1","태그2","태그3","태그4","태그5"],"images":[{"id":"thumbnail","placement":"포스팅 최상단 썸네일","placement_detail":"글 제목 바로 아래 대표 이미지","prompt":"Warm and inviting Korean private academy blog thumbnail. [Subject] Two Korean middle school students sitting at clean wooden desks, intensely focused on open textbooks, a passionate teacher pointing to explanations on a whiteboard behind them. [Setting] Bright modern Korean classroom, large windows with warm natural daylight streaming in, neat bookshelves and organized study materials visible in background. [Style] Photorealistic editorial photography, crisp sharp focus on students. [Lighting] Soft warm natural light from left-side windows, gentle diffused shadows, bright airy feel. [Colors] Warm cream and soft teal palette with white accents — clean, professional, welcoming. [Composition] Medium shot from slightly elevated angle, subjects placed in lower half or sides of frame, upper-center area intentionally left with soft blurred or simple background. [Details] Students in school uniforms, pencils and color-coded notebooks on desks, engaged and focused expressions, calm study atmosphere. Keep the central horizontal band of the image visually clean and uncluttered — no faces, hands, or busy details in that zone, as Korean text will be overlaid there. Square 1:1 format.","overlay_text":"썸네일 텍스트 문구","description":"이 썸네일이 표현하는 장면과 분위기를 한국어로 2~3문장으로 설명"},{"id":"body_1","placement":"삽입 위치","placement_detail":"이 이미지가 필요한 이유와 위치","prompt":"A detailed realistic scene directly illustrating the specific topic and message of this blog section. [Subject] Clearly describe the central subject — people, objects, or scenario that best represents this section content. [Setting] Specific realistic environment or background that fits the section context and Korean private academy theme. [Style] Photorealistic photography or clean professional digital illustration with editorial quality. [Lighting] Soft natural or warm studio lighting, bright and clear. [Colors] Consistent warm academic tones — cream, teal, soft blues — matching a professional educational atmosphere. [Composition] Clear purposeful focal point, balanced framing, uncluttered background that emphasizes the subject. [Details] Include specific realistic details relevant to the section: props, expressions, actions, environmental elements that reinforce the message. No text, words, letters, or signs visible anywhere in image. Square 1:1 format.","overlay_text":null,"description":"이미지 설명"}]}\n\n이미지 규칙: thumbnail 1개 필수. 본문 이미지 1~3개. 모두 1:1 정사각형.\nprompt 작성 필수 규칙 — 반드시 영어로, 최소 120단어 이상. DALL-E 3 최적화 구조를 반드시 준수할 것: [Subject] → [Setting] → [Style] → [Lighting] → [Colors] → [Composition] → [Details] → Square 1:1 format.\nthumbnail prompt 마지막 필수 지시: Keep the central horizontal band of the image visually clean and simple — no faces or busy details there, as Korean text will be overlaid. Subjects should be placed in lower portion or sides of frame.\n본문 이미지 prompt 마지막 필수 지시: No text or writing visible anywhere in image.\n블로그 글의 해당 섹션 주제와 내용을 정확히 반영하여 구체적이고 사실적으로 작성할 것. 추상적·일반적 표현 금지.\n글자 수: 요청된 분량에 맞게 (공백 제외)';
+var BLOG_FINAL_SYSTEM = '당신은 {{학원명}} 공식 블로그 전문 에디터입니다.\n제공된 초안과 변형 요소를 바탕으로 완성된 네이버 블로그 본문을 작성합니다.\n\n## [브랜드 정보]\n- 학원명: {{학원명}}\n- 주요 키워드: {{키워드}}\n- 과목: {{과목}}\n- 주요 대상: {{대상}}\n- 웹사이트: {{웹사이트}}\n\n## [말투 & 표현 규칙]\n- 경칭: 학부모 → "학부모님", 학생 → "학생들", "우리 학생들"\n- 어미: 기본은 "~해요/~예요" 계열, 문단 첫 문장·핵심 강조 문장에서만 "~합니다/~입니다" 예외 사용 (무작위 혼합 금지)\n- 이모지: 단락당 1~2개 자연스럽게 (💚💡📚✨ 등)\n- 줄바꿈: 모바일 가독성 위해 2~3문장 후 빈 줄\n- SEO 키워드: 원형 그대로 제목·첫 단락에 자연스럽게\n\n## [유사도 방지]\n- 초안에서 선택한 구조 유형을 유지합니다.\n- "주목해 주세요", "꼭 확인해 보세요", "적극 추천합니다", "지금 바로", "고민이신 학부모님이라면" 같은 표현은 한 글에 1회 이상 반복하지 않습니다.\n- 이번 글만의 구체적 상황·사례·포인트가 본문에 명확히 드러나야 합니다.\n\n## [AI 티 방지 규칙 — 반드시 준수]\nS1 절대 금지 (한 번이라도 나오면 수정):\n- 연결어미 뒤 쉼표 금지: "하지만," "그리고," "그러나," → 쉼표 삭제\n- AI 상투구 금지: "결론적으로", "혁신적인", "시대가 도래했다", "주목할 만하다", "~의 가능성을 열어준다", "새로운 패러다임"\n- 번역투 금지: "~에 대해" → "~를", "~를 통해" → "~로", "가지고 있다" → "있다", 이중 피동("~되어지다")\n\nS2 같은 패턴 3회 이상 금지:\n- 볼드(**) 사용 금지 — 네이버 블로그에는 서식 없는 텍스트로 복사되어 별표(**)가 그대로 노출되므로 어떤 경우에도 사용하지 않는다\n- 정도부사 반복 — "매우", "정말", "굉장히" 연속 사용 금지\n- 문두 접속사 남발 — "하지만", "그러나", "이는", "즉" 연속 금지\n- 기계적 나열 — "첫째/둘째/셋째" → 산문으로 녹이기\n- 헤징 과다 — "~할 수 있을 것으로 보인다", "~라고 할 수 있다" 반복 금지\n- "~것이다", "~할 필요가 있다" 반복 금지\n\n리듬: 단문(10자 이하)과 장문(30자 이상)을 섞어 단조로움 방지. 종결어미는 무작위로 섞지 않는다 — 기본 어미를 "~해요/~예요" 계열로 통일하고, 문단 첫 문장이나 핵심을 강조하는 문장에서만 예외적으로 "~합니다/~입니다"를 사용해 무게감을 준다.\n\n## [금지 표현 — 교육청 표시광고 심의 대상]\n아래 단어는 제목·본문·태그 어디에도 어떤 형태로도 사용하지 않습니다. 반드시 대체 표현으로 재구성합니다.\n- "선행" (선행학습 등 포함) → "사전학습" 등으로 대체\n- "예비" (예비중1 등 포함) → "신입" 또는 문맥에 맞게 자연스럽게 재구성\n\n## [글 마지막 연락처 블록]\n글 마지막에 아래 형식으로 연락처 블록을 반드시 포함합니다.\n{{학원명}}\n📞 {{연락처}}\n🗺️ 네이버지도: {{지도링크}}\n🌐 {{웹사이트}}\n연락처나 링크가 비어 있는 항목은 생략합니다.\n\n반드시 아래 JSON 형식으로만 응답하세요.\n\n{"title":"최종 포스팅 제목 (25~45자, SEO 키워드 앞부분)","intro":"도입부 본문 (초안 도입부 기반, 이번 글 방식으로 시작)","sections":[{"heading":"소제목","body":"완성된 본문 내용. 줄바꿈은 \\n\\n 사용"}],"conclusion":"마무리 본문 + CTA 블록 (CTA 유형에 따라 작성)","tags":["태그1","태그2","태그3","태그4","태그5"],"images":[{"id":"thumbnail","placement":"포스팅 최상단 썸네일","placement_detail":"글 제목 바로 아래 대표 이미지","prompt":"Warm and inviting Korean private academy blog thumbnail. [Subject] Two Korean middle school students sitting at clean wooden desks, intensely focused on open textbooks, a passionate teacher pointing to explanations on a whiteboard behind them. [Setting] Bright modern Korean classroom, large windows with warm natural daylight streaming in, neat bookshelves and organized study materials visible in background. [Style] Photorealistic editorial photography, crisp sharp focus on students. [Lighting] Soft warm natural light from left-side windows, gentle diffused shadows, bright airy feel. [Colors] Warm cream and soft teal palette with white accents — clean, professional, welcoming. [Composition] Medium shot from slightly elevated angle, subjects placed in lower half or sides of frame, upper-center area intentionally left with soft blurred or simple background. [Details] Students in school uniforms, pencils and color-coded notebooks on desks, engaged and focused expressions, calm study atmosphere. Keep the central horizontal band of the image visually clean and uncluttered — no faces, hands, or busy details in that zone, as Korean text will be overlaid there. Landscape 16:9 format (1792×1024).","overlay_text":"썸네일 텍스트 문구","description":"이 썸네일이 표현하는 장면과 분위기를 한국어로 2~3문장으로 설명"},{"id":"body_1","placement":"삽입 위치","placement_detail":"이 이미지가 필요한 이유와 위치","prompt":"A detailed realistic scene directly illustrating the specific topic and message of this blog section. [Subject] Clearly describe the central subject — people, objects, or scenario that best represents this section content. [Setting] Specific realistic environment or background that fits the section context and Korean private academy theme. [Style] Photorealistic photography or clean professional digital illustration with editorial quality. [Lighting] Soft natural or warm studio lighting, bright and clear. [Colors] Consistent warm academic tones — cream, teal, soft blues — matching a professional educational atmosphere. [Composition] Clear purposeful focal point, balanced framing, uncluttered background that emphasizes the subject. [Details] Include specific realistic details relevant to the section: props, expressions, actions, environmental elements that reinforce the message. No text, words, letters, or signs visible anywhere in image. Square 1:1 format.","overlay_text":null,"description":"이미지 설명"}]}\n\n이미지 규칙: thumbnail 1개 필수 (16:9 가로형). 본문 이미지 1~3개 (1:1 정사각형).\nprompt 작성 필수 규칙 — 반드시 영어로, 최소 120단어 이상. DALL-E 3 최적화 구조를 반드시 준수할 것: [Subject] → [Setting] → [Style] → [Lighting] → [Colors] → [Composition] → [Details] → (thumbnail: Landscape 16:9, body: Square 1:1).\nthumbnail prompt 마지막 필수 지시: Keep the central horizontal band of the image visually clean and simple — no faces or busy details there, as Korean text will be overlaid. Subjects should be placed in lower portion or sides of frame. Landscape 16:9 format (1792×1024).\n본문 이미지 prompt 마지막 필수 지시: No text or writing visible anywhere in image. Square 1:1 format.\n블로그 글의 해당 섹션 주제와 내용을 정확히 반영하여 구체적이고 사실적으로 작성할 것. 추상적·일반적 표현 금지.\n글자 수: 요청된 분량에 맞게 (공백 제외)';
 
 function autoResizeBlogTextarea(el) {
   el.style.height = 'auto';
@@ -380,11 +380,14 @@ async function blogAnalyzeFreeText(btn) {
   var orig = btn ? btn.textContent : '';
   if (btn) { btn.disabled = true; btn.textContent = '분석 중...'; }
   try {
-    var systemPrompt = '당신은 블로그 기획 보조 도구입니다. 사용자의 자유 서술을 분석해 블로그 글 작성에 필요한 핵심 정보를 추출합니다.\n\n반드시 아래 JSON 형식으로만 응답하세요.\n{"topic":"글의 핵심 주제 한 문장 (25~50자)","keywords":"검색 키워드 3~5개, 쉼표로 구분"}';
+    var systemPrompt = '당신은 블로그 기획 보조 도구입니다. 사용자의 자유 서술을 분석해 블로그 글 작성에 필요한 핵심 정보를 추출합니다.\n\n반드시 아래 JSON 형식으로만 응답하세요.\n{"topic":"글의 핵심 주제 한 문장 (25~50자)","keywords":"검색 키워드 3~5개, 쉼표로 구분","type":"아래 중 하나만 선택: 교육칼럼, 입시정보, 학원홍보, 합격인터뷰, 수학정보, 이벤트안내, 학원공지","mood":"아래 중 하나만 선택: 차분하고 신뢰감 있는, 친근하고 공감가는, 전문적이고 정보 중심의, 설득력 있고 참여를 유도하는, 따뜻하고 응원하는","target":"타겟 독자층 한 문장 (예: 초등 고학년 자녀를 둔 학부모)"}';
     var raw = await blogCall(systemPrompt, input, 500);
     var parsed = blogParseJson(raw);
-    if (parsed.topic) document.getElementById('blog-topic').value = parsed.topic;
+    if (parsed.topic)    document.getElementById('blog-topic').value = parsed.topic;
     if (parsed.keywords) document.getElementById('blog-keywords').value = parsed.keywords;
+    if (parsed.type)      document.getElementById('blog-type').value = parsed.type;
+    if (parsed.mood)      document.getElementById('blog-mood').value = parsed.mood;
+    if (parsed.target)    document.getElementById('blog-target').value = parsed.target;
     if (btn) { btn.textContent = '✅ 반영됨'; setTimeout(function() { btn.textContent = orig; }, 1500); }
   } catch(e) {
     blogShowFreeAlert(e.message || '분석 중 오류가 발생했습니다.');
@@ -413,14 +416,13 @@ async function blogGenerateDraft() {
     core:     (document.getElementById('blog-core')     || {}).value.trim() || ''
   };
   var btn = document.getElementById('btn-draft');
+  var btnOrig = btn.textContent;
   btn.disabled = true;
-  var loadingEl = document.getElementById('blog-loading1');
-  loadingEl.classList.add('show');
+  btn.textContent = '초안 생성중...';
   try {
     // 참고 URL 중 네이버 블로그는 GAS 경유로 본문 발췌 수집 (실패 시 URL만 사용, 조용히 폴백)
     if (blogState.inputs.refUrl) {
-      var loadingText = loadingEl.querySelector('.blog-loading-label');
-      if (loadingText) loadingText.textContent = '참고 URL 확인 중...';
+      btn.textContent = '참고 URL 확인 중...';
       var refUrls = blogState.inputs.refUrl.split('\n').map(function(u){ return u.trim(); }).filter(function(u){ return u; });
       var refContents = {};
       await Promise.all(refUrls.map(async function(u) {
@@ -428,7 +430,7 @@ async function blogGenerateDraft() {
         if (content) refContents[u] = content.substring(0, 700);
       }));
       blogState.inputs.refContents = refContents;
-      if (loadingText) loadingText.textContent = '초안을 생성 중이에요...';
+      btn.textContent = '초안 생성중...';
     }
     // 구글 시트에서 유사 글 조회 → 유사 방지 지시 삽입
     var allPosts = await gasGetRecentPosts(50);
@@ -450,16 +452,28 @@ async function blogGenerateDraft() {
         systemPrompt += recentSummary;
       }
     }
-    var raw = await blogCall(systemPrompt, blogBuildInputText(), 3000);
-    var draft = blogParseJson(raw);
+    var raw = await blogCall(systemPrompt, blogBuildInputText(), 4096);
+    var draft;
+    try {
+      draft = blogParseJson(raw);
+    } catch(parseErr) {
+      // 응답이 잘려 파싱 실패 → 더 큰 토큰으로 1회 재시도
+      raw = await blogCall(systemPrompt, blogBuildInputText(), 8192);
+      try {
+        draft = blogParseJson(raw);
+      } catch(parseErr2) {
+        // 재시도도 실패 → 잘린 JSON 복구 시도 (최후의 안전망)
+        draft = blogRepairJson(raw);
+        if (!draft) throw parseErr2;
+      }
+    }
     blogState.draft = draft;
     blogRenderOutline(draft);
     blogGoStep(2);
   } catch(e) {
     blogShowAlert('1', e.message || '오류가 발생했습니다.');
   } finally {
-    if (btn) btn.disabled = false;
-    document.getElementById('blog-loading1').classList.remove('show');
+    if (btn) { btn.disabled = false; btn.textContent = btnOrig; }
   }
 }
 
@@ -524,8 +538,9 @@ async function blogFinalize(triggerBtn) {
   blogHideAlert('2');
   var updatedDraft = blogReadOutline();
   var notes = document.getElementById('blog-notes') ? document.getElementById('blog-notes').value.trim() : '';
-  var btn = triggerBtn || null; if (btn) btn.disabled = true;
-  document.getElementById('blog-loading2').classList.add('show');
+  var btn = triggerBtn || null;
+  var btnOrig = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = '최종 본문 작성중...'; }
   try {
     var userMsg = '[최초 입력값]\n' + blogBuildInputText()
       + '\n\n[확정된 글 설계도]\n' + JSON.stringify(updatedDraft, null, 2)
@@ -551,6 +566,7 @@ async function blogFinalize(triggerBtn) {
       }
     }
     var bannedFound = blogFilterBannedWords(result);
+    blogStripBold(result);
     blogState.result = result;
     blogRenderPost(result);
     blogRenderImages(result.images || []);
@@ -577,8 +593,7 @@ async function blogFinalize(triggerBtn) {
   } catch(e) {
     blogShowAlert('2', e.message || '오류가 발생했습니다.');
   } finally {
-    if (btn) btn.disabled = false;
-    document.getElementById('blog-loading2').classList.remove('show');
+    if (btn) { btn.disabled = false; btn.textContent = btnOrig; }
   }
 }
 
@@ -606,6 +621,22 @@ function blogFilterBannedWords(result) {
   result.conclusion = scan(result.conclusion);
   result.tags = (result.tags || []).map(scan);
   return found;
+}
+
+// 마크다운 볼드(**) 제거 안전망 — 네이버 블로그는 서식 없는 텍스트라 별표가 그대로 노출됨
+function blogStripBold(result) {
+  function strip(str) {
+    if (!str) return str;
+    return str.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*\*/g, '');
+  }
+  result.title = strip(result.title);
+  result.intro = strip(result.intro);
+  (result.sections || []).forEach(function(s) {
+    s.heading = strip(s.heading);
+    s.body = strip(s.body);
+  });
+  result.conclusion = strip(result.conclusion);
+  result.tags = (result.tags || []).map(strip);
 }
 
 function blogShowFilterNotice(words) {
@@ -716,7 +747,7 @@ async function blogGenImage(btn, idx) {
     var img = images[idx];
     var finalPrompt = img.prompt;
     if (img.id === 'thumbnail' && img.overlay_text) finalPrompt += '\n\n이미지 중앙에 한국어 텍스트를 굵고 크게 넣어주세요: "' + img.overlay_text + '"';
-    var res = await fetch('https://api.openai.com/v1/images/generations', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + openaiKey }, body: JSON.stringify({ model: 'dall-e-3', prompt: finalPrompt, n: 1, size: '1024x1024', quality: 'hd', response_format: 'url' }) });
+    var res = await fetch('https://api.openai.com/v1/images/generations', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + openaiKey }, body: JSON.stringify({ model: 'dall-e-3', prompt: finalPrompt, n: 1, size: img.id === 'thumbnail' ? '1792x1024' : '1024x1024', quality: 'hd', response_format: 'url' }) });
     var data = await res.json();
     if (!res.ok || data.error) { alert(data.error ? data.error.message : '이미지 생성 오류'); return; }
     var url = data.data[0].url;
