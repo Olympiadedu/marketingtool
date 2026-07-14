@@ -388,7 +388,7 @@ async function blogAnalyzeFreeText(btn) {
     if (parsed.type)      document.getElementById('blog-type').value = parsed.type;
     if (parsed.mood)      document.getElementById('blog-mood').value = parsed.mood;
     if (parsed.target)    document.getElementById('blog-target').value = parsed.target;
-    if (btn) { btn.textContent = '✅ 반영됨'; setTimeout(function() { btn.textContent = orig; }, 1500); }
+    if (btn) { btn.textContent = '반영됨'; setTimeout(function() { btn.textContent = orig; }, 1500); }
   } catch(e) {
     blogShowFreeAlert(e.message || '분석 중 오류가 발생했습니다.');
     if (btn) btn.textContent = orig;
@@ -643,7 +643,7 @@ function blogShowFilterNotice(words) {
   var el = document.getElementById('blog-filter-notice');
   if (!el) return;
   if (!words || !words.length) { el.style.display = 'none'; return; }
-  el.textContent = '⚠️ \'' + words.join('\', \'') + '\' 표현은 교육청 표시·광고 심의 대상이 될 수 있어 자동으로 대체 표현으로 필터링되었습니다.';
+  el.textContent = '\'' + words.join('\', \'') + '\' 표현은 교육청 표시·광고 심의 대상이 될 수 있어 자동으로 대체 표현으로 필터링되었습니다.';
   el.style.display = 'block';
 }
 
@@ -669,11 +669,11 @@ function blogRenderImages(images) {
   var openaiKey = getApiKey('openai');
   c.innerHTML = images.map(function(img, i) {
     var isThumb = img.id === 'thumbnail';
-    var badge = isThumb ? '<span class="bimg-badge thumb">🖼️ 썸네일 (필수)</span>' : '<span class="bimg-badge body-img">📍 본문 삽입</span>';
-    var overlayRow = img.overlay_text ? '<div class="bimg-overlay">💬 오버레이 텍스트: <strong>' + blogEsc(img.overlay_text) + '</strong></div>' : '';
-    var genBtn = openaiKey ? '<button class="bimg-gen-btn" onclick="blogGenImage(this,' + i + ')">🎨 이미지 생성</button>' : '';
+    var badge = isThumb ? '<span class="bimg-badge thumb">썸네일 (필수)</span>' : '<span class="bimg-badge body-img">본문 삽입</span>';
+    var overlayRow = img.overlay_text ? '<div class="bimg-overlay">오버레이 텍스트: <strong>' + blogEsc(img.overlay_text) + '</strong></div>' : '';
+    var genBtn = openaiKey ? '<button class="bimg-gen-btn" onclick="blogGenImage(this,' + i + ')">이미지 생성</button>' : '';
     return '<div class="bimg-card' + (isThumb ? ' is-thumb' : '') + '" id="bimg-card-' + i + '">'
-      + '<div class="bimg-preview" id="bimg-preview-' + i + '">🖼️<br><span style="font-size:11px">' + (isThumb ? '썸네일' : '본문 이미지') + '</span></div>'
+      + '<div class="bimg-preview" id="bimg-preview-' + i + '"><span style="font-size:11px">' + (isThumb ? '썸네일' : '본문 이미지') + '</span></div>'
       + '<div class="bimg-info">'
         + badge
         + '<div class="bimg-placement">' + blogEsc(img.placement) + '</div>'
@@ -682,8 +682,8 @@ function blogRenderImages(images) {
         + '<button class="bimg-toggle-btn" onclick="blogTogglePrompt(this,' + i + ')">프롬프트 보기 ▼</button>'
         + '<div class="bimg-prompt" id="bimg-prompt-' + i + '" style="display:none">' + blogEsc(img.prompt) + '</div>'
         + '<div class="bimg-actions" id="bimg-actions-' + i + '">'
-          + '<button class="blog-copy-btn" onclick="blogCopyPrompt(this,' + i + ')">📋 복사</button>'
-          + '<button class="bimg-regen-btn" onclick="blogRegenImagePrompt(this,' + i + ')">🔄 재생성</button>'
+          + '<button class="blog-copy-btn" onclick="blogCopyPrompt(this,' + i + ')">복사</button>'
+          + '<button class="bimg-regen-btn" onclick="blogRegenImagePrompt(this,' + i + ')">재생성</button>'
           + genBtn
         + '</div>'
       + '</div>'
@@ -728,11 +728,11 @@ async function blogRegenImagePrompt(btn, idx) {
     if (promptEl) promptEl.textContent = parsed.prompt;
     var descEl = document.getElementById('bimg-desc-' + idx);
     if (descEl) descEl.textContent = parsed.description || '';
-    btn.textContent = '✅ 완료';
-    setTimeout(function() { btn.textContent = '🔄 재생성'; }, 2000);
+    btn.textContent = '완료';
+    setTimeout(function() { btn.textContent = '재생성'; }, 2000);
   } catch(e) {
     alert('오류: ' + e.message);
-    btn.textContent = '🔄 재생성';
+    btn.textContent = '재생성';
   } finally {
     btn.disabled = false;
   }
@@ -808,7 +808,7 @@ function blogCopyPrompt(btn, idx) {
   if (img.overlay_text) {
     prompt += '\n\n이미지 중앙에 한국어 텍스트를 굵고 선명한 흰색 글씨로 크게 표시해 주세요: "' + img.overlay_text + '"';
   }
-  navigator.clipboard.writeText(prompt).then(function() { btn.textContent = '✅ 복사됨'; setTimeout(function() { btn.textContent = '📋 프롬프트 복사'; }, 1500); });
+  navigator.clipboard.writeText(prompt).then(function() { btn.textContent = '복사됨'; setTimeout(function() { btn.textContent = '복사'; }, 1500); });
 }
 
 function blogCopyAll(btn) {
@@ -835,16 +835,16 @@ function blogCopyAll(btn) {
   parts.push('');
   parts.push((r.tags||[]).map(function(t){ return '#'+t; }).join(' '));
   navigator.clipboard.writeText(parts.join('\n')).then(function() {
-    if (btn) { var orig = btn.textContent; btn.textContent = '✅ 복사됨'; setTimeout(function(){ btn.textContent = orig; }, 2000); }
+    if (btn) { var orig = btn.textContent; btn.textContent = '복사됨'; setTimeout(function(){ btn.textContent = orig; }, 2000); }
     var a3 = document.getElementById('blog-alert3');
-    if (a3) { a3.textContent = '✅ 전체 본문이 복사되었습니다.'; a3.className = 'blog-alert ok show'; setTimeout(function(){ a3.classList.remove('show'); }, 3000); }
+    if (a3) { a3.textContent = '전체 본문이 복사되었습니다.'; a3.className = 'blog-alert ok show'; setTimeout(function(){ a3.classList.remove('show'); }, 3000); }
   });
 }
 
 function blogCopyText(btn, id) {
   var el = document.getElementById(id);
   if (!el) return;
-  navigator.clipboard.writeText(el.innerText || el.textContent).then(function() { var orig = btn.textContent; btn.textContent = '✅'; setTimeout(function() { btn.textContent = orig; }, 1500); });
+  navigator.clipboard.writeText(el.innerText || el.textContent).then(function() { var orig = btn.textContent; btn.textContent = '복사됨'; setTimeout(function() { btn.textContent = orig; }, 1500); });
 }
 
 function blogShowAlert(num, msg) {

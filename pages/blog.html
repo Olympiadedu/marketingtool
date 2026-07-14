@@ -11,7 +11,8 @@
       <!-- 학원 프로필 -->
       <div class="tool-section" id="blog-academy-section">
         <div class="step-label" style="cursor:pointer;margin-bottom:0;" onclick="toggleBlogAcademy()">
-          <span>① 학원 프로필</span>
+          <span class="step-num">1</span>
+          <span>학원 프로필</span>
           <span id="blog-academy-status" style="margin-left:auto;font-size:10px;font-weight:600;color:var(--acc);">처음 한 번만 입력</span>
           <span id="blog-academy-toggle" style="font-size:10px;color:var(--mut);">▲</span>
         </div>
@@ -57,22 +58,22 @@
               <input class="blog-input" id="acad-map" type="text" placeholder="naver.me/..." />
             </div>
           </div>
-          <button class="btn btn-primary" style="align-self:flex-start;font-size:12px;padding:7px 16px;" onclick="blogSaveProfileClick()">💾 저장</button>
+          <button class="btn btn-primary" style="align-self:flex-start;font-size:12px;padding:7px 16px;" onclick="blogSaveProfileClick()">저장</button>
         </div>
       </div>
 
       <!-- STEP 1 — 글 작성 정보 -->
       <div id="blog-step1-panel">
         <div class="tool-section">
-          <div class="step-label">② 글 작성 정보</div>
+          <div class="step-label"><span class="step-num">2</span>글 작성 정보</div>
           <div id="blog-alert1" class="blog-alert err"></div>
 
           <!-- 자유 서술 → AI 분석 (보조 기능) -->
           <div style="border:1.5px dashed var(--acc-border);background:var(--acc-light);padding:12px;border-radius:9px;margin-bottom:14px;">
-            <label class="blog-label" style="font-size:12px;color:var(--acc);font-weight:800;">✨ 자유 서술로 빠르게 채우기 (선택)</label>
+            <label class="blog-label" style="font-size:12px;color:var(--acc);font-weight:800;">자유 서술로 빠르게 채우기 (선택)</label>
             <textarea class="blog-input blog-textarea" id="blog-free-desc" style="min-height:64px;margin-top:6px;" placeholder="예) 중1 올라가기 전에 선행보다 개념 정리가 중요하다는 내용으로 학부모 대상 글 쓰고 싶어요"></textarea>
             <div id="blog-free-alert" class="blog-alert err" style="margin-top:6px;"></div>
-            <button class="btn btn-outline" style="margin-top:8px;font-size:12px;padding:6px 14px;" onclick="blogAnalyzeFreeText(this)">🔍 AI 분석해서 아래 채우기</button>
+            <button class="btn btn-outline" style="margin-top:8px;font-size:12px;padding:6px 14px;" onclick="blogAnalyzeFreeText(this)">AI 분석해서 아래 채우기</button>
           </div>
 
           <!-- 핵심 입력 -->
@@ -145,7 +146,7 @@
 
         </div>
 
-        <button class="btn btn-primary" id="btn-draft" style="width:100%;padding:12px;" onclick="blogGenerateDraft()">🚀 초안 생성</button>
+        <button class="btn btn-primary" id="btn-draft" style="width:100%;padding:12px;" onclick="blogGenerateDraft()">초안 생성</button>
       </div>
 
     </div><!-- /blog-left -->
@@ -168,7 +169,7 @@
       </div>
       <div class="blog-panel" id="blog-right-step2">
         <div class="tool-section">
-          <div class="step-label">③ 초안 검토</div>
+          <div class="step-label"><span class="step-num">3</span>초안 검토</div>
           <div id="blog-alert2" class="blog-alert err"></div>
           <div id="blog-outline-edit-container"></div>
           <div class="blog-form-row" style="margin-bottom:0">
@@ -176,15 +177,15 @@
             <textarea class="blog-input blog-textarea" id="blog-notes" style="min-height:56px" placeholder="예) 톤을 더 가볍게, 2번 섹션에 수치 추가"></textarea>
           </div>
         </div>
-        <button class="btn btn-primary" style="width:100%" onclick="blogFinalize(this)">✨ 최종 본문 작성</button>
+        <button class="btn btn-primary" style="width:100%" onclick="blogFinalize(this)">최종 본문 작성</button>
       </div>
       <div class="blog-panel" id="blog-right-step3">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
-          <div style="font-size:14px;font-weight:700;color:#172033;">④ 완성 &amp; 복사</div>
+          <div class="step-label" style="margin:0;"><span class="step-num">4</span>완성 &amp; 복사</div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
             <button class="bc-btn" id="blog-tab-post-btn" onclick="blogSwitchTab('post')" style="background:var(--acc);color:#fff;border-color:var(--acc);">본문</button>
             <button class="bc-btn" id="blog-tab-img-btn" onclick="blogSwitchTab('images')">이미지·프롬프트</button>
-            <button class="btn btn-primary" onclick="blogCopyAll(this)" style="font-size:11px;padding:5px 10px;">📋 전체 복사</button>
+            <button class="btn btn-primary" onclick="blogCopyAll(this)" style="font-size:11px;padding:5px 10px;">전체 복사</button>
             <button class="btn btn-outline" onclick="blogGoStep(2)" style="font-size:11px;padding:5px 10px;">← 다시 수정</button>
           </div>
         </div>

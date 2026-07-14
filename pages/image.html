@@ -118,7 +118,7 @@
         </div>
       </div>
       <div class="tool-section">
-        <div class="step-label list-only">① 배경 선택</div>
+        <div class="step-label list-only"><span class="step-num">1</span>배경 선택</div>
         <div class="sec-title free-only">배경</div>
         <div class="img-grid" id="p2-img-grid"></div>
         <div class="bg-tools">
@@ -170,7 +170,7 @@
       </div>
       <!-- ② 텍스트 편집 -->
       <div class="tool-section">
-        <div class="step-label list-only">② 제목 텍스트 편집</div>
+        <div class="step-label list-only"><span class="step-num">2</span>제목 텍스트 편집</div>
         <div class="sec-title free-only">텍스트</div>
         <button class="btn btn-primary list-only" id="p2-add-btn" onclick="p2addBox()">+ 텍스트 추가</button>
         <div class="box-list" id="p2-box-list"></div>
@@ -194,7 +194,7 @@
       <!-- ③ 명단 입력 -->
       <div class="tool-section list-only">
         <div class="step-label" style="justify-content:space-between;">
-          <span>③ 명단 입력</span>
+          <span style="display:inline-flex;align-items:center;gap:8px;"><span class="step-num">3</span>명단 입력</span>
           <div style="display:flex;gap:4px;align-items:center;">
             <button class="col-btn" id="p2-col-2" onclick="p2setCol(2)">2열</button>
             <button class="col-btn active" id="p2-col-3" onclick="p2setCol(3)">3열</button>
@@ -254,12 +254,12 @@
       </div>
       <!-- ④ 로고 -->
       <div class="tool-section">
-        <div class="step-label list-only">④ 로고 선택</div>
+        <div class="step-label list-only"><span class="step-num">4</span>로고 선택</div>
         <div class="sec-title free-only">로고</div>
         <div id="p2-logo-rows"></div>
       </div>
-      <div class="tool-section">
-        <div class="sec-title">홍보문구 생성</div>
+      <div class="tool-section highlight">
+        <div class="sec-title"><span class="sec-title-icon"><svg viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M18 6l-2.5 2.5M8.5 15.5L6 18"/></svg></span>홍보문구 생성</div>
         <div class="ai-panel">
           <div class="ai-note">현재 미리보기 이미지를 분석해 인스타그램용 홍보문구를 만듭니다. API 키는 사이드바 하단 <b>API 설정</b>에서 입력하세요.</div>
           <select id="ai-tone">
@@ -289,8 +289,8 @@
           <div class="canvas-title" id="p2-canvas-title">성적우수 이미지</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center;">
-          <button id="p2-undo-btn" title="실행취소 (Ctrl+Z)" style="padding:7px 14px;border:1px solid var(--bdr);border-radius:8px;background:#fff;font-size:12px;font-weight:700;cursor:pointer;color:#374151;">↩ 취소</button>
-          <button id="p2-redo-btn" title="다시실행 (Ctrl+Y)" style="padding:7px 14px;border:1px solid var(--bdr);border-radius:8px;background:#fff;font-size:12px;font-weight:700;cursor:pointer;color:#374151;">↪ 다시</button>
+          <button id="p2-undo-btn" title="실행취소 (Ctrl+Z)" style="padding:7px 14px;border:1px solid var(--bdr);border-radius:8px;background:#fff;font-size:12px;font-weight:700;cursor:pointer;color:#374151;">취소</button>
+          <button id="p2-redo-btn" title="다시실행 (Ctrl+Y)" style="padding:7px 14px;border:1px solid var(--bdr);border-radius:8px;background:#fff;font-size:12px;font-weight:700;cursor:pointer;color:#374151;">다시</button>
           <button class="btn btn-primary download-btn" id="p2-dl" style="padding:7px 18px;font-size:13px;min-width:auto;">PNG 다운로드</button>
         </div>
       </div>
