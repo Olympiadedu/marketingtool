@@ -31,6 +31,8 @@ body{display:flex;height:100vh;overflow:hidden;font-family:'Noto Sans KR',sans-s
 .sidebar-subitem.active{background:var(--acc-light);color:var(--acc);font-weight:700;}
 .sidebar-footer-btn{width:100%;padding:9px 12px;background:var(--acc);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;}
 .sidebar-footer-btn:hover{background:var(--acc2);}
+.sidebar-corp-info{padding:10px 10px 2px;margin-top:8px;border-top:1px solid #f3f4f6;font-size:10px;line-height:1.6;color:#b0b8c4;}
+.sidebar-corp-info .sidebar-corp-name{font-weight:700;color:#9ca3af;margin-bottom:1px;}
 
 /* ── MAIN ── */
 .main{flex:1;display:flex;overflow:hidden;}
