@@ -1,4 +1,4 @@
-﻿var FONTS = [
+var FONTS = [
   {f:'Noto Sans KR', l:'Noto Sans KR', g:'KR_BASIC', w:700, weights:[400,700,900]},
   {f:'Noto Serif KR', l:'Noto Serif KR', g:'KR_BASIC', w:700, weights:[400,700,900]},
   {f:'Nanum Gothic', l:'나눔고딕', g:'KR_BASIC', w:800, weights:[400,700,800]},
@@ -627,19 +627,6 @@ async function forceLoadFont(family, weight, size) {
   document.body.removeChild(el);
 }
 
-// ============================================================
-// PAGE 1
-// ============================================================
-var p1State = {
-  bgImg: null,
-  bgTransform: {scale: 100, posX: 0, posY: 0, cropL: 0, cropR: 0, cropT: 0, cropB: 0},
-  logoItems: [],
-  selLogoFile: null,
-  boxes: [],
-  selId: null,
-  nextNum: 1,
-  templateKey: 'free'
-};
 
 var P2_TEMPLATES = {
   free: {label: '자유 편집', list: null, logo: {posX: 50, posY: 88, size: 20}, boxes: []},
@@ -665,242 +652,6 @@ var P2_TEMPLATES = {
     ]
   }
 };
-var p1Canvas = document.getElementById('cv1');
-var p1Ctx = p1Canvas.getContext('2d');
-
-function p1render() {
-  var W = p1Canvas.width;
-  var H = p1Canvas.height;
-  p1Ctx.clearRect(0, 0, W, H);
-  drawBackground(p1Ctx, p1State, W, H);
-  var selBox = null;
-  p1State.boxes.forEach(function(b) {
-    if (b.id === p1State.selId) { selBox = b; return; }
-    drawTextBox(p1Ctx, b, false, W, H);
-  });
-  if (selBox) drawTextBox(p1Ctx, selBox, true, W, H);
-  drawLogoItems(p1Ctx, p1State.logoItems, p1State.selLogoFile, W, H);
-  drawCropOverlay(p1Ctx, p1State, W, H);
-}
-
-function p1updatePanel() {
-  var bl = document.getElementById('p1-box-list');
-  bl.innerHTML = '';
-  p1State.boxes.forEach(function(b) {
-    var item = document.createElement('div');
-    item.className = 'box-item' + (b.id === p1State.selId ? ' sel' : '');
-    item.innerHTML = '<div class="box-preview">' + (b.text || '(빈 텍스트)') + '</div>';
-    item.addEventListener('click', function() {
-      p1State.selId = b.id;
-      p1updatePanel();
-      p1render();
-    });
-    bl.appendChild(item);
-  });
-  var ed = document.getElementById('p1-editor');
-  var selBox = p1State.boxes.find(function(b) { return b.id === p1State.selId; });
-  if (selBox) {
-    ed.style.display = 'flex';
-    document.getElementById('p1-ed-text').value = selBox.text;
-    document.getElementById('p1-ed-font').value = selBox.font;
-    document.getElementById('p1-ed-size').value = selBox.size;
-    document.getElementById('p1-ed-size-v').textContent = selBox.size;
-    document.getElementById('p1-ed-color').value = selBox.color;
-    document.getElementById('p1-ed-bold').className = 'toggle-btn' + (selBox.bold ? ' on' : '');
-    document.getElementById('p1-ed-shadow').className = 'toggle-btn' + (selBox.shadow ? ' on' : '');
-  } else {
-    ed.style.display = 'none';
-  }
-}
-
-function p1addBox() {
-  var num = p1State.nextNum++;
-  var box = {
-    id: 'p1b' + num,
-    text: '텍스트 ' + num,
-    font: 'Noto Sans KR',
-    size: 72,
-    color: '#ffffff',
-    bold: true,
-    shadow: true,
-    posX: 50,
-    posY: 50,
-    _rect: null
-  };
-  p1State.boxes.push(box);
-  p1State.selId = box.id;
-  p1updatePanel();
-  p1render();
-}
-
-function p1removeBox(id) {
-  p1State.boxes = p1State.boxes.filter(function(b) { return b.id !== id; });
-  if (p1State.selId === id) p1State.selId = null;
-  p1updatePanel();
-  p1render();
-}
-
-document.getElementById('p1-ed-text').addEventListener('input', function(e) {
-  var b = p1State.boxes.find(function(b) { return b.id === p1State.selId; });
-  if (!b) return;
-  b.text = e.target.value;
-  p1updatePanel();
-  p1render();
-});
-
-document.getElementById('p1-ed-font').addEventListener('change', async function(e) {
-  var b = p1State.boxes.find(function(b) { return b.id === p1State.selId; });
-  if (!b) return;
-  b.font = e.target.value;
-  var fd = FONTS.find(function(f) { return f.f === b.font; });
-  var fw = b.bold ? (fd ? fd.w : 700) : 400;
-  await forceLoadFont(b.font, fw, b.size);
-  p1render();
-});
-
-document.getElementById('p1-ed-size').addEventListener('input', function(e) {
-  var b = p1State.boxes.find(function(b) { return b.id === p1State.selId; });
-  if (!b) return;
-  b.size = +e.target.value;
-  document.getElementById('p1-ed-size-v').textContent = b.size;
-  p1render();
-});
-
-document.getElementById('p1-ed-color').addEventListener('input', function(e) {
-  var b = p1State.boxes.find(function(b) { return b.id === p1State.selId; });
-  if (!b) return;
-  b.color = e.target.value;
-  p1render();
-});
-
-document.getElementById('p1-ed-bold').addEventListener('click', async function() {
-  var b = p1State.boxes.find(function(b) { return b.id === p1State.selId; });
-  if (!b) return;
-  b.bold = !b.bold;
-  this.className = 'toggle-btn' + (b.bold ? ' on' : '');
-  var fd = FONTS.find(function(f) { return f.f === b.font; });
-  var fw = b.bold ? (fd ? fd.w : 700) : 400;
-  await forceLoadFont(b.font, fw, b.size);
-  p1render();
-});
-
-document.getElementById('p1-ed-shadow').addEventListener('click', function() {
-  var b = p1State.boxes.find(function(b) { return b.id === p1State.selId; });
-  if (!b) return;
-  b.shadow = !b.shadow;
-  this.className = 'toggle-btn' + (b.shadow ? ' on' : '');
-  p1render();
-});
-
-document.getElementById('p1-del-btn').addEventListener('click', function() {
-  if (p1State.selId) p1removeBox(p1State.selId);
-});
-
-(function() {
-  var dragging = null;
-  var dragStartX, dragStartY, dragOrigX, dragOrigY, cropDragStart;
-
-  function getCanvasPos(e) {
-    var rect = p1Canvas.getBoundingClientRect();
-    var scaleX = p1Canvas.width / rect.width;
-    var scaleY = p1Canvas.height / rect.height;
-    var clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    var clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return {x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY};
-  }
-
-  function onDown(e) {
-    var pos = getCanvasPos(e);
-    var pad = 20;
-    var cropHandle = hitCropHandle(p1State, p1Canvas.width, p1Canvas.height, pos.x, pos.y);
-    if (cropHandle === 'bg-move') {
-      dragging = p1State.bgTransform;
-      dragStartX = pos.x; dragStartY = pos.y;
-      dragOrigX = p1State.bgTransform.posX; dragOrigY = p1State.bgTransform.posY;
-      e.preventDefault();
-      return;
-    }
-    if (cropHandle) {
-      dragging = {type: 'crop', handle: cropHandle};
-      cropDragStart = {
-        x: pos.x,
-        y: pos.y,
-        crop: {
-          cropL: p1State.bgTransform.cropL || 0,
-          cropR: p1State.bgTransform.cropR || 0,
-          cropT: p1State.bgTransform.cropT || 0,
-          cropB: p1State.bgTransform.cropB || 0
-        }
-      };
-      e.preventDefault();
-      return;
-    }
-    if (p1State.moveMode && p1State.bgImg) {
-      dragging = p1State.bgTransform;
-      dragStartX = pos.x; dragStartY = pos.y;
-      dragOrigX = p1State.bgTransform.posX; dragOrigY = p1State.bgTransform.posY;
-      e.preventDefault();
-      return;
-    }
-    for (var i = p1State.logoItems.length - 1; i >= 0; i--) {
-      var item = p1State.logoItems[i];
-      if (!item.active || !item._rect) continue;
-      var r = item._rect;
-      if (pos.x >= r.x - pad && pos.x <= r.x + r.w + pad && pos.y >= r.y - pad && pos.y <= r.y + r.h + pad) {
-        dragging = item;
-        dragStartX = pos.x; dragStartY = pos.y;
-        dragOrigX = item.posX; dragOrigY = item.posY;
-        p1State.selLogoFile = item.file;
-        p1render();
-        e.preventDefault();
-        return;
-      }
-    }
-    var hit = hitTestBoxes(p1State.boxes, pos.x, pos.y);
-    if (hit) {
-      dragging = hit;
-      dragStartX = pos.x; dragStartY = pos.y;
-      dragOrigX = hit.posX; dragOrigY = hit.posY;
-      p1State.selId = hit.id;
-      p1updatePanel();
-      p1render();
-      e.preventDefault();
-    } else {
-      p1State.selId = null;
-      p1State.selLogoFile = null;
-      p1updatePanel();
-      p1render();
-    }
-  }
-
-  function onMove(e) {
-    if (!dragging) return;
-    var pos = getCanvasPos(e);
-    var W = p1Canvas.width, H = p1Canvas.height;
-    if (dragging.type === 'crop') {
-      applyCropDrag(p1State, dragging.handle, cropDragStart, pos, W, H);
-      updateBgControls('p1', p1State);
-    } else if (dragging === p1State.bgTransform) {
-      dragging.posX = Math.max(-100, Math.min(100, dragOrigX + ((pos.x - dragStartX) / W) * 100));
-      dragging.posY = Math.max(-100, Math.min(100, dragOrigY + ((pos.y - dragStartY) / H) * 100));
-      updateBgControls('p1', p1State);
-    } else {
-      dragging.posX = Math.max(0, Math.min(100, dragOrigX + ((pos.x - dragStartX) / W) * 100));
-      dragging.posY = Math.max(0, Math.min(100, dragOrigY + ((pos.y - dragStartY) / H) * 100));
-    }
-    p1render();
-    e.preventDefault();
-  }
-
-  function onUp() { dragging = null; cropDragStart = null; }
-
-  p1Canvas.addEventListener('mousedown', onDown);
-  p1Canvas.addEventListener('mousemove', onMove);
-  p1Canvas.addEventListener('mouseup', onUp);
-  p1Canvas.addEventListener('touchstart', onDown, {passive: false});
-  p1Canvas.addEventListener('touchmove', onMove, {passive: false});
-  p1Canvas.addEventListener('touchend', onUp);
-})();
 
 function initBgControls(prefix, state, render) {
   var uploadBtn = document.getElementById(prefix + '-bg-upload');
@@ -1040,39 +791,6 @@ async function sharePreparedImage(canvas, fileName, prepare, restore) {
     restore();
   }
 }
-document.getElementById('p1-dl').addEventListener('click', function() {
-  var prevSel = p1State.selId;
-  var prevLogo = p1State.selLogoFile;
-  p1State.selId = null;
-  p1State.selLogoFile = null;
-  p1render();
-  var link = document.createElement('a');
-  link.download = downloadFileName('이미지만들기');
-  link.href = p1Canvas.toDataURL('image/png');
-  link.click();
-  p1State.selId = prevSel;
-  p1State.selLogoFile = prevLogo;
-  p1render();
-});
-document.getElementById('p1-ig').addEventListener('click', function() {
-  var prevSel = p1State.selId;
-  var prevLogo = p1State.selLogoFile;
-  sharePreparedImage(
-    p1Canvas,
-    downloadFileName('이미지만들기'),
-    function() {
-      p1State.selId = null;
-      p1State.selLogoFile = null;
-      p1render();
-    },
-    function() {
-      p1State.selId = prevSel;
-      p1State.selLogoFile = prevLogo;
-      p1render();
-    }
-  );
-});
-// ============================================================
 // PAGE 2
 // ============================================================
 var p2State = {
@@ -2241,13 +1959,10 @@ function initAiPromoControls() {
 }
 
 // ── INIT ──
-buildFontSelect(document.getElementById('p1-ed-font'));
 buildFontSelect(document.getElementById('p2-ed-font'));
 buildFontSelect(document.getElementById('p2-school-font'));
 buildFontSelect(document.getElementById('p2-name-font'));
-p1updatePanel();
 p2updatePanel();
-initBgControls('p1', p1State, p1render);
 initBgControls('p2', p2State, p2render);
 initListToggle();
 initTemplateControls();
@@ -2255,12 +1970,10 @@ initExamplePanel();
 initCanvasSelectionClear();
 initAiPromoControls();
 
-loadImgManifest('p1-img-grid', function(img, name) { setBackground(p1State, img, 'p1', p1render, name); }, 'p1-bg-file');
 loadImgManifest('p2-img-grid', function(img, name) { setBackground(p2State, img, 'p2', p2render, name); }, 'p2-bg-file');
-initLogoSection('p1-logo-rows', p1State.logoItems, p1render);
 initLogoSection('p2-logo-rows', p2State.logoItems, p2render);
 
-document.fonts.ready.then(function() { p1render(); p2render(); });
+document.fonts.ready.then(function() { p2render(); });
 showPage('list');
 
 /* ── 경쟁학원 모니터링 ── */

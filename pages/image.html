@@ -1,102 +1,4 @@
 
-  <!-- PAGE 1 -->
-  <div class="page" id="page-1">
-    <div class="left-panel">
-      <div class="tool-section">
-        <div class="sec-title">배경 이미지</div>
-        <div class="img-grid" id="p1-img-grid"></div>
-        <div class="bg-tools">
-          <div class="bg-upload-row">
-            <button class="btn btn-outline btn-sm" type="button" id="p1-bg-upload">+ 이미지 추가</button>
-            <span class="bg-file-name" id="p1-bg-file-name">기본 배경</span>
-            <input type="file" id="p1-bg-file" accept="image/*" style="display:none">
-          </div>
-          <div class="ed-row">
-            <span class="ed-label">확대</span>
-            <input type="range" id="p1-bg-scale" min="80" max="250" value="100">
-            <span class="val-span" id="p1-bg-scale-v">100</span>
-          </div>
-          <div class="ed-row">
-            <span class="ed-label">가로</span>
-            <input type="range" id="p1-bg-x" min="-100" max="100" value="0">
-            <span class="val-span" id="p1-bg-x-v">0</span>
-          </div>
-          <div class="ed-row">
-            <span class="ed-label">세로</span>
-            <input type="range" id="p1-bg-y" min="-100" max="100" value="0">
-            <span class="val-span" id="p1-bg-y-v">0</span>
-          </div>
-          <button class="btn btn-outline btn-sm" type="button" id="p1-bg-move-mode">위치 이동</button>
-          <button class="btn btn-outline btn-sm" type="button" id="p1-bg-crop-mode">자르기</button>
-          <div class="crop-overlay-note">이미지 이동/조절은 클릭 후 드래그, 자르기는 자르기 버튼을 누른 뒤 조절하세요.</div>
-          <div class="ed-row crop-range-row">
-            <span class="ed-label">왼쪽</span>
-            <input type="range" id="p1-bg-crop-l" min="0" max="97" value="0">
-            <span class="val-span" id="p1-bg-crop-l-v">0</span>
-          </div>
-          <div class="ed-row crop-range-row">
-            <span class="ed-label">오른쪽</span>
-            <input type="range" id="p1-bg-crop-r" min="0" max="97" value="0">
-            <span class="val-span" id="p1-bg-crop-r-v">0</span>
-          </div>
-          <div class="ed-row crop-range-row">
-            <span class="ed-label">위</span>
-            <input type="range" id="p1-bg-crop-t" min="0" max="97" value="0">
-            <span class="val-span" id="p1-bg-crop-t-v">0</span>
-          </div>
-          <div class="ed-row crop-range-row">
-            <span class="ed-label">아래</span>
-            <input type="range" id="p1-bg-crop-b" min="0" max="97" value="0">
-            <span class="val-span" id="p1-bg-crop-b-v">0</span>
-          </div>
-          <button class="btn btn-outline btn-sm" type="button" id="p1-bg-reset">배경 초기화</button>
-        </div>
-      </div>
-      <div>
-        <div class="sec-title">로고</div>
-        <div id="p1-logo-rows"></div>
-      </div>
-      <hr>
-      <button class="btn btn-primary" id="p1-add-btn" onclick="p1addBox()">+ 텍스트 추가</button>
-      <div class="box-list" id="p1-box-list"></div>
-      <div class="editor" id="p1-editor" style="display:none">
-        <div class="editor-title">텍스트 편집</div>
-        <textarea id="p1-ed-text" placeholder="텍스트 입력..."></textarea>
-        <select id="p1-ed-font"></select>
-        <div class="ed-row compact-slider">
-          <span class="ed-label">크기</span>
-          <input type="range" id="p1-ed-size" min="12" max="100" value="72">
-          <span class="val-span" id="p1-ed-size-v">72</span>
-        </div>
-        <div class="ed-row">
-          <input type="color" id="p1-ed-color" value="#ffffff">
-          <button class="toggle-btn on" id="p1-ed-bold">굵게</button>
-          <button class="toggle-btn on" id="p1-ed-shadow">그림자</button>
-        </div>
-        <button class="btn btn-danger btn-sm" id="p1-del-btn">삭제</button>
-      </div>
-    </div>
-    <div class="canvas-right">
-      <div class="canvas-header">
-        <div class="canvas-header-left">
-          <div class="canvas-title">자유 편집</div>
-          <div class="canvas-desc">배경·로고·텍스트를 조합해 인스타그램용 이미지를 제작합니다</div>
-        </div>
-      </div>
-      <div class="canvas-area">
-        <div class="canvas-wrap">
-          <canvas id="cv1" width="1080" height="1350"></canvas>
-          <div class="canvas-badge">1080 × 1350</div>
-          <div class="drag-hint">✥ 드래그로 이동</div>
-        </div>
-        <div class="canvas-actions">
-          <button class="btn btn-primary download-btn" id="p1-dl">PNG 다운로드</button>
-          <button class="btn instagram-btn" id="p1-ig" type="button">인스타그램 공유</button>
-          <span class="hint-text">텍스트/로고/이미지를 드래그해서 위치 조정</span>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- PAGE 2 -->
   <div class="page active" id="page-2">
@@ -124,47 +26,25 @@
         <div class="bg-tools">
           <div class="bg-upload-row">
             <button class="btn btn-outline btn-sm" type="button" id="p2-bg-upload">+ 이미지 추가</button>
-            <span class="bg-file-name" id="p2-bg-file-name">기본 배경</span>
             <input type="file" id="p2-bg-file" accept="image/*" style="display:none">
           </div>
-          <button class="collapse-toggle" type="button" id="p2-bg-detail-toggle" onclick="toggleCollapse('p2-bg-detail','p2-bg-detail-toggle')">배경 세부 조정 ▾</button>
-          <div id="p2-bg-detail" style="display:none">
-            <div class="ed-row">
-              <span class="ed-label">확대</span>
-              <input type="range" id="p2-bg-scale" min="80" max="250" value="100">
-              <span class="val-span" id="p2-bg-scale-v">100</span>
-            </div>
-            <div class="ed-row">
-              <span class="ed-label">가로</span>
-              <input type="range" id="p2-bg-x" min="-100" max="100" value="0">
-              <span class="val-span" id="p2-bg-x-v">0</span>
-            </div>
-            <div class="ed-row">
-              <span class="ed-label">세로</span>
-              <input type="range" id="p2-bg-y" min="-100" max="100" value="0">
-              <span class="val-span" id="p2-bg-y-v">0</span>
-            </div>
-            <div class="ed-row crop-range-row">
-              <span class="ed-label">왼쪽</span>
-              <input type="range" id="p2-bg-crop-l" min="0" max="97" value="0">
-              <span class="val-span" id="p2-bg-crop-l-v">0</span>
-            </div>
-            <div class="ed-row crop-range-row">
-              <span class="ed-label">오른쪽</span>
-              <input type="range" id="p2-bg-crop-r" min="0" max="97" value="0">
-              <span class="val-span" id="p2-bg-crop-r-v">0</span>
-            </div>
-            <div class="ed-row crop-range-row">
-              <span class="ed-label">위</span>
-              <input type="range" id="p2-bg-crop-t" min="0" max="97" value="0">
-              <span class="val-span" id="p2-bg-crop-t-v">0</span>
-            </div>
-            <div class="ed-row crop-range-row">
-              <span class="ed-label">아래</span>
-              <input type="range" id="p2-bg-crop-b" min="0" max="97" value="0">
-              <span class="val-span" id="p2-bg-crop-b-v">0</span>
-            </div>
-            <button class="btn btn-outline btn-sm" type="button" id="p2-bg-reset">배경 초기화</button>
+          <!-- 비활성화된 슬라이더 (코드 보존) -->
+          <div style="display:none">
+            <input type="range" id="p2-bg-scale" min="80" max="250" value="100">
+            <span id="p2-bg-scale-v">100</span>
+            <input type="range" id="p2-bg-x" min="-100" max="100" value="0" disabled>
+            <span id="p2-bg-x-v">0</span>
+            <input type="range" id="p2-bg-y" min="-100" max="100" value="0" disabled>
+            <span id="p2-bg-y-v">0</span>
+            <input type="range" id="p2-bg-crop-l" min="0" max="97" value="0" disabled>
+            <span id="p2-bg-crop-l-v">0</span>
+            <input type="range" id="p2-bg-crop-r" min="0" max="97" value="0" disabled>
+            <span id="p2-bg-crop-r-v">0</span>
+            <input type="range" id="p2-bg-crop-t" min="0" max="97" value="0" disabled>
+            <span id="p2-bg-crop-t-v">0</span>
+            <input type="range" id="p2-bg-crop-b" min="0" max="97" value="0" disabled>
+            <span id="p2-bg-crop-b-v">0</span>
+            <button id="p2-bg-reset" type="button">배경 초기화</button>
           </div>
         </div>
       </div>
