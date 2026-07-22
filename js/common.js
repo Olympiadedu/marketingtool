@@ -24,7 +24,7 @@ function showPage(id) {
   document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
   document.querySelectorAll('.sidebar-item').forEach(function(i) { i.classList.remove('active'); });
   // 설정 서브메뉴는 설정 계열이 아닐 때 닫기
-  if (id !== 'settings-ai' && id !== 'settings-prompt' && id !== 'settings-instagram') {
+  if (id !== 'settings-ai' && id !== 'settings-prompt' && id !== 'settings-instagram' && id !== 'settings-mapsearch') {
     var subnav = document.getElementById('sidebar-subnav-settings');
     if (subnav) subnav.style.display = 'none';
   }
@@ -33,6 +33,11 @@ function showPage(id) {
     var imgSubnav = document.getElementById('sidebar-subnav-image');
     if (imgSubnav) imgSubnav.style.display = 'none';
     document.querySelectorAll('#sidebar-subnav-image .sidebar-subitem').forEach(function(i) { i.classList.remove('active'); });
+  }
+  // 블로그 서브메뉴는 블로그 계열이 아닐 때 닫기
+  if (id !== 'blog' && id !== 'blog-history') {
+    var blogSubnav = document.getElementById('sidebar-subnav-blog');
+    if (blogSubnav) blogSubnav.style.display = 'none';
   }
   if (id === 'list' || id === 2) {
     document.getElementById('page-2').classList.add('active');
@@ -60,20 +65,34 @@ function showPage(id) {
     if (lp) { lp.classList.remove('mode-list'); lp.classList.add('mode-free'); }
     p2State.templateKey = 'free';
     p2render();
-  } else if (id === 'blog') {
+  } else if (id === 'blog' || id === 'blog-history') {
     document.getElementById('page-blog').classList.add('active');
     var navBlog = document.getElementById('nav-blog');
     if (navBlog) navBlog.classList.add('active');
-    initAcademyProfile();
-    blogGoStep(blogState.step || 1);
-  } else if (id === 'settings-ai' || id === 'settings-prompt' || id === 'settings-instagram') {
+    var blogSubnavOpen = document.getElementById('sidebar-subnav-blog');
+    if (blogSubnavOpen) blogSubnavOpen.style.display = '';
+    var navWrite = document.getElementById('nav-blog-write');
+    var navHistory = document.getElementById('nav-blog-history');
+    if (navWrite) navWrite.classList.toggle('active', id === 'blog');
+    if (navHistory) navHistory.classList.toggle('active', id === 'blog-history');
+    var tabWrite = document.getElementById('blogtab-write');
+    var tabHistory = document.getElementById('blogtab-history');
+    if (tabWrite) tabWrite.style.display = (id === 'blog') ? '' : 'none';
+    if (tabHistory) tabHistory.style.display = (id === 'blog-history') ? '' : 'none';
+    if (id === 'blog') {
+      initAcademyProfile();
+      blogGoStep(blogState.step || 1);
+    } else {
+      blogHistoryInit();
+    }
+  } else if (id === 'settings-ai' || id === 'settings-prompt' || id === 'settings-instagram' || id === 'settings-mapsearch') {
     document.getElementById('page-settings').classList.add('active');
     var navSettings = document.getElementById('nav-settings');
     if (navSettings) navSettings.classList.add('active');
     var subnav = document.getElementById('sidebar-subnav-settings');
     if (subnav) subnav.style.display = '';
-    var sub = id === 'settings-ai' ? 'ai' : id === 'settings-prompt' ? 'prompt' : 'instagram';
-    ['ai','prompt','instagram'].forEach(function(t) {
+    var sub = id === 'settings-ai' ? 'ai' : id === 'settings-prompt' ? 'prompt' : id === 'settings-instagram' ? 'instagram' : 'mapsearch';
+    ['ai','prompt','instagram','mapsearch'].forEach(function(t) {
       var ni = document.getElementById('nav-settings-' + t);
       if (ni) ni.classList.toggle('active', t === sub);
       var ti = document.getElementById('settab-' + t);
@@ -81,12 +100,18 @@ function showPage(id) {
     });
     if (sub === 'ai') settingsInit();
     else if (sub === 'prompt') settingsInitPrompt();
-    else settingsInitInstagram();
+    else if (sub === 'instagram') settingsInitInstagram();
+    else settingsInitMapsearch();
   } else if (id === 'monitor') {
     document.getElementById('page-monitor').classList.add('active');
     var navMon = document.getElementById('nav-monitor');
     if (navMon) navMon.classList.add('active');
     monRenderList();
+  } else if (id === 'mapsearch') {
+    document.getElementById('page-mapsearch').classList.add('active');
+    var navMs = document.getElementById('nav-mapsearch');
+    if (navMs) navMs.classList.add('active');
+    if (typeof msInit === 'function') msInit();
   }
 }
 
@@ -117,6 +142,10 @@ function getApiKey(type) {
   } catch(e) {}
   var fallback = { claude: 'mtt_claude_key', gemini: 'mtt_gemini_key', openai: 'mtt_openai_key' };
   return localStorage.getItem(fallback[type]) || '';
+}
+
+function getKakaoKey() {
+  return localStorage.getItem('mtt_kakao_key') || '';
 }
 
 // ── 모델 선택 ─────────────────────────────────────────────────────
@@ -419,4 +448,25 @@ function _igUpdateStatus() {
   mark('status-ig-user-id',    'mtt_ig_user_id');
   mark('status-ig-token',      'mtt_ig_token');
   mark('status-github-token',  'mtt_github_token');
+}
+
+// ── 지도검색(카카오) 설정 ────────────────────────────────────────
+function settingsInitMapsearch() {
+  var kakaoEl = document.getElementById('set-kakao');
+  if (kakaoEl) kakaoEl.value = getKakaoKey();
+  function mark(id, val) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = (val && val.length > 3) ? '✓ 설정됨' : '× 미설정';
+    el.className = 'set-current-val ' + ((val && val.length > 3) ? 'ok' : 'none');
+  }
+  mark('status-kakao', getKakaoKey());
+}
+
+function settingsSaveMapsearch() {
+  var kakaoEl = document.getElementById('set-kakao');
+  var val = kakaoEl ? kakaoEl.value.trim() : '';
+  if (val) localStorage.setItem('mtt_kakao_key', val); else localStorage.removeItem('mtt_kakao_key');
+  settingsInitMapsearch();
+  showToast('설정이 저장되었습니다');
 }

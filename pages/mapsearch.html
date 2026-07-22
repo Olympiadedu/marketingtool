@@ -1,0 +1,46 @@
+
+  <!-- PAGE MAPSEARCH -->
+  <div class="page" id="page-mapsearch">
+    <div class="blog-left">
+      <div class="panel-intro">
+        <div class="panel-intro-title">지도검색</div>
+        <div class="panel-intro-desc">우리 학원 위치 기준으로 반경 내 수학학원을 찾고, 블로그·카페 글을 취합합니다</div>
+      </div>
+
+      <div class="tool-section">
+        <div class="sec-title">① 기준 위치</div>
+        <select class="blog-input" id="ms-profile-select" onchange="msOnProfileChange()"></select>
+        <div class="hint-text" id="ms-profile-map-hint" style="margin-top:2px;"></div>
+      </div>
+
+      <div class="tool-section">
+        <div class="sec-title">② 검색 반경</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="ms-radius-group">
+          <div class="mon-pill" data-r="500" onclick="msSetRadius(this,500)">500m</div>
+          <div class="mon-pill active-date" data-r="1000" onclick="msSetRadius(this,1000)">1km</div>
+          <div class="mon-pill" data-r="2000" onclick="msSetRadius(this,2000)">2km</div>
+          <div class="mon-pill" data-r="3000" onclick="msSetRadius(this,3000)">3km</div>
+        </div>
+      </div>
+
+      <div class="tool-section">
+        <div class="sec-title">③ 검색 키워드</div>
+        <input class="blog-input" id="ms-keyword" value="수학학원" />
+        <div class="hint-text">카카오맵 카테고리 "학원"과 함께 검색됩니다</div>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;" onclick="msSearch()">🔍 인근 학원 검색</button>
+    </div>
+
+    <div class="canvas-right" style="overflow-y:auto;align-items:stretch;justify-content:flex-start;">
+      <div class="canvas-header">
+        <div class="canvas-header-left">
+          <div class="canvas-title">인근 학원 리스트</div>
+          <div class="canvas-desc" id="ms-result-count">왼쪽에서 위치와 반경을 설정한 뒤 검색해보세요</div>
+        </div>
+      </div>
+      <div style="padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start;" id="ms-result-list">
+        <div class="mon-empty-right" style="grid-column:1/-1;">← 검색 결과가 여기에 표시됩니다</div>
+      </div>
+    </div>
+  </div><!-- /page-mapsearch -->

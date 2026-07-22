@@ -237,6 +237,53 @@
         </div>
       </div>
 
+      <!-- 지도검색 연동 -->
+      <div class="set-tab" id="settab-mapsearch" style="display:none;">
+        <div class="set-page-title">지도검색 연동</div>
+        <div class="set-page-sub">카카오맵 API로 학원 위치 기준 반경 내 학원을 검색합니다</div>
+
+        <div class="set-main-body">
+          <div class="set-main-left">
+            <div class="set-card">
+              <div class="set-card-title">카카오 로컬 API 설정</div>
+
+              <div class="set-field">
+                <label class="set-label">
+                  카카오 REST API 키
+                  <a href="https://developers.kakao.com/console/app" target="_blank" rel="noopener" class="set-key-link">키 발급 →</a>
+                </label>
+                <input id="set-kakao" type="password" placeholder="카카오 REST API 키" class="set-input" />
+                <div style="font-size:11px;color:var(--mut);margin-top:4px;">인근 학원 검색(주소·키워드 검색)에 사용됩니다. 플랫폼 키 페이지의 "REST API 키".</div>
+              </div>
+
+              <button class="btn btn-primary set-save-btn" onclick="settingsSaveMapsearch()">✓ 설정 저장</button>
+
+              <div class="set-current-list" style="margin-top:16px;">
+                <div class="set-current-row">
+                  <span class="set-current-label">REST API 키</span>
+                  <span class="set-current-val" id="status-kakao">—</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="set-main-right">
+            <div class="set-card">
+              <div class="set-guide-header"><span>ⓘ</span> 설정 방법</div>
+              <ol class="set-how-list">
+                <li><a href="https://developers.kakao.com/console/app" target="_blank" rel="noopener" class="set-key-link">카카오 디벨로퍼스</a> → 앱 설정 → 플랫폼 키</li>
+                <li><b>REST API 키</b> 카드에서 키 복사 → 위 입력란</li>
+                <li>제품 설정 → <b>카카오맵</b>이 "사용 중"인지 확인 (꺼져 있으면 검색이 403으로 실패)</li>
+              </ol>
+              <div class="set-tip" style="margin-top:12px;">
+                <span style="color:#f59e0b;flex-shrink:0;">▲</span>
+                <span>REST API 키는 도메인 등록이 필요 없습니다.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- 프롬프트 설정 -->
       <div class="set-tab" id="settab-prompt" style="display:none;">
         <div class="set-page-title">프롬프트 설정</div>

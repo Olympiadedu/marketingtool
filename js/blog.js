@@ -1,4 +1,4 @@
-var blogState = { draft: null, result: null, step: 1 };
+var blogState = { draft: null, result: null, step: 1, historyPosts: null, historySelected: -1 };
 // 모델은 설정 페이지의 getModel('claude') 로 동적 참조
 var BLOG_GEMINI_FALLBACK = ['gemini-2.5-flash','gemini-3.5-flash','gemini-3-flash','gemini-3.1-flash-lite','gemini-2.5-flash-lite'];
 
@@ -168,7 +168,7 @@ function blogParseJson(text) {
   throw new Error('JSON 파싱 실패');
 }
 
-var BLOG_PROFILE_FIELDS = ['name','subject','target','keywords','website','phone','map'];
+var BLOG_PROFILE_FIELDS = ['name','subject','target','keywords','website','phone','map','address'];
 
 function blogGenProfileId() {
   return 'p_' + Math.random().toString(36).slice(2, 10);
@@ -854,4 +854,87 @@ function blogShowAlert(num, msg) {
 function blogHideAlert(num) {
   var el = document.getElementById('blog-alert' + num);
   if (el) { el.className = 'blog-alert err'; el.textContent = ''; }
+}
+
+// ── 작성 히스토리 ────────────────────────────────────────────────
+async function blogHistoryInit() {
+  var alertEl = document.getElementById('bhist-alert');
+  var listEl = document.getElementById('bhist-list');
+  if (alertEl) { alertEl.className = 'blog-alert err'; alertEl.textContent = ''; }
+  blogState.historySelected = -1;
+  blogRenderHistoryDetail(null);
+  if (listEl) listEl.innerHTML = '<p style="color:#9aa1ad;font-size:13px;">불러오는 중...</p>';
+  try {
+    var posts = await gasGetRecentPosts(100);
+    blogState.historyPosts = posts || [];
+    if (!blogState.historyPosts.length && alertEl) {
+      alertEl.textContent = '저장된 글이 없거나 구글 시트 연동이 설정되지 않았습니다. 설정 페이지에서 확인해주세요.';
+      alertEl.className = 'blog-alert err show';
+    }
+    blogRenderHistoryList();
+  } catch(e) {
+    blogState.historyPosts = [];
+    if (alertEl) { alertEl.textContent = e.message || '히스토리를 불러오지 못했습니다.'; alertEl.className = 'blog-alert err show'; }
+    blogRenderHistoryList();
+  }
+}
+
+function blogRenderHistoryList() {
+  var listEl = document.getElementById('bhist-list');
+  if (!listEl) return;
+  var posts = blogState.historyPosts || [];
+  var typeFilter = (document.getElementById('bhist-type-filter') || {}).value || '';
+  var search = ((document.getElementById('bhist-search') || {}).value || '').trim().toLowerCase();
+
+  var filtered = posts.filter(function(p) {
+    if (typeFilter && p.type !== typeFilter) return false;
+    if (search) {
+      var haystack = [p.title, p.keywords, p.tags, p.topic].join(' ').toLowerCase();
+      if (haystack.indexOf(search) < 0) return false;
+    }
+    return true;
+  });
+
+  if (!filtered.length) {
+    listEl.innerHTML = '<p style="color:#9aa1ad;font-size:13px;">표시할 글이 없습니다.</p>';
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(function(p, i) {
+    var origIdx = posts.indexOf(p);
+    var isActive = origIdx === blogState.historySelected;
+    var tagsPreview = p.tags ? blogEsc(p.tags) : '';
+    return '<div class="blog-card' + (isActive ? ' is-thumb' : '') + '" style="cursor:pointer;padding:10px 12px;" onclick="blogShowHistoryDetail(' + origIdx + ')">'
+      + '<div style="display:flex;justify-content:space-between;gap:8px;align-items:start;">'
+        + '<div style="font-size:13px;font-weight:700;color:#172033;line-height:1.4;">' + blogEsc(p.title || '(제목 없음)') + '</div>'
+        + '<div style="font-size:11px;color:#9aa1ad;white-space:nowrap;flex-shrink:0;">' + blogEsc(p.date) + '</div>'
+      + '</div>'
+      + (p.type ? '<div style="margin-top:4px;"><span class="bimg-badge body-img" style="font-size:10px;">' + blogEsc(p.type) + '</span></div>' : '')
+      + (tagsPreview ? '<div style="margin-top:6px;font-size:11px;color:#657181;">' + tagsPreview + '</div>' : '')
+      + '</div>';
+  }).join('');
+}
+
+function blogShowHistoryDetail(idx) {
+  blogState.historySelected = idx;
+  blogRenderHistoryList();
+  var p = (blogState.historyPosts || [])[idx];
+  blogRenderHistoryDetail(p);
+}
+
+function blogRenderHistoryDetail(p) {
+  var c = document.getElementById('bhist-detail');
+  if (!c) return;
+  if (!p) {
+    c.innerHTML = '<div class="blog-card"><div style="font-size:13px;font-weight:900;color:var(--txt);margin-bottom:8px;">작성 히스토리</div><div style="font-size:12px;color:var(--mut);line-height:1.7;">왼쪽 목록에서 글 제목을 클릭하면<br>여기에 전체 본문이 표시됩니다.</div></div>';
+    return;
+  }
+  var html = '';
+  html += '<div class="blog-copy-section"><div class="blog-copy-header"><span class="blog-copy-label">제목</span><button class="blog-copy-btn" onclick="blogCopyText(this,\'bhist-d-title\')">복사</button></div><div class="blog-copy-content" id="bhist-d-title">' + blogEsc(p.title) + '</div></div>';
+  html += '<div class="blog-copy-section"><div class="blog-copy-header"><span class="blog-copy-label">본문</span><button class="blog-copy-btn" onclick="blogCopyText(this,\'bhist-d-body\')">복사</button></div><div class="blog-copy-content" id="bhist-d-body">' + blogEscNl(p.body) + '</div></div>';
+  if (p.tags) {
+    html += '<div class="blog-copy-section"><div class="blog-copy-header"><span class="blog-copy-label">태그</span><button class="blog-copy-btn" onclick="blogCopyText(this,\'bhist-d-tags\')">복사</button></div><div class="blog-copy-content" id="bhist-d-tags">' + blogEsc(p.tags) + '</div></div>';
+  }
+  html += '<div style="font-size:11px;color:#9aa1ad;">작성일: ' + blogEsc(p.date) + (p.structure ? ' · 구조: ' + blogEsc(p.structure) : '') + '</div>';
+  c.innerHTML = html;
 }

@@ -27,10 +27,17 @@
       <div class="sidebar-subitem active" id="nav-list" onclick="showPage('list')">성적우수</div>
     </div>
     <div class="sidebar-item" onclick="showPage('blog')" id="nav-blog">
-      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4z"/><path d="M14 7l3 3"/></svg></span>블로그 작성
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 20l4-1 10-10-3-3L5 16l-1 4z"/><path d="M14 7l3 3"/></svg></span>블로그
+    </div>
+    <div class="sidebar-subnav" id="sidebar-subnav-blog" style="display:none;">
+      <div class="sidebar-subitem active" id="nav-blog-write" onclick="showPage('blog')">작성</div>
+      <div class="sidebar-subitem" id="nav-blog-history" onclick="showPage('blog-history')">히스토리</div>
     </div>
     <div class="sidebar-item" onclick="showPage('monitor')" id="nav-monitor">
       <span class="nav-icon"><svg viewBox="0 0 24 24"><line x1="5" y1="19" x2="5" y2="11"/><line x1="12" y1="19" x2="12" y2="6"/><line x1="19" y1="19" x2="19" y2="14"/></svg></span>경쟁학원 모니터링
+    </div>
+    <div class="sidebar-item" onclick="showPage('mapsearch')" id="nav-mapsearch">
+      <span class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 21s-7-5.686-7-11a7 7 0 0 1 14 0c0 5.314-7 11-7 11z"/></svg></span>지도검색
     </div>
   </div>
   <div class="sidebar-bottom">
@@ -41,6 +48,7 @@
       <div class="sidebar-subitem active" id="nav-settings-ai" onclick="showPage('settings-ai')">AI 설정</div>
       <div class="sidebar-subitem" id="nav-settings-prompt" onclick="showPage('settings-prompt')">프롬프트 설정</div>
       <div class="sidebar-subitem" id="nav-settings-instagram" onclick="showPage('settings-instagram')">인스타그램 연동</div>
+      <div class="sidebar-subitem" id="nav-settings-mapsearch" onclick="showPage('settings-mapsearch')">지도검색 연동</div>
     </div>
   </div>
   <div class="sidebar-corp-info">
@@ -59,7 +67,7 @@
 <script>
 (function() {
   var container = document.getElementById('main-container');
-  var pages = ['pages/image.html', 'pages/blog.html', 'pages/monitor.html', 'pages/settings.html'];
+  var pages = ['pages/image.html', 'pages/blog.html', 'pages/monitor.html', 'pages/mapsearch.html', 'pages/settings.html'];
   pages.forEach(function(url) {
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, false); // synchronous — 로컬 서버 전용
@@ -78,6 +86,7 @@
 <script src="js/image.js"></script>
 <script src="js/monitor.js"></script>
 <script src="js/blog.js"></script>
+<script src="js/mapsearch.js"></script>
 <script src="js/common.js"></script>
 </body>
 </html>

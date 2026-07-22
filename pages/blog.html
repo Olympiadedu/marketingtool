@@ -1,6 +1,7 @@
 
   <!-- PAGE BLOG -->
   <div class="page" id="page-blog">
+  <div class="blogtab" id="blogtab-write">
     <div class="blog-left-wrap">
     <div class="blog-left" id="blog-left-panel">
 
@@ -53,6 +54,10 @@
             </div>
           </div>
           <div class="blog-form-grid">
+            <div>
+              <label class="blog-label">주소</label>
+              <input class="blog-input" id="acad-address" type="text" placeholder="예) 서울 광진구 능동로 120" />
+            </div>
             <div>
               <label class="blog-label">네이버지도 링크</label>
               <input class="blog-input" id="acad-map" type="text" placeholder="naver.me/..." />
@@ -198,4 +203,48 @@
         </div>
       </div>
     </div><!-- /blog-right -->
+  </div><!-- /blogtab-write -->
+
+  <div class="blogtab" id="blogtab-history" style="display:none">
+    <div class="blog-left-wrap">
+    <div class="blog-left">
+      <div class="panel-intro">
+        <div class="panel-intro-title">작성 히스토리</div>
+        <div class="panel-intro-desc">구글 시트에 저장된 이전 작성 글을 확인합니다.</div>
+      </div>
+      <div class="tool-section">
+        <div class="blog-form-grid">
+          <div>
+            <label class="blog-label">글 유형</label>
+            <select class="blog-input blog-select" id="bhist-type-filter" onchange="blogRenderHistoryList()">
+              <option value="">전체</option>
+              <option value="교육칼럼">교육칼럼·학습법</option>
+              <option value="입시정보">입시정보·전형</option>
+              <option value="학원홍보">학원홍보·캠퍼스</option>
+              <option value="합격인터뷰">합격생 인터뷰</option>
+              <option value="수학정보">수학 정보</option>
+              <option value="이벤트안내">이벤트 안내</option>
+              <option value="학원공지">학원 공지</option>
+            </select>
+          </div>
+          <div>
+            <label class="blog-label">검색</label>
+            <input class="blog-input" id="bhist-search" type="text" placeholder="제목·키워드·태그" oninput="blogRenderHistoryList()" />
+          </div>
+        </div>
+        <button class="btn btn-outline" style="font-size:12px;padding:6px 14px;align-self:flex-start;" onclick="blogHistoryInit()">새로고침</button>
+      </div>
+      <div id="bhist-alert" class="blog-alert err"></div>
+      <div id="bhist-list"></div>
+    </div>
+    </div><!-- /blog-left-wrap -->
+    <div class="blog-right">
+      <div id="bhist-detail">
+        <div class="blog-card">
+          <div style="font-size:13px;font-weight:900;color:var(--txt);margin-bottom:8px;">작성 히스토리</div>
+          <div style="font-size:12px;color:var(--mut);line-height:1.7;">왼쪽 목록에서 글 제목을 클릭하면<br>여기에 전체 본문이 표시됩니다.</div>
+        </div>
+      </div>
+    </div><!-- /blog-right -->
+  </div><!-- /blogtab-history -->
   </div><!-- /page-blog -->
