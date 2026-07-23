@@ -1,7 +1,8 @@
 // ============================================================
-// 지도검색 — 카카오 로컬 API(주소검색+키워드검색) 실연동
+// 지도검색 — 카카오 로컬 API(주소검색+키워드검색) + 네이버 블로그·카페 취합
 // ============================================================
-// 블로그·카페 취합은 네이버 검색 API의 GAS 프록시 연동 전까지 보류 상태.
+// 블로그·카페 취합은 GAS 프록시(gas/blog_tracker.gs의 searchAcademyPosts 액션)를 거쳐
+// 공식 네이버 검색 오픈API를 호출 — 서버 대 서버 호출이라 CORS 제약이 없음.
 
 var msState = { radius: 1000, keyword: '수학학원', results: [], loading: false, locationQuery: '', locationCoord: null };
 
@@ -101,8 +102,9 @@ async function msGeocode(address) {
   throw new Error('NO_MATCH');
 }
 
-// 카카오 키워드검색은 페이지당 최대 15건 — 3페이지(최대 45건)까지 이어서 조회
-var MS_MAX_RESULTS = 90;
+// 카카오 키워드검색은 size·page 조합과 무관하게 총 45건이 하드 캡(카카오 공식 답변) —
+// 45보다 크게 설정해도 더 못 받아오고 빈 페이지만 호출하니 45로 고정
+var MS_MAX_RESULTS = 45;
 var MS_PAGE_SIZE = 15;
 
 async function msKeywordSearch(x, y, radius, keyword) {
@@ -185,15 +187,79 @@ function msRenderList() {
     var naverUrl = 'https://map.naver.com/p/search/' + encodeURIComponent(a.name + ' ' + (a.address || ''));
     return '' +
       '<div class="blog-card">' +
-        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">' +
-          '<div>' +
-            '<div style="font-size:14px;font-weight:800;color:var(--txt);"><a href="' + msEsc(naverUrl) + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">' + msEsc(a.name) + '</a></div>' +
-            '<div style="font-size:12px;color:var(--mut);margin-top:2px;">' + msEsc(a.category) + ' · ' + msEsc(a.address) + '</div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
+          '<div style="display:flex;align-items:center;gap:8px;min-width:0;">' +
+            '<div class="bimg-badge body-img" style="flex-shrink:0;">' + msRadiusLabel(a.distance) + '</div>' +
+            '<div style="font-size:14px;font-weight:800;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><a href="' + msEsc(naverUrl) + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">' + msEsc(a.name) + '</a></div>' +
           '</div>' +
-          '<div class="bimg-badge body-img" style="flex-shrink:0;">' + msRadiusLabel(a.distance) + '</div>' +
+          '<button class="bc-btn" style="flex-shrink:0;" onclick="msFetchPosts(' + i + ')">📋 블로그·카페 취합</button>' +
         '</div>' +
+        '<div style="font-size:12px;color:var(--mut);margin-top:6px;">' + msEsc(a.address) + '</div>' +
       '</div>';
   }).join('');
+}
+
+function msCloseModal() {
+  var modal = document.getElementById('ms-post-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function msFetchPosts(idx) {
+  var academy = msState.results[idx];
+  if (!academy) return;
+  var modal = document.getElementById('ms-post-modal');
+  var titleEl = document.getElementById('ms-modal-title');
+  var bodyEl = document.getElementById('ms-modal-body');
+  if (!modal || !bodyEl) return;
+
+  titleEl.textContent = academy.name + ' — 블로그·카페 취합';
+  modal.style.display = 'flex';
+
+  var cfg = (typeof getGasConfig === 'function') ? getGasConfig() : { url: '', token: '' };
+  if (!cfg.url || !cfg.token) {
+    bodyEl.innerHTML = '<div class="hint-text">설정 → AI 설정에서 구글시트 연동(GAS URL·토큰)을 먼저 설정해주세요</div>';
+    return;
+  }
+
+  bodyEl.innerHTML = '<div class="blog-loading show"><span class="blog-spinner"></span>블로그·카페 검색 중...</div>';
+
+  try {
+    var res = await fetch(cfg.url, {
+      method: 'POST',
+      body: JSON.stringify({ token: cfg.token, action: 'searchAcademyPosts', query: academy.name })
+    });
+    var json = await res.json();
+
+    if (!json || !json.ok) {
+      bodyEl.innerHTML = '<div class="hint-text">취합 실패: ' + msEsc((json && json.error) || '알 수 없는 오류') + '</div>';
+      return;
+    }
+    var posts = json.posts || [];
+    if (!posts.length) {
+      bodyEl.innerHTML = '<div class="hint-text">관련 블로그·카페 글을 찾지 못했습니다</div>';
+      return;
+    }
+    // 블로그(YYYY.MM.DD)와 카페(네이버 자체 상대시간 "N분 전"/"N주 전" 등) 날짜 형식이 서로 달라
+    // 직접 비교가 불가능 — 소스별로 각자 최신순(이미 정렬됨) 유지하고 블로그 먼저, 카페를 뒤에 배치
+    var blogPosts = posts.filter(function(p) { return p.source === '블로그'; }).sort(function(a, b) {
+      return (b.date || '').localeCompare(a.date || '');
+    });
+    var cafePosts = posts.filter(function(p) { return p.source !== '블로그'; }); // 카페 API가 이미 최신순 반환
+    posts = blogPosts.concat(cafePosts);
+    // 각 글마다 별도 박스로 감싸서 헤더(날짜·버튼)와 내용이 한 세트임을 명확히 구분
+    bodyEl.innerHTML = posts.map(function(p) {
+      return '' +
+        '<div class="blog-copy-section">' +
+          '<div class="blog-copy-header">' +
+            '<span class="blog-copy-label">' + msEsc(p.source) + (p.date ? ' · ' + msEsc(p.date) : '') + '</span>' +
+            '<a class="bc-btn" href="' + msEsc(p.link) + '" target="_blank" rel="noopener">원문 보기 →</a>' +
+          '</div>' +
+          '<div class="blog-copy-content">' + msEsc(p.title) + '<div class="hint-text" style="margin-top:4px;">' + msEsc(p.author) + '</div></div>' +
+        '</div>';
+    }).join('');
+  } catch (e) {
+    bodyEl.innerHTML = '<div class="hint-text">취합 실패: ' + msEsc(e.message) + '</div>';
+  }
 }
 
 function msEsc(s) {

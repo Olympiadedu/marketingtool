@@ -19,7 +19,6 @@
           <div class="mon-pill" data-r="500" onclick="msSetRadius(this,500)">500m</div>
           <div class="mon-pill active-date" data-r="1000" onclick="msSetRadius(this,1000)">1km</div>
           <div class="mon-pill" data-r="2000" onclick="msSetRadius(this,2000)">2km</div>
-          <div class="mon-pill" data-r="3000" onclick="msSetRadius(this,3000)">3km</div>
         </div>
       </div>
 
@@ -41,6 +40,16 @@
       </div>
       <div style="padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-content:start;" id="ms-result-list">
         <div class="mon-empty-right" style="grid-column:1/-1;">← 검색 결과가 여기에 표시됩니다</div>
+      </div>
+    </div>
+
+    <div class="ms-modal-overlay" id="ms-post-modal" style="display:none;" onclick="if(event.target===this) msCloseModal()">
+      <div class="ms-modal-box">
+        <div class="ms-modal-header">
+          <div class="ms-modal-title" id="ms-modal-title"></div>
+          <button class="ms-modal-close" onclick="msCloseModal()">✕</button>
+        </div>
+        <div class="ms-modal-body" id="ms-modal-body"></div>
       </div>
     </div>
   </div><!-- /page-mapsearch -->
