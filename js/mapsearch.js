@@ -4,7 +4,7 @@
 // 블로그·카페 취합은 GAS 프록시(gas/blog_tracker.gs의 searchAcademyPosts 액션)를 거쳐
 // 공식 네이버 검색 오픈API를 호출 — 서버 대 서버 호출이라 CORS 제약이 없음.
 
-var msState = { radius: 1000, keyword: '수학학원', results: [], loading: false, locationQuery: '', locationCoord: null };
+var msState = { radius: 1000, keyword: '수학학원', results: [], loading: false, locationQuery: '' };
 
 // 네이버지도 "검색" 형태 공유링크(.../search/장소명)는 URL에 장소명이 그대로 들어있어 파싱 가능.
 // (참고: "장소 상세" 링크나 naver.me 단축링크는 브라우저 CORS로 직접 못 풀고, GAS 프록시로 시도해봤으나
@@ -39,7 +39,6 @@ function msOnProfileChange() {
   var profiles = (typeof loadAcademyProfiles === 'function') ? loadAcademyProfiles() : [];
   var p = profiles.filter(function(x) { return x.id === sel.value; })[0];
   msState.locationQuery = '';
-  msState.locationCoord = null;
 
   if (!p || !p.name) {
     if (hintEl) hintEl.textContent = '블로그 작성 페이지에서 학원 프로필(학원명·주소)을 먼저 등록해주세요';
@@ -154,7 +153,7 @@ async function msSearch() {
   if (wrap) wrap.innerHTML = '<div class="blog-loading show" style="grid-column:1/-1;"><span class="blog-spinner"></span>인근 학원을 검색하고 있습니다...</div>';
 
   try {
-    var coord = msState.locationCoord || await msGeocode(address);
+    var coord = await msGeocode(address);
     var list = await msKeywordSearch(coord.x, coord.y, msState.radius, msState.keyword);
     msState.results = list.sort(function(a, b) { return a.distance - b.distance; });
     if (countEl) {
