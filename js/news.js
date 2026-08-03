@@ -33,7 +33,7 @@ function buildNewsTopicSystem() {
 }
 
 async function newsFetchEducationNews() {
-  var cfg = getGasConfig();
+  var cfg = (typeof getNewsGasConfig === 'function') ? getNewsGasConfig() : { url: '', token: '' };
   if (!cfg.url || !cfg.token) throw new Error('서버 설정 오류(GAS 미설정)');
   var url = cfg.url + '?action=getEducationNews&token=' + encodeURIComponent(cfg.token);
   var res = await fetch(url);
@@ -48,7 +48,7 @@ async function newsCallGemini(systemPrompt, userContent, maxTokens) {
 
 async function newsSuggestTopics(btn) {
   var resultEl = document.getElementById('news-result');
-  var cfg = getGasConfig();
+  var cfg = (typeof getNewsGasConfig === 'function') ? getNewsGasConfig() : { url: '', token: '' };
   if (!cfg.url || !cfg.token) { alert('서버 설정 오류(GAS 미설정)'); return; }
 
   var orig = btn.textContent;

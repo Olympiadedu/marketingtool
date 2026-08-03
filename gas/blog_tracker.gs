@@ -4,14 +4,18 @@
 // 이 파일은 git으로 추적됩니다(공개 저장소) — 토큰/키를 코드에 직접 적지 마세요.
 // 전부 PropertiesService(관리자 전용, 코드에 남지 않음)에서 읽어옵니다.
 //
+// 블로그 저장/조회 + 로그인/사용량 제한 + Claude·Gemini 프록시만 담당한다.
+// 지도검색(카카오맵 블로그 취합)은 gas/mapsearch_tracker.gs, 기사검색(뉴스 조회)은
+// gas/news_tracker.gs — 각각 별도 Apps Script 프로젝트로 분리 배포되어 있으니
+// 그 기능들을 여기 다시 추가하지 말 것 (공유 계정 실행 할당량을 나눠 쓰기 위한 분리).
+//
 // 사용법:
 //   1. script.google.com 에서 새 프로젝트 생성 (또는 기존 프로젝트에 덮어쓰기)
 //   2. 이 코드 전체를 붙여넣기
 //   3. 편집기 상단 드롭다운에서 아래 함수들을 각각 선택해 "실행" (최초 1회, 또는 값 변경 시)
-//      - setSharedToken('원하는 토큰값')         → 클라이언트(config.js)의 token과 동일하게 맞출 것
+//      - setSharedToken('원하는 토큰값')         → 클라이언트(config.js)의 ADMIN_GAS.token과 동일하게 맞출 것
 //      - setAdminApiKey('sk-ant-...')            → Claude 프록시용
-//      - setAdminGeminiKey('AIza...')             → Gemini 프록시용 (뉴스 소재 추천)
-//      - setAdminNaverKeys('클라이언트ID','시크릿') → 뉴스 검색용 (네이버 개발자센터 "검색" API)
+//      - setAdminGeminiKey('AIza...')             → Gemini 프록시용 (뉴스 소재 추천의 AI 정리 단계에서 사용)
 //   4. setupSheet() 함수를 한 번 실행 (시트 초기화)
 //   5. 배포 → 웹 앱으로 배포
 //      - 다음 사용자로 실행: 나(Me)
@@ -28,25 +32,6 @@ function setSharedToken(token) {
 
 // 베타테스트: 개인별 하루 블로그 작성 한도
 var DAILY_BLOG_LIMIT = 5;
-
-// 네이버 검색 오픈API (뉴스 기반 소재 추천 기능용)
-// → 네이버 개발자센터에 등록된 "검색" API 앱의 Client ID/Secret 그대로 사용
-var NAVER_CLIENT_ID = PropertiesService.getScriptProperties().getProperty('NAVER_CLIENT_ID') || '';
-var NAVER_CLIENT_SECRET = PropertiesService.getScriptProperties().getProperty('NAVER_CLIENT_SECRET') || '';
-
-function setAdminNaverKeys(clientId, clientSecret) {
-  PropertiesService.getScriptProperties().setProperty('NAVER_CLIENT_ID', clientId);
-  PropertiesService.getScriptProperties().setProperty('NAVER_CLIENT_SECRET', clientSecret);
-}
-
-// 뉴스 검색 쿼리 목록 — 학원 블로그 소재에 맞게 자유롭게 수정 가능
-var NEWS_QUERIES = [
-  '수학교육', '입시정책', '선행학습', '고교학점제', '내신',
-  '수능', '자사고', '특목고', '영재학교', '과학고',
-  '외고', '국제고', '초등수학', '중등수학', '고등수학'
-];
-var NEWS_MAX_DAYS = 30;           // 최근 N일 이내 기사만
-var NEWS_PER_QUERY_DISPLAY = 30;  // 쿼리당 최대 조회 건수 (네이버 API 최대 100까지 허용)
 
 // 임시 로그인용 사용자 시트 이름 — 실제 사용자 데이터 연동 전까지 관리자가 직접 행을 추가/관리
 var USERS_SHEET_NAME = 'users';
@@ -194,10 +179,6 @@ function doGet(e) {
     return _fetchNaverBlogContent(e.parameter.url || '');
   }
 
-  if (action === 'getEducationNews') {
-    return _getEducationNews(output);
-  }
-
   // 최근 N개 조회
   var n = Math.min(parseInt(e.parameter.n || '20'), 100);
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -238,14 +219,6 @@ function doPost(e) {
 
   try {
     var data = JSON.parse(e.postData.contents);
-
-    if (data.action === 'searchAcademyPosts') {
-      if (data.token !== SECRET) {
-        output.setContent(JSON.stringify({ ok: false, error: 'Unauthorized' }));
-        return output;
-      }
-      return _searchAcademyPosts(data.placeId || '');
-    }
 
     // ── 아래 액션들은 전부 토큰 + 개인 아이디/비밀번호 이중 확인 ──
     if (data.action === 'login' || data.action === 'myPosts' || data.action === 'quotaStatus' || data.action === 'claudeProxy' || data.action === 'geminiProxy') {
@@ -432,72 +405,6 @@ function _geminiProxy(payload) {
   return output;
 }
 
-// ── 최근 1개월 교육 뉴스 조회 (뉴스 기반 소재 추천 기능용) ─────────
-function _getEducationNews(output) {
-  var cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - NEWS_MAX_DAYS);
-
-  var seen = {};
-  var items = [];
-  var debug = []; // 문제 진단용: 쿼리별 응답 상태 기록
-
-  NEWS_QUERIES.forEach(function(q) {
-    try {
-      var url = 'https://openapi.naver.com/v1/search/news.json'
-        + '?query=' + encodeURIComponent(q)
-        + '&display=' + NEWS_PER_QUERY_DISPLAY + '&sort=date';
-      var res = UrlFetchApp.fetch(url, {
-        headers: {
-          'X-Naver-Client-Id': NAVER_CLIENT_ID,
-          'X-Naver-Client-Secret': NAVER_CLIENT_SECRET
-        },
-        muteHttpExceptions: true
-      });
-      var code = res.getResponseCode();
-      if (code !== 200) {
-        debug.push({ query: q, status: code, body: res.getContentText().slice(0, 200) });
-        return;
-      }
-      var json = JSON.parse(res.getContentText());
-      var rawCount = (json.items || []).length;
-      var kept = 0;
-      (json.items || []).forEach(function(it) {
-        var pub = new Date(it.pubDate);
-        if (isNaN(pub.getTime()) || pub < cutoff) return;
-        var link = it.originallink || it.link;
-        if (!link || seen[link]) return;
-        seen[link] = true;
-        kept++;
-        items.push({
-          title: _stripTags(it.title),
-          description: _stripTags(it.description),
-          link: link,
-          pubDate: it.pubDate,
-          query: q
-        });
-      });
-      debug.push({ query: q, status: 200, raw: rawCount, kept: kept });
-    } catch (err) {
-      debug.push({ query: q, error: String(err) });
-    }
-  });
-
-  items.sort(function(a, b) { return new Date(b.pubDate) - new Date(a.pubDate); });
-
-  output.setContent(JSON.stringify({ items: items, debug: debug }));
-  return output;
-}
-
-function _stripTags(s) {
-  return String(s || '')
-    .replace(/<[^>]*>/g, '')
-    .replace(/&quot;/g, '"')
-    .replace(/&amp;/g, '&')
-    .replace(/&#39;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>');
-}
-
 // ── 네이버 블로그 본문 수집 (참고 URL 기능용) ──────────────────────
 // GAS는 서버에서 실행되므로 브라우저 CORS 제약 없이 네이버 블로그에 직접 접근 가능
 function _fetchNaverBlogContent(url) {
@@ -584,56 +491,4 @@ function _extractNaverBlogText(html) {
     .join('\n');
 
   return text;
-}
-
-// ── 카카오맵 장소별 블로그 리뷰 (지도검색 "블로그 취합" 기능용) ──────
-// 카카오맵 장소 상세페이지("블로그 리뷰" 탭)가 내부적으로 쓰는 비공식 API를 그대로 호출.
-// 학원명으로 네이버를 검색하는 방식(동명 학원 오검색 위험)과 달리, 카카오맵이 이미 해당
-// 장소 하나에 정확히 매칭해 둔 블로그만 가져오므로 훨씬 정확 — 브라우저 개발자도구로
-// place.map.kakao.com 페이지의 요청을 역추적해 확인한 값(appVersion/pf 헤더 필요).
-// 공식 문서화된 API가 아니라서 카카오 쪽에서 예고 없이 스펙을 바꾸거나 막을 수 있음.
-function _searchAcademyPosts(placeId) {
-  var output = ContentService.createTextOutput();
-  output.setMimeType(ContentService.MimeType.JSON);
-
-  if (!placeId) {
-    output.setContent(JSON.stringify({ ok: false, error: '카카오맵 장소 정보 없음' }));
-    return output;
-  }
-
-  try {
-    var url = 'https://place-api.map.kakao.com/places/panel3/' + encodeURIComponent(placeId);
-    var res = UrlFetchApp.fetch(url, {
-      headers: {
-        appVersion: '6.6.0',
-        pf: 'PC',
-        Accept: 'application/json, text/plain, */*',
-        Referer: 'https://place.map.kakao.com/' + encodeURIComponent(placeId),
-        Origin: 'https://place.map.kakao.com',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
-      },
-      muteHttpExceptions: true
-    });
-    if (res.getResponseCode() !== 200) {
-      output.setContent(JSON.stringify({ ok: false, error: '카카오맵 응답 실패 (HTTP ' + res.getResponseCode() + ')' }));
-      return output;
-    }
-    var json = JSON.parse(res.getContentText());
-    var reviews = (json.blog_review && json.blog_review.reviews) || [];
-    var posts = reviews.map(function(r) {
-      return {
-        source: '블로그',
-        title: r.title || '',
-        link: r.origin_url || '',
-        author: r.author || '',
-        date: (r.registered_at || '').slice(0, 10).replace(/-/g, '.')
-      };
-    });
-
-    output.setContent(JSON.stringify({ ok: true, posts: posts }));
-  } catch (err) {
-    output.setContent(JSON.stringify({ ok: false, error: err.message }));
-  }
-
-  return output;
 }

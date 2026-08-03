@@ -1,7 +1,7 @@
 // ============================================================
 // 지도검색 — 카카오 로컬 API(주소검색+키워드검색) + 카카오맵 장소별 블로그 리뷰 취합
 // ============================================================
-// 블로그 취합은 GAS 프록시(gas/blog_tracker.gs의 searchAcademyPosts 액션)를 거쳐
+// 블로그 취합은 지도검색 전용 GAS 프록시(gas/mapsearch_tracker.gs, searchAcademyPosts 액션)를 거쳐
 // 카카오맵 장소 상세페이지가 쓰는 비공식 API(place-api.map.kakao.com)를 호출 —
 // 서버 대 서버 호출이라 CORS 제약이 없고, 학원명 텍스트 검색이 아니라 장소 ID로
 // 정확히 매칭된 블로그만 가져온다.
@@ -244,7 +244,7 @@ async function msRequestAcademyPosts(placeId, cfg) {
 // 검색 결과가 뜨자마자 백그라운드로 블로그 보유 여부를 확인해, 없는 학원은 버튼을 비활성화.
 // 실패(네트워크 오류 등)한 경우는 판단 불가로 보고 버튼을 그대로 둔다(오탐으로 기능을 막지 않기 위해).
 async function msRunBlogChecks() {
-  var cfg = (typeof getGasConfig === 'function') ? getGasConfig() : { url: '', token: '' };
+  var cfg = (typeof getMapsearchGasConfig === 'function') ? getMapsearchGasConfig() : { url: '', token: '' };
   if (!cfg.url || !cfg.token) return;
 
   var queue = msState.results.map(function(a, i) { return i; });
@@ -293,7 +293,7 @@ async function msFetchPosts(idx) {
     return;
   }
 
-  var cfg = (typeof getGasConfig === 'function') ? getGasConfig() : { url: '', token: '' };
+  var cfg = (typeof getMapsearchGasConfig === 'function') ? getMapsearchGasConfig() : { url: '', token: '' };
   if (!cfg.url || !cfg.token) {
     bodyEl.innerHTML = '<div class="hint-text">설정 → AI 설정에서 구글시트 연동(GAS URL·토큰)을 먼저 설정해주세요</div>';
     return;

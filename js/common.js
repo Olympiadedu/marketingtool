@@ -331,6 +331,24 @@ function getGasConfig() {
   };
 }
 
+// 지도검색 전용 GAS(gas/mapsearch_tracker.gs) — blog_tracker.gs와 별개 배포·별개 할당량
+function getMapsearchGasConfig() {
+  var gas = (typeof ADMIN_GAS_MAPSEARCH !== 'undefined') ? ADMIN_GAS_MAPSEARCH : {};
+  return {
+    url:   (gas.url   && gas.url.trim())   ? gas.url.trim()   : (localStorage.getItem('mtt_gas_url_mapsearch')   || ''),
+    token: (gas.token && gas.token.trim()) ? gas.token.trim() : (localStorage.getItem('mtt_gas_token_mapsearch') || '')
+  };
+}
+
+// 기사검색(뉴스 조회) 전용 GAS(gas/news_tracker.gs) — blog_tracker.gs와 별개 배포·별개 할당량
+function getNewsGasConfig() {
+  var gas = (typeof ADMIN_GAS_NEWS !== 'undefined') ? ADMIN_GAS_NEWS : {};
+  return {
+    url:   (gas.url   && gas.url.trim())   ? gas.url.trim()   : (localStorage.getItem('mtt_gas_url_news')   || ''),
+    token: (gas.token && gas.token.trim()) ? gas.token.trim() : (localStorage.getItem('mtt_gas_token_news') || '')
+  };
+}
+
 async function gasSavePost(data) {
   var cfg = getGasConfig();
   if (!cfg.url || !cfg.token) return;

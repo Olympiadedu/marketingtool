@@ -37,10 +37,15 @@ jobs:
         env:
           GAS_URL: ${{ secrets.GAS_URL }}
           GAS_TOKEN: ${{ secrets.GAS_TOKEN }}
+          MAPSEARCH_GAS_URL: ${{ secrets.MAPSEARCH_GAS_URL }}
+          MAPSEARCH_GAS_TOKEN: ${{ secrets.MAPSEARCH_GAS_TOKEN }}
+          NEWS_GAS_URL: ${{ secrets.NEWS_GAS_URL }}
+          NEWS_GAS_TOKEN: ${{ secrets.NEWS_GAS_TOKEN }}
           KAKAO_KEY: ${{ secrets.KAKAO_KEY }}
         run: |
           for dir in dev-src beta-src; do
-            printf 'var ADMIN_GAS = { url: "%s", token: "%s" };\nvar ADMIN_KAKAO_KEY = "%s";\n' "${GAS_URL}" "${GAS_TOKEN}" "${KAKAO_KEY}" > "$dir/config.js"
+            printf 'var ADMIN_GAS = { url: "%s", token: "%s" };\nvar ADMIN_GAS_MAPSEARCH = { url: "%s", token: "%s" };\nvar ADMIN_GAS_NEWS = { url: "%s", token: "%s" };\nvar ADMIN_KAKAO_KEY = "%s";\n' \
+              "${GAS_URL}" "${GAS_TOKEN}" "${MAPSEARCH_GAS_URL}" "${MAPSEARCH_GAS_TOKEN}" "${NEWS_GAS_URL}" "${NEWS_GAS_TOKEN}" "${KAKAO_KEY}" > "$dir/config.js"
           done
 
       - name: Create flags.js (dev — 기본값 그대로, 전부 켜짐)
