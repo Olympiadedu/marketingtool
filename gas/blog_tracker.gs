@@ -1,0 +1,639 @@
+// ============================================================
+// MTT 블로그 트래커 - Google Apps Script
+// ============================================================
+// 이 파일은 git으로 추적됩니다(공개 저장소) — 토큰/키를 코드에 직접 적지 마세요.
+// 전부 PropertiesService(관리자 전용, 코드에 남지 않음)에서 읽어옵니다.
+//
+// 사용법:
+//   1. script.google.com 에서 새 프로젝트 생성 (또는 기존 프로젝트에 덮어쓰기)
+//   2. 이 코드 전체를 붙여넣기
+//   3. 편집기 상단 드롭다운에서 아래 함수들을 각각 선택해 "실행" (최초 1회, 또는 값 변경 시)
+//      - setSharedToken('원하는 토큰값')         → 클라이언트(config.js)의 token과 동일하게 맞출 것
+//      - setAdminApiKey('sk-ant-...')            → Claude 프록시용
+//      - setAdminGeminiKey('AIza...')             → Gemini 프록시용 (뉴스 소재 추천)
+//      - setAdminNaverKeys('클라이언트ID','시크릿') → 뉴스 검색용 (네이버 개발자센터 "검색" API)
+//   4. setupSheet() 함수를 한 번 실행 (시트 초기화)
+//   5. 배포 → 웹 앱으로 배포
+//      - 다음 사용자로 실행: 나(Me)
+//      - 액세스 권한: 모든 사용자(Anyone)
+//   6. 웹 앱 URL을 MTT 설정 페이지(config.js)에 입력
+// ============================================================
+
+var SHEET_NAME = 'blog_posts';
+var SECRET = PropertiesService.getScriptProperties().getProperty('SHARED_TOKEN') || '';
+
+function setSharedToken(token) {
+  PropertiesService.getScriptProperties().setProperty('SHARED_TOKEN', token);
+}
+
+// 베타테스트: 개인별 하루 블로그 작성 한도
+var DAILY_BLOG_LIMIT = 5;
+
+// 네이버 검색 오픈API (뉴스 기반 소재 추천 기능용)
+// → 네이버 개발자센터에 등록된 "검색" API 앱의 Client ID/Secret 그대로 사용
+var NAVER_CLIENT_ID = PropertiesService.getScriptProperties().getProperty('NAVER_CLIENT_ID') || '';
+var NAVER_CLIENT_SECRET = PropertiesService.getScriptProperties().getProperty('NAVER_CLIENT_SECRET') || '';
+
+function setAdminNaverKeys(clientId, clientSecret) {
+  PropertiesService.getScriptProperties().setProperty('NAVER_CLIENT_ID', clientId);
+  PropertiesService.getScriptProperties().setProperty('NAVER_CLIENT_SECRET', clientSecret);
+}
+
+// 뉴스 검색 쿼리 목록 — 학원 블로그 소재에 맞게 자유롭게 수정 가능
+var NEWS_QUERIES = [
+  '수학교육', '입시정책', '선행학습', '고교학점제', '내신',
+  '수능', '자사고', '특목고', '영재학교', '과학고',
+  '외고', '국제고', '초등수학', '중등수학', '고등수학'
+];
+var NEWS_MAX_DAYS = 30;           // 최근 N일 이내 기사만
+var NEWS_PER_QUERY_DISPLAY = 30;  // 쿼리당 최대 조회 건수 (네이버 API 최대 100까지 허용)
+
+// 임시 로그인용 사용자 시트 이름 — 실제 사용자 데이터 연동 전까지 관리자가 직접 행을 추가/관리
+var USERS_SHEET_NAME = 'users';
+
+
+// ── 시트 초기화 (최초 1회 실행) ──────────────────────────────────
+function setupSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
+
+  sheet.clearContents();
+  sheet.clearFormats();
+
+  var headers = ['날짜', '글 유형', '분위기', '주제', '키워드', '태그', '제목', '본문', '구조', '작성자'];
+  sheet.appendRow(headers);
+
+  // 헤더 스타일
+  var headerRange = sheet.getRange(1, 1, 1, headers.length);
+  headerRange.setBackground('#00a891');
+  headerRange.setFontColor('#ffffff');
+  headerRange.setFontWeight('bold');
+  headerRange.setFontSize(11);
+  sheet.setFrozenRows(1);
+
+  // 열 너비
+  sheet.setColumnWidth(1, 140);  // 날짜
+  sheet.setColumnWidth(2, 110);  // 글 유형
+  sheet.setColumnWidth(3, 140);  // 분위기
+  sheet.setColumnWidth(4, 320);  // 제목
+  sheet.setColumnWidth(5, 260);  // 주제
+  sheet.setColumnWidth(6, 200);  // 키워드
+  sheet.setColumnWidth(7, 220);  // 태그
+  sheet.setColumnWidth(8, 500);  // 본문
+  sheet.setColumnWidth(9, 160);  // 구조
+  sheet.setColumnWidth(10, 140); // 작성자
+
+  SpreadsheetApp.getUi().alert('시트 초기화 완료!');
+}
+
+// 기존에 쓰던 시트(작성자 열 없음)에 열만 추가할 때 1회 실행
+function migrateAddAuthorColumn() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) return;
+  if (sheet.getRange(1, 10).getValue() !== '작성자') {
+    sheet.getRange(1, 10).setValue('작성자').setBackground('#00a891').setFontColor('#ffffff').setFontWeight('bold');
+    sheet.setColumnWidth(10, 140);
+  }
+}
+
+// ── 임시 로그인용 사용자 시트 (최초 1회 실행) ──────────────────────
+// 실제 사용자 데이터 연동 전까지, 이 시트에 관리자가 직접 계정을 추가/관리
+function setupUsersSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(USERS_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(USERS_SHEET_NAME);
+  if (sheet.getLastRow() > 0) return; // 이미 데이터 있으면 건드리지 않음
+
+  var headers = ['아이디', '비밀번호', '이름', '학원명', '상태', '역할'];
+  sheet.appendRow(headers);
+  var headerRange = sheet.getRange(1, 1, 1, headers.length);
+  headerRange.setBackground('#00a891').setFontColor('#ffffff').setFontWeight('bold').setFontSize(11);
+  sheet.setFrozenRows(1);
+  sheet.setColumnWidth(1, 120);
+  sheet.setColumnWidth(2, 120);
+  sheet.setColumnWidth(3, 120);
+  sheet.setColumnWidth(4, 200);
+  sheet.setColumnWidth(5, 100);
+  sheet.setColumnWidth(6, 100);
+
+  SpreadsheetApp.getUi().alert('users 시트 초기화 완료! 아이디/비밀번호/이름/학원명/상태("사용")/역할("관리자" 또는 빈칸) 행을 추가해 계정을 등록하세요. 역할이 "관리자"가 아니면 dev 사이트엔 로그인할 수 없습니다.');
+}
+
+// 기존에 쓰던 users 시트(역할 열 없음)에 열만 추가할 때 1회 실행
+function migrateAddRoleColumn() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(USERS_SHEET_NAME);
+  if (!sheet) return;
+  if (sheet.getRange(1, 6).getValue() !== '역할') {
+    sheet.getRange(1, 6).setValue('역할').setBackground('#00a891').setFontColor('#ffffff').setFontWeight('bold');
+    sheet.setColumnWidth(6, 100);
+  }
+}
+
+function _findUser(id) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(USERS_SHEET_NAME);
+  if (!sheet || sheet.getLastRow() <= 1) return null;
+  var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 6).getValues();
+  for (var i = 0; i < data.length; i++) {
+    if (String(data[i][0]) === String(id)) {
+      return { id: data[i][0], password: data[i][1], name: data[i][2], academy: data[i][3], status: data[i][4], role: data[i][5] };
+    }
+  }
+  return null;
+}
+
+function _verifyUser(id, password, site) {
+  var u = _findUser(id);
+  if (!u) return { valid: false, error: '존재하지 않는 아이디입니다.' };
+  if (String(u.status) !== '사용') return { valid: false, error: '비활성화된 계정입니다. 관리자에게 문의하세요.' };
+  if (String(u.password) !== String(password)) return { valid: false, error: '비밀번호가 일치하지 않습니다.' };
+  if (site === 'dev' && String(u.role) !== '관리자') return { valid: false, error: '이 주소는 개발용입니다. https://olympiadedu.github.io/marketingtool/beta/ 로 접속해주세요.' };
+  return { valid: true, name: u.name, academy: u.academy, role: u.role };
+}
+
+function _todayKST() {
+  return Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd');
+}
+
+// blog_posts 시트에서 오늘 해당 사용자가 작성(저장)한 글 수
+function _countTodayPosts(userId) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet || sheet.getLastRow() <= 1) return 0;
+  var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 10).getValues();
+  var today = _todayKST();
+  var count = 0;
+  data.forEach(function(row) {
+    var rowDate = row[0] ? String(row[0]).substring(0, 10) : '';
+    if (rowDate === today && String(row[9] || '') === String(userId)) count++;
+  });
+  return count;
+}
+
+// ── GET: 최근 글 목록 조회 ────────────────────────────────────────
+function doGet(e) {
+  var output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+
+  if (!e || !e.parameter || e.parameter.token !== SECRET) {
+    output.setContent(JSON.stringify({ error: 'Unauthorized' }));
+    return output;
+  }
+
+  var action = e.parameter.action || 'get';
+
+  if (action === 'save') {
+    // GET으로 저장 요청 처리 (CORS 우회용) — 실제 클라이언트는 POST(doPost)로 저장하므로 레거시 경로
+    return _savePost(e.parameter);
+  }
+
+  if (action === 'fetchNaverBlog') {
+    return _fetchNaverBlogContent(e.parameter.url || '');
+  }
+
+  if (action === 'getEducationNews') {
+    return _getEducationNews(output);
+  }
+
+  // 최근 N개 조회
+  var n = Math.min(parseInt(e.parameter.n || '20'), 100);
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+
+  if (!sheet || sheet.getLastRow() <= 1) {
+    output.setContent(JSON.stringify({ posts: [] }));
+    return output;
+  }
+
+  var lastRow = sheet.getLastRow();
+  var startRow = Math.max(2, lastRow - n + 1);
+  var numRows = lastRow - startRow + 1;
+  var data = sheet.getRange(startRow, 1, numRows, 9).getValues();
+
+  var posts = data.reverse().map(function(row) {
+    return {
+      date:      row[0] ? String(row[0]).substring(0, 10) : '',
+      type:      row[1] || '',
+      mood:      row[2] || '',
+      topic:     row[3] || '',
+      keywords:  row[4] || '',
+      tags:      row[5] || '',
+      title:     row[6] || '',
+      body:      row[7] || '',
+      structure: row[8] || ''
+    };
+  });
+
+  output.setContent(JSON.stringify({ posts: posts }));
+  return output;
+}
+
+// ── POST: 글 저장 ─────────────────────────────────────────────────
+function doPost(e) {
+  var output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+
+  try {
+    var data = JSON.parse(e.postData.contents);
+
+    if (data.action === 'searchAcademyPosts') {
+      if (data.token !== SECRET) {
+        output.setContent(JSON.stringify({ ok: false, error: 'Unauthorized' }));
+        return output;
+      }
+      return _searchAcademyPosts(data.placeId || '');
+    }
+
+    // ── 아래 액션들은 전부 토큰 + 개인 아이디/비밀번호 이중 확인 ──
+    if (data.action === 'login' || data.action === 'myPosts' || data.action === 'quotaStatus' || data.action === 'claudeProxy' || data.action === 'geminiProxy') {
+      if (data.token !== SECRET) {
+        output.setContent(JSON.stringify({ ok: false, error: 'Unauthorized' }));
+        return output;
+      }
+      var v = _verifyUser(data.userId, data.userPw, data.site);
+      if (!v.valid) {
+        output.setContent(JSON.stringify({ ok: false, error: v.error }));
+        return output;
+      }
+      if (data.action === 'login')       { output.setContent(JSON.stringify({ ok: true, name: v.name, academy: v.academy })); return output; }
+      if (data.action === 'myPosts')      return _getMyPosts(data.userId, data.n || 100);
+      if (data.action === 'quotaStatus')  return _getQuotaStatus(data.userId);
+      if (data.action === 'claudeProxy')  return _claudeProxy(data.payload);
+      if (data.action === 'geminiProxy')  return _geminiProxy(data.payload);
+    }
+
+    return _savePost(data);
+  } catch(err) {
+    output.setContent(JSON.stringify({ error: err.message }));
+    return output;
+  }
+}
+
+// ── 내부: 저장 처리 ───────────────────────────────────────────────
+function _savePost(data) {
+  var output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+
+  if (data.token !== SECRET) {
+    output.setContent(JSON.stringify({ error: 'Unauthorized' }));
+    return output;
+  }
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    setupSheet();
+    sheet = ss.getSheetByName(SHEET_NAME);
+  }
+
+  // 일일 작성 한도 재확인 (클라이언트 체크 우회 방지용 최종 방어선)
+  if (data.userId) {
+    var v = _verifyUser(data.userId, data.userPw, data.site);
+    if (!v.valid) { output.setContent(JSON.stringify({ ok: false, error: v.error })); return output; }
+    if (_countTodayPosts(data.userId) >= DAILY_BLOG_LIMIT) {
+      output.setContent(JSON.stringify({ ok: false, error: '오늘 작성 가능 횟수(' + DAILY_BLOG_LIMIT + '회)를 모두 사용했습니다.' }));
+      return output;
+    }
+  }
+
+  var now = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm');
+  sheet.appendRow([
+    now,
+    data.type      || '',
+    data.mood      || '',
+    data.topic     || '',
+    data.keywords  || '',
+    data.tags      || '',
+    data.title     || '',
+    data.body      || '',
+    data.structure || '',
+    data.userId    || ''
+  ]);
+
+  output.setContent(JSON.stringify({ ok: true }));
+  return output;
+}
+
+// ── 오늘 작성 횟수 조회 (초안 생성 전, 클라이언트가 미리 확인) ──────
+function _getQuotaStatus(userId) {
+  var output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+  var count = _countTodayPosts(userId);
+  output.setContent(JSON.stringify({ ok: true, count: count, limit: DAILY_BLOG_LIMIT, remaining: Math.max(0, DAILY_BLOG_LIMIT - count) }));
+  return output;
+}
+
+// ── 본인이 작성한 글만 조회 (히스토리 탭 전용) ─────────────────────
+function _getMyPosts(userId, n) {
+  var output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet || sheet.getLastRow() <= 1) { output.setContent(JSON.stringify({ ok: true, posts: [] })); return output; }
+
+  var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 10).getValues();
+  var posts = data
+    .filter(function(row) { return String(row[9] || '') === String(userId); })
+    .reverse()
+    .slice(0, Math.min(n || 100, 100))
+    .map(function(row) {
+      return {
+        date: row[0] ? String(row[0]).substring(0, 10) : '',
+        type: row[1] || '', mood: row[2] || '', topic: row[3] || '', keywords: row[4] || '',
+        tags: row[5] || '', title: row[6] || '', body: row[7] || '', structure: row[8] || ''
+      };
+    });
+
+  output.setContent(JSON.stringify({ ok: true, posts: posts }));
+  return output;
+}
+
+// ── Claude 프록시 — 관리자 API 키로만 호출, 클라이언트는 키를 절대 보지 않음 ──
+// 최초 1회, Apps Script 편집기에서 setAdminApiKey('sk-ant-...') 를 직접 실행해서 키를 등록할 것
+// (코드에 키를 적지 말 것 — PropertiesService에 저장되며 이 파일/git에는 남지 않음)
+function setAdminApiKey(key) {
+  PropertiesService.getScriptProperties().setProperty('ANTHROPIC_API_KEY', key);
+}
+
+function _claudeProxy(payload) {
+  var output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+  var apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+  if (!apiKey) {
+    output.setContent(JSON.stringify({ ok: false, error: '관리자 Claude API 키가 아직 설정되지 않았습니다.' }));
+    return output;
+  }
+  try {
+    var res = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+      payload: JSON.stringify(payload || {}),
+      muteHttpExceptions: true
+    });
+    var json = JSON.parse(res.getContentText());
+    if (res.getResponseCode() !== 200) {
+      output.setContent(JSON.stringify({ ok: false, error: (json.error && json.error.message) || ('Claude API 오류 ' + res.getResponseCode()) }));
+      return output;
+    }
+    output.setContent(JSON.stringify({ ok: true, data: json }));
+  } catch (err) {
+    output.setContent(JSON.stringify({ ok: false, error: err.message }));
+  }
+  return output;
+}
+
+// ── Gemini 프록시 — 관리자 API 키로만 호출, 클라이언트는 키를 절대 보지 않음 ──
+// 최초 1회, Apps Script 편집기에서 setAdminGeminiKey('AIza...') 를 직접 실행해서 키를 등록할 것
+function setAdminGeminiKey(key) {
+  PropertiesService.getScriptProperties().setProperty('GEMINI_API_KEY', key);
+}
+
+function _geminiProxy(payload) {
+  var output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+  var apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
+  if (!apiKey) {
+    output.setContent(JSON.stringify({ ok: false, error: '관리자 Gemini API 키가 아직 설정되지 않았습니다.' }));
+    return output;
+  }
+  var model = (payload && payload.model) || 'gemini-2.5-flash';
+  try {
+    var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey;
+    var res = UrlFetchApp.fetch(url, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify({
+        system_instruction: { parts: [{ text: (payload && payload.system) || '' }] },
+        contents: [{ role: 'user', parts: [{ text: (payload && payload.content) || '' }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: (payload && payload.max_tokens) || 3500 }
+      }),
+      muteHttpExceptions: true
+    });
+    var json = JSON.parse(res.getContentText());
+    if (res.getResponseCode() !== 200) {
+      output.setContent(JSON.stringify({ ok: false, error: (json.error && json.error.message) || ('Gemini API 오류 ' + res.getResponseCode()) }));
+      return output;
+    }
+    var text = json.candidates && json.candidates[0] && json.candidates[0].content &&
+               json.candidates[0].content.parts && json.candidates[0].content.parts[0] &&
+               json.candidates[0].content.parts[0].text;
+    if (!text) {
+      output.setContent(JSON.stringify({ ok: false, error: 'Gemini 빈 응답 (안전 필터에 걸렸을 수 있습니다)' }));
+      return output;
+    }
+    output.setContent(JSON.stringify({ ok: true, text: text }));
+  } catch (err) {
+    output.setContent(JSON.stringify({ ok: false, error: err.message }));
+  }
+  return output;
+}
+
+// ── 최근 1개월 교육 뉴스 조회 (뉴스 기반 소재 추천 기능용) ─────────
+function _getEducationNews(output) {
+  var cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - NEWS_MAX_DAYS);
+
+  var seen = {};
+  var items = [];
+  var debug = []; // 문제 진단용: 쿼리별 응답 상태 기록
+
+  NEWS_QUERIES.forEach(function(q) {
+    try {
+      var url = 'https://openapi.naver.com/v1/search/news.json'
+        + '?query=' + encodeURIComponent(q)
+        + '&display=' + NEWS_PER_QUERY_DISPLAY + '&sort=date';
+      var res = UrlFetchApp.fetch(url, {
+        headers: {
+          'X-Naver-Client-Id': NAVER_CLIENT_ID,
+          'X-Naver-Client-Secret': NAVER_CLIENT_SECRET
+        },
+        muteHttpExceptions: true
+      });
+      var code = res.getResponseCode();
+      if (code !== 200) {
+        debug.push({ query: q, status: code, body: res.getContentText().slice(0, 200) });
+        return;
+      }
+      var json = JSON.parse(res.getContentText());
+      var rawCount = (json.items || []).length;
+      var kept = 0;
+      (json.items || []).forEach(function(it) {
+        var pub = new Date(it.pubDate);
+        if (isNaN(pub.getTime()) || pub < cutoff) return;
+        var link = it.originallink || it.link;
+        if (!link || seen[link]) return;
+        seen[link] = true;
+        kept++;
+        items.push({
+          title: _stripTags(it.title),
+          description: _stripTags(it.description),
+          link: link,
+          pubDate: it.pubDate,
+          query: q
+        });
+      });
+      debug.push({ query: q, status: 200, raw: rawCount, kept: kept });
+    } catch (err) {
+      debug.push({ query: q, error: String(err) });
+    }
+  });
+
+  items.sort(function(a, b) { return new Date(b.pubDate) - new Date(a.pubDate); });
+
+  output.setContent(JSON.stringify({ items: items, debug: debug }));
+  return output;
+}
+
+function _stripTags(s) {
+  return String(s || '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
+}
+
+// ── 네이버 블로그 본문 수집 (참고 URL 기능용) ──────────────────────
+// GAS는 서버에서 실행되므로 브라우저 CORS 제약 없이 네이버 블로그에 직접 접근 가능
+function _fetchNaverBlogContent(url) {
+  var output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+
+  if (!url) {
+    output.setContent(JSON.stringify({ ok: false, error: 'URL 없음' }));
+    return output;
+  }
+
+  try {
+    var mobileUrl = _normalizeNaverMobileUrl(url);
+    var res = UrlFetchApp.fetch(mobileUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15',
+        'Referer': 'https://m.blog.naver.com/'
+      },
+      muteHttpExceptions: true,
+      followRedirects: true
+    });
+    var html = res.getContentText();
+    var text = _extractNaverBlogText(html);
+
+    if (!text) {
+      output.setContent(JSON.stringify({ ok: false, error: '본문을 찾을 수 없습니다.' }));
+      return output;
+    }
+
+    output.setContent(JSON.stringify({ ok: true, content: text.substring(0, 3000) }));
+  } catch (err) {
+    output.setContent(JSON.stringify({ ok: false, error: err.message }));
+  }
+
+  return output;
+}
+
+// 데스크톱/일반 링크를 모바일 PostView 주소로 정규화 (모바일 페이지가 서버 렌더링이라 파싱이 쉬움)
+function _normalizeNaverMobileUrl(url) {
+  var raw = (url || '').trim();
+  var m = raw.match(/blog\.naver\.com\/([^\/?#]+)\/(\d+)/);
+  if (m) {
+    return 'https://m.blog.naver.com/PostView.naver?blogId=' + m[1] + '&logNo=' + m[2];
+  }
+  var blogId = (raw.match(/[?&]blogId=([^&]+)/) || [])[1];
+  var logNo  = (raw.match(/[?&]logNo=([^&]+)/) || [])[1];
+  if (blogId && logNo) {
+    return 'https://m.blog.naver.com/PostView.naver?blogId=' + blogId + '&logNo=' + logNo;
+  }
+  return raw.replace('https://blog.naver.com', 'https://m.blog.naver.com')
+            .replace('http://blog.naver.com', 'https://m.blog.naver.com');
+}
+
+// HTML에서 본문 텍스트만 대략 추출 (GAS엔 DOM 파서가 없어 정규식 기반 근사 처리)
+function _extractNaverBlogText(html) {
+  var body = html || '';
+
+  // 스마트에디터 본문 영역(se-main-container) 근처만 잘라내 노이즈 최소화
+  // 주의: 'se-main-container' 문자열은 <head>의 CSS 규칙(.se-main-container{...})에도 먼저 등장하므로
+  // 반드시 실제 태그 속성 형태(class="se-main-container")로 찾아야 함
+  var markerIdx = body.indexOf('class="se-main-container');
+  if (markerIdx === -1) markerIdx = body.indexOf("class='se-main-container");
+  if (markerIdx === -1) markerIdx = body.indexOf('id="postViewArea');
+  if (markerIdx === -1) markerIdx = body.indexOf('se-main-container'); // 최후 폴백 (근사치)
+  if (markerIdx >= 0) {
+    var start = Math.max(0, markerIdx - 50);
+    // 라이브러리 없이 태그 깊이를 못 따지므로, 스크립트/스타일을 먼저 제거한 뒤
+    // 넉넉한 구간을 확보해 실제 텍스트가 잘리지 않게 함 (최종 텍스트는 아래에서 다시 자름)
+    body = body.substring(start, start + 150000);
+  }
+
+  var text = body
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, '\n')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .split('\n')
+    .map(function(line) { return line.trim(); })
+    .filter(function(line) { return line.length > 1; })
+    .join('\n');
+
+  return text;
+}
+
+// ── 카카오맵 장소별 블로그 리뷰 (지도검색 "블로그 취합" 기능용) ──────
+// 카카오맵 장소 상세페이지("블로그 리뷰" 탭)가 내부적으로 쓰는 비공식 API를 그대로 호출.
+// 학원명으로 네이버를 검색하는 방식(동명 학원 오검색 위험)과 달리, 카카오맵이 이미 해당
+// 장소 하나에 정확히 매칭해 둔 블로그만 가져오므로 훨씬 정확 — 브라우저 개발자도구로
+// place.map.kakao.com 페이지의 요청을 역추적해 확인한 값(appVersion/pf 헤더 필요).
+// 공식 문서화된 API가 아니라서 카카오 쪽에서 예고 없이 스펙을 바꾸거나 막을 수 있음.
+function _searchAcademyPosts(placeId) {
+  var output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+
+  if (!placeId) {
+    output.setContent(JSON.stringify({ ok: false, error: '카카오맵 장소 정보 없음' }));
+    return output;
+  }
+
+  try {
+    var url = 'https://place-api.map.kakao.com/places/panel3/' + encodeURIComponent(placeId);
+    var res = UrlFetchApp.fetch(url, {
+      headers: {
+        appVersion: '6.6.0',
+        pf: 'PC',
+        Accept: 'application/json, text/plain, */*',
+        Referer: 'https://place.map.kakao.com/' + encodeURIComponent(placeId),
+        Origin: 'https://place.map.kakao.com',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+      },
+      muteHttpExceptions: true
+    });
+    if (res.getResponseCode() !== 200) {
+      output.setContent(JSON.stringify({ ok: false, error: '카카오맵 응답 실패 (HTTP ' + res.getResponseCode() + ')' }));
+      return output;
+    }
+    var json = JSON.parse(res.getContentText());
+    var reviews = (json.blog_review && json.blog_review.reviews) || [];
+    var posts = reviews.map(function(r) {
+      return {
+        source: '블로그',
+        title: r.title || '',
+        link: r.origin_url || '',
+        author: r.author || '',
+        date: (r.registered_at || '').slice(0, 10).replace(/-/g, '.')
+      };
+    });
+
+    output.setContent(JSON.stringify({ ok: true, posts: posts }));
+  } catch (err) {
+    output.setContent(JSON.stringify({ ok: false, error: err.message }));
+  }
+
+  return output;
+}

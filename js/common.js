@@ -35,7 +35,7 @@ function showPage(id) {
     document.querySelectorAll('#sidebar-subnav-image .sidebar-subitem').forEach(function(i) { i.classList.remove('active'); });
   }
   // 블로그 서브메뉴는 블로그 계열이 아닐 때 닫기
-  if (id !== 'blog' && id !== 'blog-history') {
+  if (id !== 'blog' && id !== 'blog-history' && id !== 'blog-news') {
     var blogSubnav = document.getElementById('sidebar-subnav-blog');
     if (blogSubnav) blogSubnav.style.display = 'none';
   }
@@ -65,7 +65,7 @@ function showPage(id) {
     if (lp) { lp.classList.remove('mode-list'); lp.classList.add('mode-free'); }
     p2State.templateKey = 'free';
     p2render();
-  } else if (id === 'blog' || id === 'blog-history') {
+  } else if (id === 'blog' || id === 'blog-history' || id === 'blog-news') {
     document.getElementById('page-blog').classList.add('active');
     var navBlog = document.getElementById('nav-blog');
     if (navBlog) navBlog.classList.add('active');
@@ -73,16 +73,20 @@ function showPage(id) {
     if (blogSubnavOpen) blogSubnavOpen.style.display = '';
     var navWrite = document.getElementById('nav-blog-write');
     var navHistory = document.getElementById('nav-blog-history');
+    var navNews = document.getElementById('nav-blog-news');
     if (navWrite) navWrite.classList.toggle('active', id === 'blog');
     if (navHistory) navHistory.classList.toggle('active', id === 'blog-history');
+    if (navNews) navNews.classList.toggle('active', id === 'blog-news');
     var tabWrite = document.getElementById('blogtab-write');
     var tabHistory = document.getElementById('blogtab-history');
+    var tabNews = document.getElementById('blogtab-news');
     if (tabWrite) tabWrite.style.display = (id === 'blog') ? '' : 'none';
     if (tabHistory) tabHistory.style.display = (id === 'blog-history') ? '' : 'none';
+    if (tabNews) tabNews.style.display = (id === 'blog-news') ? '' : 'none';
     if (id === 'blog') {
       initAcademyProfile();
       blogGoStep(blogState.step || 1);
-    } else {
+    } else if (id === 'blog-history') {
       blogHistoryInit();
     }
   } else if (id === 'settings-ai' || id === 'settings-prompt' || id === 'settings-instagram') {
@@ -236,6 +240,22 @@ async function claudeProxyCall(payload) {
   var json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Claude 요청 실패');
   return json.data;
+}
+
+// Gemini 프록시 (뉴스 소재 추천 등 텍스트 전용 호출) — { model, system, content, max_tokens } 형태
+async function geminiProxyCall(payload) {
+  var auth = getUserAuth();
+  if (!auth) { showLoginOverlay(); throw new Error('로그인이 필요합니다.'); }
+  var cfg = getGasConfig();
+  if (!cfg.url || !cfg.token) throw new Error('서버 설정 오류(GAS 미설정)');
+  var res = await fetch(cfg.url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GAS는 OPTIONS(preflight)를 못 받으므로 simple-request로 보냄
+    body: JSON.stringify({ action: 'geminiProxy', token: cfg.token, userId: auth.id, userPw: auth.pw, site: _siteId(), payload: payload })
+  });
+  var json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Gemini 요청 실패');
+  return json.text;
 }
 
 // 오늘 남은 블로그 작성 가능 횟수 확인 (초안 생성 전에 먼저 체크)
