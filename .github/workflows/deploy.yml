@@ -45,7 +45,7 @@ jobs:
 
       - name: Create flags.js (dev — 기본값 그대로, 전부 켜짐)
         run: |
-          echo "// dev 사이트: 기능 제한 없음" > dev-src/js/flags.js
+          printf 'window.SITE_ID = "dev"; // 로그인 저장소를 beta와 분리하는 용도\n// dev 사이트: 기능 제한 없음\n' > dev-src/js/flags.js
 
       - name: Create flags.js (beta — BETA_DISABLED_FEATURES 변수 반영)
         env:
@@ -55,6 +55,7 @@ jobs:
             const disabled = (process.env.DISABLED || '').split(',').map(s => s.trim()).filter(Boolean);
             const overrides = {};
             disabled.forEach(f => { overrides[f] = false; });
+            console.log('window.SITE_ID = \"beta\"; // 로그인 저장소를 dev와 분리하는 용도');
             console.log('// beta 사이트: BETA_DISABLED_FEATURES 저장소 변수로 제어');
             console.log('window.FEATURE_FLAGS = Object.assign(window.FEATURE_FLAGS || {}, ' + JSON.stringify(overrides) + ');');
           " > beta-src/js/flags.js

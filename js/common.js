@@ -148,15 +148,22 @@ function getKakaoKey() {
 }
 
 // ── 로그인(임시 — 구글시트 기반, 추후 실제 사용자 데이터 연동 예정) ──
+// dev/beta가 같은 도메인(olympiadedu.github.io)의 하위 경로라 localStorage가 공유되므로,
+// window.SITE_ID(flags.js가 주입 — dev/beta)로 키를 구분해 로그인 상태가 서로 섞이지 않게 함
+function _authKey(name) {
+  var site = (typeof window.SITE_ID === 'string' && window.SITE_ID) ? window.SITE_ID + '_' : '';
+  return 'mtt_' + site + name;
+}
+
 function getUserAuth() {
-  var id = localStorage.getItem('mtt_user_id') || '';
-  var pw = localStorage.getItem('mtt_user_pw') || '';
+  var id = localStorage.getItem(_authKey('user_id')) || '';
+  var pw = localStorage.getItem(_authKey('user_pw')) || '';
   if (!id || !pw) return null;
-  return { id: id, pw: pw, name: localStorage.getItem('mtt_user_name') || id, academy: localStorage.getItem('mtt_user_academy') || '' };
+  return { id: id, pw: pw, name: localStorage.getItem(_authKey('user_name')) || id, academy: localStorage.getItem(_authKey('user_academy')) || '' };
 }
 
 function clearUserAuth() {
-  ['mtt_user_id','mtt_user_pw','mtt_user_name','mtt_user_academy'].forEach(function(k){ localStorage.removeItem(k); });
+  ['user_id','user_pw','user_name','user_academy'].forEach(function(k){ localStorage.removeItem(_authKey(k)); });
 }
 
 async function loginSubmit() {
@@ -179,10 +186,10 @@ async function loginSubmit() {
     });
     var json = await res.json();
     if (!json.ok) { if (errEl) { errEl.textContent = json.error || '로그인 실패'; errEl.style.display = 'block'; } return; }
-    localStorage.setItem('mtt_user_id', id);
-    localStorage.setItem('mtt_user_pw', pw);
-    localStorage.setItem('mtt_user_name', json.name || id);
-    localStorage.setItem('mtt_user_academy', json.academy || '');
+    localStorage.setItem(_authKey('user_id'), id);
+    localStorage.setItem(_authKey('user_pw'), pw);
+    localStorage.setItem(_authKey('user_name'), json.name || id);
+    localStorage.setItem(_authKey('user_academy'), json.academy || '');
     hideLoginOverlay();
   } catch(e) {
     if (errEl) { errEl.textContent = '연결 오류: ' + e.message; errEl.style.display = 'block'; }
