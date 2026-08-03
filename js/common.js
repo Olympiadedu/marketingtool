@@ -151,8 +151,11 @@ function getKakaoKey() {
 // dev/beta가 같은 도메인(olympiadedu.github.io)의 하위 경로라 localStorage가 공유되므로,
 // window.SITE_ID(flags.js가 주입 — dev/beta)로 키를 구분해 로그인 상태가 서로 섞이지 않게 함
 function _authKey(name) {
-  var site = (typeof window.SITE_ID === 'string' && window.SITE_ID) ? window.SITE_ID + '_' : '';
-  return 'mtt_' + site + name;
+  return 'mtt_' + _siteId() + '_' + name;
+}
+// flags.js가 주입하는 window.SITE_ID('dev'/'beta') — 로컬 등 미설정 시 'local'로 취급
+function _siteId() {
+  return (typeof window.SITE_ID === 'string' && window.SITE_ID) ? window.SITE_ID : 'local';
 }
 
 function getUserAuth() {
@@ -182,7 +185,7 @@ async function loginSubmit() {
     var res = await fetch(cfg.url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GAS는 OPTIONS(preflight)를 못 받으므로 simple-request로 보냄
-      body: JSON.stringify({ action: 'login', token: cfg.token, userId: id, userPw: pw })
+      body: JSON.stringify({ action: 'login', token: cfg.token, userId: id, userPw: pw, site: _siteId() })
     });
     var json = await res.json();
     if (!json.ok) { if (errEl) { errEl.textContent = json.error || '로그인 실패'; errEl.style.display = 'block'; } return; }
@@ -228,7 +231,7 @@ async function claudeProxyCall(payload) {
   var res = await fetch(cfg.url, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GAS는 OPTIONS(preflight)를 못 받으므로 simple-request로 보냄
-    body: JSON.stringify({ action: 'claudeProxy', token: cfg.token, userId: auth.id, userPw: auth.pw, payload: payload })
+    body: JSON.stringify({ action: 'claudeProxy', token: cfg.token, userId: auth.id, userPw: auth.pw, site: _siteId(), payload: payload })
   });
   var json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Claude 요청 실패');
@@ -244,7 +247,7 @@ async function claudeQuotaCheck() {
   var res = await fetch(cfg.url, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GAS는 OPTIONS(preflight)를 못 받으므로 simple-request로 보냄
-    body: JSON.stringify({ action: 'quotaStatus', token: cfg.token, userId: auth.id, userPw: auth.pw })
+    body: JSON.stringify({ action: 'quotaStatus', token: cfg.token, userId: auth.id, userPw: auth.pw, site: _siteId() })
   });
   var json = await res.json();
   if (!json.ok) throw new Error(json.error || '사용량 확인 실패');
@@ -261,7 +264,7 @@ async function gasGetMyPosts(n) {
     var res = await fetch(cfg.url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GAS는 OPTIONS(preflight)를 못 받으므로 simple-request로 보냄
-      body: JSON.stringify({ action: 'myPosts', token: cfg.token, userId: auth.id, userPw: auth.pw, n: n || 100 })
+      body: JSON.stringify({ action: 'myPosts', token: cfg.token, userId: auth.id, userPw: auth.pw, site: _siteId(), n: n || 100 })
     });
     var json = await res.json();
     if (!json.ok) throw new Error(json.error || '히스토리 조회 실패');
@@ -324,7 +327,8 @@ async function gasSavePost(data) {
     body:      data.body      || '',
     structure: data.structure || '',
     userId:    auth ? auth.id : '',
-    userPw:    auth ? auth.pw : ''
+    userPw:    auth ? auth.pw : '',
+    site:      _siteId()
   };
   fetch(cfg.url, {
     method: 'POST',
