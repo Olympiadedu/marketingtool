@@ -174,7 +174,7 @@ async function loginSubmit() {
   try {
     var res = await fetch(cfg.url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GAS는 OPTIONS(preflight)를 못 받으므로 simple-request로 보냄
       body: JSON.stringify({ action: 'login', token: cfg.token, userId: id, userPw: pw })
     });
     var json = await res.json();
@@ -220,7 +220,7 @@ async function claudeProxyCall(payload) {
   if (!cfg.url || !cfg.token) throw new Error('서버 설정 오류(GAS 미설정)');
   var res = await fetch(cfg.url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GAS는 OPTIONS(preflight)를 못 받으므로 simple-request로 보냄
     body: JSON.stringify({ action: 'claudeProxy', token: cfg.token, userId: auth.id, userPw: auth.pw, payload: payload })
   });
   var json = await res.json();
@@ -236,7 +236,7 @@ async function claudeQuotaCheck() {
   if (!cfg.url || !cfg.token) throw new Error('서버 설정 오류(GAS 미설정)');
   var res = await fetch(cfg.url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GAS는 OPTIONS(preflight)를 못 받으므로 simple-request로 보냄
     body: JSON.stringify({ action: 'quotaStatus', token: cfg.token, userId: auth.id, userPw: auth.pw })
   });
   var json = await res.json();
@@ -253,7 +253,7 @@ async function gasGetMyPosts(n) {
   try {
     var res = await fetch(cfg.url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GAS는 OPTIONS(preflight)를 못 받으므로 simple-request로 보냄
       body: JSON.stringify({ action: 'myPosts', token: cfg.token, userId: auth.id, userPw: auth.pw, n: n || 100 })
     });
     var json = await res.json();
