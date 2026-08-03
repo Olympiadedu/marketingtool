@@ -1843,30 +1843,17 @@ async function callGeminiPromo(keys, imageDataUrl, prompt) {
 }
 
 async function callClaudePromo(imageDataUrl, prompt) {
-  var key = getApiKey('claude');
-  if (!key || key.length < 10) return { ok: false, error: '키 없음' };
   var b64 = imageDataUrl.split(',')[1];
   var mimeType = imageDataUrl.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
   try {
-    var res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: getModel('claude'),
-        max_tokens: 800,
-        messages: [{ role: 'user', content: [
-          { type: 'image', source: { type: 'base64', media_type: mimeType, data: b64 } },
-          { type: 'text', text: prompt }
-        ]}]
-      })
+    var data = await claudeProxyCall({
+      model: getModel('claude'),
+      max_tokens: 800,
+      messages: [{ role: 'user', content: [
+        { type: 'image', source: { type: 'base64', media_type: mimeType, data: b64 } },
+        { type: 'text', text: prompt }
+      ]}]
     });
-    if (!res.ok) { var e = await res.text(); return { ok: false, error: 'HTTP ' + res.status + ': ' + e.substring(0, 80) }; }
-    var data = await res.json();
     var text = data.content && data.content[0] && data.content[0].text;
     if (text && text.trim()) return { ok: true, text: text, model: getModel('claude') };
     return { ok: false, error: '빈 응답' };
@@ -1898,16 +1885,7 @@ async function callOpenAIPromo(imageDataUrl, prompt) {
 }
 
 async function callAiPromo(imageDataUrl, prompt) {
-  var r1 = await callClaudePromo(imageDataUrl, prompt);
-  if (r1.ok) return r1;
-  var geminiKeys = await loadGeminiKeys();
-  if (geminiKeys.length) {
-    var r2 = await callGeminiPromo(geminiKeys, imageDataUrl, prompt);
-    if (r2.ok) return r2;
-  }
-  var r3 = await callOpenAIPromo(imageDataUrl, prompt);
-  if (r3.ok) return r3;
-  return { ok: false, error: 'API 키가 없거나 모두 실패했습니다. 사이드바 하단 API 설정에서 키를 입력하세요.' };
+  return callClaudePromo(imageDataUrl, prompt);
 }
 
 function initAiPromoControls() {

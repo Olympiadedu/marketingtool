@@ -1,6 +1,5 @@
 var blogState = { draft: null, result: null, step: 1, historyPosts: null, historySelected: -1 };
 // 모델은 설정 페이지의 getModel('claude') 로 동적 참조
-var BLOG_GEMINI_FALLBACK = ['gemini-2.5-flash','gemini-3.5-flash','gemini-3-flash','gemini-3.1-flash-lite','gemini-2.5-flash-lite'];
 
 // ── 교육청 표시광고 심의 대상 금지어 (감지 시 대체 표현으로 필터링) ──
 // 복합어(선행학습)를 먼저 검사해야 "사전학습학습" 같은 중복 치환을 피할 수 있음 — 순서 중요
@@ -80,45 +79,12 @@ function blogSwitchTab(tab) {
 }
 
 async function blogCallClaude(systemPrompt, userContent, maxTokens) {
-  var key = getApiKey('claude');
-  if (!key) throw new Error('Claude API 키 없음');
-  var res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-    body: JSON.stringify({ model: getModel('claude'), max_tokens: maxTokens || 2048, system: systemPrompt, messages: [{ role: 'user', content: userContent }] })
-  });
-  if (!res.ok) { var err = await res.json().catch(function() { return {}; }); throw new Error(err.error && err.error.message ? err.error.message : 'Claude API 오류 (' + res.status + ')'); }
-  var data = await res.json();
+  var data = await claudeProxyCall({ model: getModel('claude'), max_tokens: maxTokens || 2048, system: systemPrompt, messages: [{ role: 'user', content: userContent }] });
   return data.content[0].text;
 }
 
-async function blogCallGemini(systemPrompt, userContent, maxTokens) {
-  var key = getApiKey('gemini');
-  if (!key) throw new Error('Gemini API 키 없음');
-  var selectedModel = getModel('gemini');
-  var modelList = [selectedModel].concat(BLOG_GEMINI_FALLBACK.filter(function(m){ return m !== selectedModel; }));
-  var lastErr = null;
-  for (var mi = 0; mi < modelList.length; mi++) {
-    var modelId = modelList[mi];
-    var loadEls = document.querySelectorAll('.blog-loading-model');
-    loadEls.forEach(function(el) { el.textContent = modelId + ' 사용 중...'; });
-    try {
-      var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + modelId + ':generateContent?key=' + key;
-      var res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: systemPrompt + '\n\n' + userContent }] }], generationConfig: { maxOutputTokens: maxTokens || 3000, temperature: 0.7 } }) });
-      var data = await res.json();
-      if (!res.ok) { lastErr = new Error(data.error && data.error.message ? data.error.message : 'HTTP ' + res.status); continue; }
-      var text = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] ? data.candidates[0].content.parts[0].text : null;
-      if (!text) { lastErr = new Error('빈 응답'); continue; }
-      return text;
-    } catch(e) { lastErr = e; continue; }
-  }
-  throw lastErr || new Error('Gemini 모두 실패');
-}
-
 async function blogCall(systemPrompt, userContent, maxTokens) {
-  var claudeKey = getApiKey('claude');
-  if (claudeKey) return blogCallClaude(systemPrompt, userContent, maxTokens);
-  return blogCallGemini(systemPrompt, userContent, maxTokens);
+  return blogCallClaude(systemPrompt, userContent, maxTokens);
 }
 
 function blogCleanJson(text) {
@@ -373,9 +339,6 @@ async function blogAnalyzeFreeText(btn) {
   var input = (document.getElementById('blog-free-desc') || {}).value || '';
   input = input.trim();
   if (!input) { blogShowFreeAlert('자유 서술 내용을 입력해주세요.'); return; }
-  var claudeKey = getApiKey('claude');
-  var geminiKey = getApiKey('gemini');
-  if (!claudeKey && !geminiKey) { blogShowFreeAlert('API 설정에서 Claude 또는 Gemini 키를 먼저 입력해주세요.'); return; }
   blogHideFreeAlert();
   var orig = btn ? btn.textContent : '';
   if (btn) { btn.disabled = true; btn.textContent = '분석 중...'; }
@@ -400,9 +363,10 @@ async function blogAnalyzeFreeText(btn) {
 async function blogGenerateDraft() {
   var topic = document.getElementById('blog-topic').value.trim();
   if (!topic) { blogShowAlert('1', '주제를 입력해주세요.'); return; }
-  var claudeKey = getApiKey('claude');
-  var geminiKey = getApiKey('gemini');
-  if (!claudeKey && !geminiKey) { blogShowAlert('1', 'API 설정에서 Claude 또는 Gemini 키를 먼저 입력해주세요.'); return; }
+  try {
+    var quota = await claudeQuotaCheck();
+    if (quota.remaining <= 0) { blogShowAlert('1', '오늘 작성 가능한 글 수(' + quota.limit + '개)를 모두 사용했습니다. 내일 다시 시도해주세요.'); return; }
+  } catch(qe) { blogShowAlert('1', qe.message || '사용량 확인에 실패했습니다.'); return; }
   blogHideAlert('1');
   blogState.inputs = {
     type:     (document.getElementById('blog-type')     || {}).value || '',
@@ -532,9 +496,6 @@ function blogReadOutline() {
 }
 
 async function blogFinalize(triggerBtn) {
-  var claudeKey = getApiKey('claude');
-  var geminiKey = getApiKey('gemini');
-  if (!claudeKey && !geminiKey) { blogShowAlert('2', 'API 설정에서 키를 입력해주세요.'); return; }
   blogHideAlert('2');
   var updatedDraft = blogReadOutline();
   var notes = document.getElementById('blog-notes') ? document.getElementById('blog-notes').value.trim() : '';
@@ -865,7 +826,7 @@ async function blogHistoryInit() {
   blogRenderHistoryDetail(null);
   if (listEl) listEl.innerHTML = '<p style="color:#9aa1ad;font-size:13px;">불러오는 중...</p>';
   try {
-    var posts = await gasGetRecentPosts(100);
+    var posts = await gasGetMyPosts(100);
     blogState.historyPosts = posts || [];
     if (!blogState.historyPosts.length && alertEl) {
       alertEl.textContent = '저장된 글이 없거나 구글 시트 연동이 설정되지 않았습니다. 설정 페이지에서 확인해주세요.';

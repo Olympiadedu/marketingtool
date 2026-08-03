@@ -60,6 +60,22 @@
   <!-- pages/*.html 이 동기 로드 후 여기에 삽입됩니다 -->
 </div>
 
+<!-- 로그인 게이트 — 로그인 전에는 전체를 가림 (js/common.js의 initLoginGate가 로그인 여부에 따라 표시/숨김) -->
+<div id="login-overlay" style="display:flex;position:fixed;inset:0;z-index:3000;background:var(--bg);align-items:center;justify-content:center;">
+  <div style="background:var(--sur);border:1px solid var(--bdr);border-radius:12px;padding:32px;width:320px;max-width:90vw;">
+    <div style="font-weight:900;font-size:18px;margin-bottom:4px;">MarketingTool 로그인</div>
+    <div style="color:var(--mut);font-size:13px;margin-bottom:20px;">발급받은 아이디/비밀번호로 로그인하세요</div>
+    <div class="set-field">
+      <input id="login-id" type="text" placeholder="아이디" class="set-input" autocomplete="username" onkeydown="if(event.key==='Enter')loginSubmit()" />
+    </div>
+    <div class="set-field" style="margin-top:8px;">
+      <input id="login-pw" type="password" placeholder="비밀번호" class="set-input" autocomplete="current-password" onkeydown="if(event.key==='Enter')loginSubmit()" />
+    </div>
+    <div id="login-error" style="display:none;color:#ef4444;font-size:12px;margin-top:8px;"></div>
+    <button id="login-submit" class="btn btn-primary" style="width:100%;margin-top:16px;" onclick="loginSubmit()">로그인</button>
+  </div>
+</div>
+
 <div id="toast" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;z-index:2000;pointer-events:none;"></div>
 
 <!-- 1. 다른 스크립트보다 먼저 pages/*.html을 동기 로드해 DOM에 삽입 -->

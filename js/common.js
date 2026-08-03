@@ -147,6 +147,121 @@ function getKakaoKey() {
   return (typeof ADMIN_KAKAO_KEY !== 'undefined' && ADMIN_KAKAO_KEY) ? ADMIN_KAKAO_KEY : '';
 }
 
+// ── 로그인(임시 — 구글시트 기반, 추후 실제 사용자 데이터 연동 예정) ──
+function getUserAuth() {
+  var id = localStorage.getItem('mtt_user_id') || '';
+  var pw = localStorage.getItem('mtt_user_pw') || '';
+  if (!id || !pw) return null;
+  return { id: id, pw: pw, name: localStorage.getItem('mtt_user_name') || id, academy: localStorage.getItem('mtt_user_academy') || '' };
+}
+
+function clearUserAuth() {
+  ['mtt_user_id','mtt_user_pw','mtt_user_name','mtt_user_academy'].forEach(function(k){ localStorage.removeItem(k); });
+}
+
+async function loginSubmit() {
+  var idEl = document.getElementById('login-id');
+  var pwEl = document.getElementById('login-pw');
+  var errEl = document.getElementById('login-error');
+  var btn = document.getElementById('login-submit');
+  var id = idEl ? idEl.value.trim() : '';
+  var pw = pwEl ? pwEl.value : '';
+  if (errEl) { errEl.textContent = ''; errEl.style.display = 'none'; }
+  if (!id || !pw) { if (errEl) { errEl.textContent = '아이디와 비밀번호를 입력하세요.'; errEl.style.display = 'block'; } return; }
+  var cfg = getGasConfig();
+  if (!cfg.url || !cfg.token) { if (errEl) { errEl.textContent = '서버 설정 오류(GAS 미설정)'; errEl.style.display = 'block'; } return; }
+  if (btn) { btn.disabled = true; btn.textContent = '확인 중...'; }
+  try {
+    var res = await fetch(cfg.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'login', token: cfg.token, userId: id, userPw: pw })
+    });
+    var json = await res.json();
+    if (!json.ok) { if (errEl) { errEl.textContent = json.error || '로그인 실패'; errEl.style.display = 'block'; } return; }
+    localStorage.setItem('mtt_user_id', id);
+    localStorage.setItem('mtt_user_pw', pw);
+    localStorage.setItem('mtt_user_name', json.name || id);
+    localStorage.setItem('mtt_user_academy', json.academy || '');
+    hideLoginOverlay();
+  } catch(e) {
+    if (errEl) { errEl.textContent = '연결 오류: ' + e.message; errEl.style.display = 'block'; }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '로그인'; }
+  }
+}
+
+function logoutUser() {
+  clearUserAuth();
+  showLoginOverlay();
+}
+
+function showLoginOverlay() {
+  var el = document.getElementById('login-overlay');
+  if (el) el.style.display = 'flex';
+}
+function hideLoginOverlay() {
+  var el = document.getElementById('login-overlay');
+  if (el) el.style.display = 'none';
+  var nameEl = document.getElementById('login-user-name');
+  var auth = getUserAuth();
+  if (nameEl && auth) nameEl.textContent = auth.name + (auth.academy ? ' · ' + auth.academy : '');
+}
+function initLoginGate() {
+  if (getUserAuth()) { hideLoginOverlay(); return; }
+  showLoginOverlay();
+}
+
+// ── Claude 프록시 (관리자 키로 서버측 호출 — 클라이언트는 Claude API 키를 절대 갖지 않음) ──
+async function claudeProxyCall(payload) {
+  var auth = getUserAuth();
+  if (!auth) { showLoginOverlay(); throw new Error('로그인이 필요합니다.'); }
+  var cfg = getGasConfig();
+  if (!cfg.url || !cfg.token) throw new Error('서버 설정 오류(GAS 미설정)');
+  var res = await fetch(cfg.url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'claudeProxy', token: cfg.token, userId: auth.id, userPw: auth.pw, payload: payload })
+  });
+  var json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Claude 요청 실패');
+  return json.data;
+}
+
+// 오늘 남은 블로그 작성 가능 횟수 확인 (초안 생성 전에 먼저 체크)
+async function claudeQuotaCheck() {
+  var auth = getUserAuth();
+  if (!auth) { showLoginOverlay(); throw new Error('로그인이 필요합니다.'); }
+  var cfg = getGasConfig();
+  if (!cfg.url || !cfg.token) throw new Error('서버 설정 오류(GAS 미설정)');
+  var res = await fetch(cfg.url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'quotaStatus', token: cfg.token, userId: auth.id, userPw: auth.pw })
+  });
+  var json = await res.json();
+  if (!json.ok) throw new Error(json.error || '사용량 확인 실패');
+  return json; // { count, limit, remaining }
+}
+
+// 본인이 작성한 글만 조회 (히스토리 탭 전용 — gasGetRecentPosts는 유사글 검사용으로 전체 공용 유지)
+async function gasGetMyPosts(n) {
+  var auth = getUserAuth();
+  if (!auth) return [];
+  var cfg = getGasConfig();
+  if (!cfg.url || !cfg.token) return [];
+  try {
+    var res = await fetch(cfg.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'myPosts', token: cfg.token, userId: auth.id, userPw: auth.pw, n: n || 100 })
+    });
+    var json = await res.json();
+    if (!json.ok) throw new Error(json.error || '히스토리 조회 실패');
+    return json.posts || [];
+  } catch(e) { throw e; }
+}
+
 // ── 기능별 on/off (flags.js가 배포 시 window.FEATURE_FLAGS 일부를 덮어씀) ──
 function applyFeatureFlags() {
   var f = window.FEATURE_FLAGS || {};
@@ -177,36 +292,6 @@ function settingsTab(tab) {
   showPage('settings-' + tab);
 }
 
-// ── 프로바이더 카드 선택 ──────────────────────────────────────────
-var _setActiveProvider = 'claude';
-function setSelectProvider(provider) {
-  _setActiveProvider = provider;
-  document.querySelectorAll('.set-provider-card').forEach(function(c) {
-    c.classList.toggle('active', c.dataset.provider === provider);
-  });
-  ['claude','gemini','openai'].forEach(function(p) {
-    var d = document.getElementById('setdetail-' + p);
-    if (d) d.style.display = p === provider ? 'flex' : 'none';
-  });
-  settingsUpdateGuideLink(provider);
-  settingsUpdateCurrent();
-}
-
-var SET_GUIDE_LINKS = {
-  claude: 'https://console.anthropic.com/settings/keys',
-  gemini: 'https://aistudio.google.com/app/apikey',
-  openai: 'https://platform.openai.com/api-keys'
-};
-var SET_PROVIDER_NAMES = { claude: 'Anthropic Claude', gemini: 'Google Gemini', openai: 'OpenAI GPT' };
-
-function settingsUpdateGuideLink(provider) {
-  var btn = document.getElementById('set-guide-link-btn');
-  if (btn) btn.textContent = SET_PROVIDER_NAMES[provider] + ' API 키 발급 페이지 열기 →';
-}
-function setOpenGuideLink() {
-  window.open(SET_GUIDE_LINKS[_setActiveProvider], '_blank', 'noopener');
-}
-
 // ── 구글 시트 연동 ────────────────────────────────────────────────
 function getGasConfig() {
   var gas = (typeof ADMIN_GAS !== 'undefined') ? ADMIN_GAS : {};
@@ -219,8 +304,7 @@ function getGasConfig() {
 async function gasSavePost(data) {
   var cfg = getGasConfig();
   if (!cfg.url || !cfg.token) return;
-  // GET 방식으로 저장 (CORS 문제 없음)
-  // 본문이 길어 GET URL 한계 초과 가능 → POST no-cors로 전송
+  var auth = getUserAuth();
   var payload = {
     token:     cfg.token,
     action:    'save',
@@ -231,7 +315,9 @@ async function gasSavePost(data) {
     keywords:  data.keywords  || '',
     tags:      data.tags      || '',
     body:      data.body      || '',
-    structure: data.structure || ''
+    structure: data.structure || '',
+    userId:    auth ? auth.id : '',
+    userPw:    auth ? auth.pw : ''
   };
   fetch(cfg.url, {
     method: 'POST',
@@ -317,27 +403,14 @@ async function gasTestConnection() {
 
 // ── 설정 페이지 초기화 ────────────────────────────────────────────
 function settingsInit() {
-  // API 키 로드
-  ['claude','gemini','openai'].forEach(function(t) {
-    var inp = document.getElementById('set-' + t);
-    if (inp) inp.value = getApiKey(t);
-    var sel = document.getElementById('set-' + t + '-model');
-    if (sel) sel.value = getModel(t);
-  });
-  // GAS 설정 로드
+  var sel = document.getElementById('set-claude-model');
+  if (sel) sel.value = getModel('claude');
+  // GAS 설정 로드 (레거시 필드 — 현재 settings.html엔 없지만 존재하면 채움)
   var gasUrl = document.getElementById('set-gas-url');
   var gasToken = document.getElementById('set-gas-token');
   if (gasUrl) gasUrl.value = localStorage.getItem('mtt_gas_url') || '';
   if (gasToken) gasToken.value = localStorage.getItem('mtt_gas_token') || '';
-  // 첫 번째 프로바이더 선택
-  setSelectProvider('claude');
-  // 상태 표시
   settingsUpdateStatus();
-  // 모델 변경 시 현재 설정 갱신
-  ['claude','gemini','openai'].forEach(function(t) {
-    var sel = document.getElementById('set-' + t + '-model');
-    if (sel) sel.onchange = settingsUpdateCurrent;
-  });
 }
 
 function _migrateOldPrompts() {
@@ -387,43 +460,27 @@ function settingsInitPrompt() {
 }
 
 function settingsUpdateStatus() {
-  ['claude','gemini','openai'].forEach(function(t) {
-    var el = document.getElementById('status-' + t);
-    if (!el) return;
-    var key = getApiKey(t);
-    if (key && key.length > 10) {
-      el.textContent = '✓ 설정됨';
-      el.className = 'set-current-val ok';
-    } else {
-      el.textContent = '× 미설정';
-      el.className = 'set-current-val none';
-    }
-  });
   if (typeof _igUpdateStatus === 'function') _igUpdateStatus();
   if (typeof igShowSection === 'function') igShowSection();
   settingsUpdateCurrent();
 }
 
 function settingsUpdateCurrent() {
-  var p = _setActiveProvider || 'claude';
-  var nameEl = document.getElementById('cur-provider');
-  var modelEl = document.getElementById('cur-model');
-  if (nameEl) nameEl.textContent = SET_PROVIDER_NAMES[p] || p;
-  if (modelEl) {
-    var sel = document.getElementById('set-' + p + '-model');
-    modelEl.textContent = sel ? sel.value : getModel(p);
+  var nameEl = document.getElementById('cur-user');
+  var auth = getUserAuth();
+  if (nameEl) nameEl.textContent = auth ? (auth.name + (auth.academy ? ' · ' + auth.academy : '')) : '—';
+  var quotaEl = document.getElementById('cur-quota');
+  if (quotaEl && auth) {
+    quotaEl.textContent = '확인 중...';
+    claudeQuotaCheck().then(function(q) {
+      quotaEl.textContent = q.count + ' / ' + q.limit + '회 (오늘)';
+    }).catch(function() { quotaEl.textContent = '—'; });
   }
 }
 
 function settingsSave() {
-  // API 키 저장
-  ['claude','gemini','openai'].forEach(function(t) {
-    var inp = document.getElementById('set-' + t);
-    var val = inp ? inp.value.trim() : '';
-    if (val) localStorage.setItem('mtt_' + t + '_key', val); else localStorage.removeItem('mtt_' + t + '_key');
-    var sel = document.getElementById('set-' + t + '-model');
-    if (sel && sel.value) localStorage.setItem('mtt_model_' + t, sel.value);
-  });
+  var sel = document.getElementById('set-claude-model');
+  if (sel && sel.value) localStorage.setItem('mtt_model_claude', sel.value);
   // GAS 설정 저장
   var gasUrl = document.getElementById('set-gas-url');
   var gasToken = document.getElementById('set-gas-token');
@@ -469,3 +526,4 @@ function _igUpdateStatus() {
 }
 
 applyFeatureFlags();
+initLoginGate();
