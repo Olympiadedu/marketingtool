@@ -1,10 +1,16 @@
 // ============================================================
-// 지도검색 — 카카오 로컬 API(주소검색+키워드검색) + 네이버 블로그·카페 취합
+// 지도검색 — 카카오 로컬 API(주소검색+키워드검색) + 카카오맵 장소별 블로그 리뷰 취합
 // ============================================================
-// 블로그·카페 취합은 GAS 프록시(gas/blog_tracker.gs의 searchAcademyPosts 액션)를 거쳐
-// 공식 네이버 검색 오픈API를 호출 — 서버 대 서버 호출이라 CORS 제약이 없음.
+// 블로그 취합은 GAS 프록시(gas/blog_tracker.gs의 searchAcademyPosts 액션)를 거쳐
+// 카카오맵 장소 상세페이지가 쓰는 비공식 API(place-api.map.kakao.com)를 호출 —
+// 서버 대 서버 호출이라 CORS 제약이 없고, 학원명 텍스트 검색이 아니라 장소 ID로
+// 정확히 매칭된 블로그만 가져온다.
 
-var msState = { radius: 1000, keyword: '수학학원', results: [], loading: false, locationQuery: '' };
+var msState = { radius: 1000, keyword: '수학학원', results: [], loading: false, locationQuery: '', postsCache: {} };
+
+// 결과 목록에 뜨자마자 45건 전부를 동시에 확인하면 GAS(전원 공유 계정) 부하가 튀므로
+// 동시 실행 개수를 제한해서 순차적으로 흘려보냄
+var MS_BLOG_CHECK_CONCURRENCY = 4;
 
 // 네이버지도 "검색" 형태 공유링크(.../search/장소명)는 URL에 장소명이 그대로 들어있어 파싱 가능.
 // (참고: "장소 상세" 링크나 naver.me 단축링크는 브라우저 CORS로 직접 못 풀고, GAS 프록시로 시도해봤으나
@@ -156,10 +162,12 @@ async function msSearch() {
     var coord = await msGeocode(address);
     var list = await msKeywordSearch(coord.x, coord.y, msState.radius, msState.keyword);
     msState.results = list.sort(function(a, b) { return a.distance - b.distance; });
+    msState.postsCache = {};
     if (countEl) {
       countEl.textContent = address + ' 기준, 반경 ' + msRadiusLabel(msState.radius) + ' 이내 "' + msState.keyword + '" ' + msState.results.length + '건';
     }
     msRenderList();
+    msRunBlogChecks();
   } catch (e) {
     msState.results = [];
     var msg = '검색 중 오류가 발생했습니다.';
@@ -191,7 +199,7 @@ function msRenderList() {
             '<div class="bimg-badge body-img" style="flex-shrink:0;">' + msRadiusLabel(a.distance) + '</div>' +
             '<div style="font-size:14px;font-weight:800;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><a href="' + msEsc(naverUrl) + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">' + msEsc(a.name) + '</a></div>' +
           '</div>' +
-          '<button class="bc-btn" style="flex-shrink:0;" onclick="msFetchPosts(' + i + ')">📋 블로그·카페 취합</button>' +
+          '<button class="bc-btn" id="ms-blog-btn-' + i + '" style="flex-shrink:0;" onclick="msFetchPosts(' + i + ')">📋 블로그 취합</button>' +
         '</div>' +
         '<div style="font-size:12px;color:var(--mut);margin-top:6px;">' + msEsc(a.address) + '</div>' +
       '</div>';
@@ -203,6 +211,71 @@ function msCloseModal() {
   if (modal) modal.style.display = 'none';
 }
 
+// 카카오 로컬 API의 place_url(예: https://place.map.kakao.com/12923294)에서 장소 ID만 추출
+function msExtractPlaceId(placeUrl) {
+  var m = (placeUrl || '').match(/place\.map\.kakao\.com\/(\d+)/);
+  return m ? m[1] : '';
+}
+
+// GAS(searchAcademyPosts)를 호출해 { ok, posts } 또는 { ok:false, error }로 정규화.
+// error === '__PARSE__'면 GAS가 JSON 대신 HTML 에러 페이지를 반환한 경우(할당량 초과 등).
+async function msRequestAcademyPosts(placeId, cfg) {
+  try {
+    var res = await fetch(cfg.url, {
+      method: 'POST',
+      body: JSON.stringify({ token: cfg.token, action: 'searchAcademyPosts', placeId: placeId })
+    });
+    var rawText = await res.text();
+    var json;
+    try {
+      json = JSON.parse(rawText);
+    } catch (parseErr) {
+      return { ok: false, error: '__PARSE__' };
+    }
+    if (!json || !json.ok) {
+      return { ok: false, error: (json && json.error) || '알 수 없는 오류' };
+    }
+    return { ok: true, posts: json.posts || [] };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+}
+
+// 검색 결과가 뜨자마자 백그라운드로 블로그 보유 여부를 확인해, 없는 학원은 버튼을 비활성화.
+// 실패(네트워크 오류 등)한 경우는 판단 불가로 보고 버튼을 그대로 둔다(오탐으로 기능을 막지 않기 위해).
+async function msRunBlogChecks() {
+  var cfg = (typeof getGasConfig === 'function') ? getGasConfig() : { url: '', token: '' };
+  if (!cfg.url || !cfg.token) return;
+
+  var queue = msState.results.map(function(a, i) { return i; });
+  var workers = [];
+  for (var w = 0; w < MS_BLOG_CHECK_CONCURRENCY; w++) {
+    workers.push((async function worker() {
+      while (queue.length) {
+        var idx = queue.shift();
+        await msCheckHasBlog(idx, cfg);
+      }
+    })());
+  }
+  await Promise.all(workers);
+}
+
+async function msCheckHasBlog(idx, cfg) {
+  var academy = msState.results[idx];
+  var btn = document.getElementById('ms-blog-btn-' + idx);
+  if (!academy || !btn) return;
+  var placeId = msExtractPlaceId(academy.link);
+  if (!placeId) return;
+
+  var result = await msRequestAcademyPosts(placeId, cfg);
+  if (!result.ok) return;
+  msState.postsCache[placeId] = result.posts;
+  if (!result.posts.length) {
+    btn.disabled = true;
+    btn.textContent = '📋 블로그 없음';
+  }
+}
+
 async function msFetchPosts(idx) {
   var academy = msState.results[idx];
   if (!academy) return;
@@ -211,8 +284,14 @@ async function msFetchPosts(idx) {
   var bodyEl = document.getElementById('ms-modal-body');
   if (!modal || !bodyEl) return;
 
-  titleEl.textContent = academy.name + ' — 블로그·카페 취합';
+  titleEl.textContent = academy.name + ' — 블로그 취합';
   modal.style.display = 'flex';
+
+  var placeId = msExtractPlaceId(academy.link);
+  if (!placeId) {
+    bodyEl.innerHTML = '<div class="hint-text">카카오맵 장소 정보를 찾을 수 없습니다</div>';
+    return;
+  }
 
   var cfg = (typeof getGasConfig === 'function') ? getGasConfig() : { url: '', token: '' };
   if (!cfg.url || !cfg.token) {
@@ -220,45 +299,40 @@ async function msFetchPosts(idx) {
     return;
   }
 
-  bodyEl.innerHTML = '<div class="blog-loading show"><span class="blog-spinner"></span>블로그·카페 검색 중...</div>';
+  bodyEl.innerHTML = '<div class="blog-loading show"><span class="blog-spinner"></span>블로그 검색 중...</div>';
 
-  try {
-    var res = await fetch(cfg.url, {
-      method: 'POST',
-      body: JSON.stringify({ token: cfg.token, action: 'searchAcademyPosts', query: academy.name })
-    });
-    var json = await res.json();
+  // 배경 확인(msRunBlogChecks)에서 이미 가져온 결과가 있으면 재요청하지 않고 재사용
+  var cached = msState.postsCache[placeId];
+  var result = cached ? { ok: true, posts: cached } : await msRequestAcademyPosts(placeId, cfg);
 
-    if (!json || !json.ok) {
-      bodyEl.innerHTML = '<div class="hint-text">취합 실패: ' + msEsc((json && json.error) || '알 수 없는 오류') + '</div>';
-      return;
+  if (!result.ok) {
+    if (result.error === '__PARSE__') {
+      bodyEl.innerHTML = '<div class="hint-text">취합 실패: 서버(GAS)가 응답을 반환하지 못했습니다. 잠시 후 다시 시도해주세요.</div>';
+    } else {
+      bodyEl.innerHTML = '<div class="hint-text">취합 실패: ' + msEsc(result.error) + '</div>';
     }
-    var posts = json.posts || [];
-    if (!posts.length) {
-      bodyEl.innerHTML = '<div class="hint-text">관련 블로그·카페 글을 찾지 못했습니다</div>';
-      return;
-    }
-    // 블로그(YYYY.MM.DD)와 카페(네이버 자체 상대시간 "N분 전"/"N주 전" 등) 날짜 형식이 서로 달라
-    // 직접 비교가 불가능 — 소스별로 각자 최신순(이미 정렬됨) 유지하고 블로그 먼저, 카페를 뒤에 배치
-    var blogPosts = posts.filter(function(p) { return p.source === '블로그'; }).sort(function(a, b) {
-      return (b.date || '').localeCompare(a.date || '');
-    });
-    var cafePosts = posts.filter(function(p) { return p.source !== '블로그'; }); // 카페 API가 이미 최신순 반환
-    posts = blogPosts.concat(cafePosts);
-    // 각 글마다 별도 박스로 감싸서 헤더(날짜·버튼)와 내용이 한 세트임을 명확히 구분
-    bodyEl.innerHTML = posts.map(function(p) {
-      return '' +
-        '<div class="blog-copy-section">' +
-          '<div class="blog-copy-header">' +
-            '<span class="blog-copy-label">' + msEsc(p.source) + (p.date ? ' · ' + msEsc(p.date) : '') + '</span>' +
-            '<a class="bc-btn" href="' + msEsc(p.link) + '" target="_blank" rel="noopener">원문 보기 →</a>' +
-          '</div>' +
-          '<div class="blog-copy-content">' + msEsc(p.title) + '<div class="hint-text" style="margin-top:4px;">' + msEsc(p.author) + '</div></div>' +
-        '</div>';
-    }).join('');
-  } catch (e) {
-    bodyEl.innerHTML = '<div class="hint-text">취합 실패: ' + msEsc(e.message) + '</div>';
+    return;
   }
+
+  msState.postsCache[placeId] = result.posts;
+  var posts = result.posts.slice().sort(function(a, b) {
+    return (b.date || '').localeCompare(a.date || '');
+  });
+  if (!posts.length) {
+    bodyEl.innerHTML = '<div class="hint-text">관련 블로그 글을 찾지 못했습니다</div>';
+    return;
+  }
+  // 각 글마다 별도 박스로 감싸서 헤더(날짜·버튼)와 내용이 한 세트임을 명확히 구분
+  bodyEl.innerHTML = posts.map(function(p) {
+    return '' +
+      '<div class="blog-copy-section">' +
+        '<div class="blog-copy-header">' +
+          '<span class="blog-copy-label">' + msEsc(p.source) + (p.date ? ' · ' + msEsc(p.date) : '') + '</span>' +
+          '<a class="bc-btn" href="' + msEsc(p.link) + '" target="_blank" rel="noopener">원문 보기 →</a>' +
+        '</div>' +
+        '<div class="blog-copy-content">' + msEsc(p.title) + '<div class="hint-text" style="margin-top:4px;">' + msEsc(p.author) + '</div></div>' +
+      '</div>';
+  }).join('');
 }
 
 function msEsc(s) {

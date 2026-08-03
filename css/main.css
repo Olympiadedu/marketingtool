@@ -215,6 +215,7 @@ canvas{display:block;border-radius:10px;box-shadow:0 8px 40px rgba(0,0,0,.15);cu
 .blog-copy-content{padding:12px 14px;font-size:14px;line-height:1.8;color:var(--txt);}
 .bc-btn,.blog-copy-btn{background:var(--acc-light);color:var(--acc);border:1px solid var(--acc-border);border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;transition:background .15s;white-space:nowrap;}
 .bc-btn:hover,.blog-copy-btn:hover{background:var(--acc-border);}
+.bc-btn:disabled{background:transparent;color:var(--mut);border-color:var(--bdr);cursor:default;}
 .bimg-grid{display:flex;flex-direction:column;gap:14px;margin-top:4px;}
 .bimg-card{border:1px solid #e5ecf2;border-radius:10px;overflow:hidden;background:#fff;display:grid;grid-template-columns:160px 1fr;}
 .bimg-card.is-thumb{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc-light);}
