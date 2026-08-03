@@ -24,7 +24,7 @@ function showPage(id) {
   document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
   document.querySelectorAll('.sidebar-item').forEach(function(i) { i.classList.remove('active'); });
   // 설정 서브메뉴는 설정 계열이 아닐 때 닫기
-  if (id !== 'settings-ai' && id !== 'settings-prompt' && id !== 'settings-instagram' && id !== 'settings-mapsearch') {
+  if (id !== 'settings-ai' && id !== 'settings-prompt' && id !== 'settings-instagram') {
     var subnav = document.getElementById('sidebar-subnav-settings');
     if (subnav) subnav.style.display = 'none';
   }
@@ -85,14 +85,14 @@ function showPage(id) {
     } else {
       blogHistoryInit();
     }
-  } else if (id === 'settings-ai' || id === 'settings-prompt' || id === 'settings-instagram' || id === 'settings-mapsearch') {
+  } else if (id === 'settings-ai' || id === 'settings-prompt' || id === 'settings-instagram') {
     document.getElementById('page-settings').classList.add('active');
     var navSettings = document.getElementById('nav-settings');
     if (navSettings) navSettings.classList.add('active');
     var subnav = document.getElementById('sidebar-subnav-settings');
     if (subnav) subnav.style.display = '';
-    var sub = id === 'settings-ai' ? 'ai' : id === 'settings-prompt' ? 'prompt' : id === 'settings-instagram' ? 'instagram' : 'mapsearch';
-    ['ai','prompt','instagram','mapsearch'].forEach(function(t) {
+    var sub = id === 'settings-ai' ? 'ai' : id === 'settings-prompt' ? 'prompt' : 'instagram';
+    ['ai','prompt','instagram'].forEach(function(t) {
       var ni = document.getElementById('nav-settings-' + t);
       if (ni) ni.classList.toggle('active', t === sub);
       var ti = document.getElementById('settab-' + t);
@@ -100,8 +100,7 @@ function showPage(id) {
     });
     if (sub === 'ai') settingsInit();
     else if (sub === 'prompt') settingsInitPrompt();
-    else if (sub === 'instagram') settingsInitInstagram();
-    else settingsInitMapsearch();
+    else settingsInitInstagram();
   } else if (id === 'monitor') {
     document.getElementById('page-monitor').classList.add('active');
     var navMon = document.getElementById('nav-monitor');
@@ -145,7 +144,26 @@ function getApiKey(type) {
 }
 
 function getKakaoKey() {
-  return localStorage.getItem('mtt_kakao_key') || '';
+  return (typeof ADMIN_KAKAO_KEY !== 'undefined' && ADMIN_KAKAO_KEY) ? ADMIN_KAKAO_KEY : '';
+}
+
+// ── 기능별 on/off (flags.js가 배포 시 window.FEATURE_FLAGS 일부를 덮어씀) ──
+function applyFeatureFlags() {
+  var f = window.FEATURE_FLAGS || {};
+  if (f.monitor === false) {
+    var navMon = document.getElementById('nav-monitor');
+    if (navMon) navMon.style.display = 'none';
+  }
+  if (f.mapsearch === false) {
+    var navMs = document.getElementById('nav-mapsearch');
+    if (navMs) navMs.style.display = 'none';
+  }
+  if (f.instagram === false) {
+    var navIg = document.getElementById('nav-settings-instagram');
+    if (navIg) navIg.style.display = 'none';
+    var igSec = document.getElementById('ig-post-section');
+    if (igSec) igSec.style.display = 'none';
+  }
 }
 
 // ── 모델 선택 ─────────────────────────────────────────────────────
@@ -450,23 +468,4 @@ function _igUpdateStatus() {
   mark('status-github-token',  'mtt_github_token');
 }
 
-// ── 지도검색(카카오) 설정 ────────────────────────────────────────
-function settingsInitMapsearch() {
-  var kakaoEl = document.getElementById('set-kakao');
-  if (kakaoEl) kakaoEl.value = getKakaoKey();
-  function mark(id, val) {
-    var el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = (val && val.length > 3) ? '✓ 설정됨' : '× 미설정';
-    el.className = 'set-current-val ' + ((val && val.length > 3) ? 'ok' : 'none');
-  }
-  mark('status-kakao', getKakaoKey());
-}
-
-function settingsSaveMapsearch() {
-  var kakaoEl = document.getElementById('set-kakao');
-  var val = kakaoEl ? kakaoEl.value.trim() : '';
-  if (val) localStorage.setItem('mtt_kakao_key', val); else localStorage.removeItem('mtt_kakao_key');
-  settingsInitMapsearch();
-  showToast('설정이 저장되었습니다');
-}
+applyFeatureFlags();

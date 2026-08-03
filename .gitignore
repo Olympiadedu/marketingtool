@@ -1,4 +1,5 @@
 config.js
+js/flags.js
 .claude/
 CLAUDE.md
 DB.xlsx

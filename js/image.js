@@ -2120,9 +2120,11 @@ function igSetStatus(msg, type) {
 }
 
 function igShowSection() {
-  var creds = igGetCreds();
   var sec = document.getElementById('ig-post-section');
-  if (sec) sec.style.display = (creds.userId && creds.token && creds.githubToken) ? '' : 'none';
+  if (!sec) return;
+  if (window.FEATURE_FLAGS && window.FEATURE_FLAGS.instagram === false) { sec.style.display = 'none'; return; }
+  var creds = igGetCreds();
+  sec.style.display = (creds.userId && creds.token && creds.githubToken) ? '' : 'none';
 }
 
 async function igUploadToGitHub(blob) {

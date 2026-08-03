@@ -33,7 +33,7 @@
       <div class="sidebar-subitem active" id="nav-blog-write" onclick="showPage('blog')">작성</div>
       <div class="sidebar-subitem" id="nav-blog-history" onclick="showPage('blog-history')">히스토리</div>
     </div>
-    <div class="sidebar-item" onclick="showPage('monitor')" id="nav-monitor" style="display:none">
+    <div class="sidebar-item" onclick="showPage('monitor')" id="nav-monitor">
       <span class="nav-icon"><svg viewBox="0 0 24 24"><line x1="5" y1="19" x2="5" y2="11"/><line x1="12" y1="19" x2="12" y2="6"/><line x1="19" y1="19" x2="19" y2="14"/></svg></span>경쟁학원 모니터링
     </div>
     <div class="sidebar-item" onclick="showPage('mapsearch')" id="nav-mapsearch">
@@ -48,7 +48,6 @@
       <div class="sidebar-subitem active" id="nav-settings-ai" onclick="showPage('settings-ai')">AI 설정</div>
       <div class="sidebar-subitem" id="nav-settings-prompt" onclick="showPage('settings-prompt')">프롬프트 설정</div>
       <div class="sidebar-subitem" id="nav-settings-instagram" onclick="showPage('settings-instagram')">인스타그램 연동</div>
-      <div class="sidebar-subitem" id="nav-settings-mapsearch" onclick="showPage('settings-mapsearch')">지도검색 연동</div>
     </div>
   </div>
   <div class="sidebar-corp-info">
@@ -82,6 +81,9 @@
 </script>
 
 <!-- 2. DOM이 준비된 후 각 모듈 스크립트 로드 -->
+<!-- 기능별 on/off 기본값(전부 켜짐) — 배포 시 flags.js가 이 중 일부를 덮어씀. flags.js는 gitignore 대상이라 로컬엔 없어도(404) 정상 동작함 -->
+<script>window.FEATURE_FLAGS = { monitor: true, instagram: true, mapsearch: true };</script>
+<script src="js/flags.js"></script>
 <script src="config.js"></script>
 <script src="js/image.js"></script>
 <script src="js/monitor.js"></script>

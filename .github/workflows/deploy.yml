@@ -2,7 +2,8 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, beta ]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -20,21 +21,52 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout dev (main) → root
         uses: actions/checkout@v4
+        with:
+          ref: main
+          path: dev-src
 
-      - name: Create config.js from secrets
+      - name: Checkout beta → /beta 하위경로
+        uses: actions/checkout@v4
+        with:
+          ref: beta
+          path: beta-src
+
+      - name: Create config.js (dev + beta 공통 — GAS/카카오 키)
         env:
           GAS_URL: ${{ secrets.GAS_URL }}
           GAS_TOKEN: ${{ secrets.GAS_TOKEN }}
+          KAKAO_KEY: ${{ secrets.KAKAO_KEY }}
         run: |
-          printf 'var ADMIN_GAS = { url: "%s", token: "%s" };\n' "${GAS_URL}" "${GAS_TOKEN}" > config.js
+          for dir in dev-src beta-src; do
+            printf 'var ADMIN_GAS = { url: "%s", token: "%s" };\nvar ADMIN_KAKAO_KEY = "%s";\n' "${GAS_URL}" "${GAS_TOKEN}" "${KAKAO_KEY}" > "$dir/config.js"
+          done
 
-      - name: Verify config.js
+      - name: Create flags.js (dev — 기본값 그대로, 전부 켜짐)
         run: |
-          echo "=== config.js content (secrets masked) ==="
-          cat config.js | sed 's/https:[^"]*/"[URL]"/g' | sed 's/token: "[^"]*"/token: "[TOKEN]"/g'
-          echo "=== file size: $(wc -c < config.js) bytes ==="
+          echo "// dev 사이트: 기능 제한 없음" > dev-src/js/flags.js
+
+      - name: Create flags.js (beta — BETA_DISABLED_FEATURES 변수 반영)
+        env:
+          DISABLED: ${{ vars.BETA_DISABLED_FEATURES }}
+        run: |
+          node -e "
+            const disabled = (process.env.DISABLED || '').split(',').map(s => s.trim()).filter(Boolean);
+            const overrides = {};
+            disabled.forEach(f => { overrides[f] = false; });
+            console.log('// beta 사이트: BETA_DISABLED_FEATURES 저장소 변수로 제어');
+            console.log('window.FEATURE_FLAGS = Object.assign(window.FEATURE_FLAGS || {}, ' + JSON.stringify(overrides) + ');');
+          " > beta-src/js/flags.js
+          echo "=== beta-src/js/flags.js ==="
+          cat beta-src/js/flags.js
+
+      - name: Assemble combined site (dev=루트, beta=/beta)
+        run: |
+          mkdir -p _site
+          rsync -a --exclude='.git' dev-src/ _site/
+          mkdir -p _site/beta
+          rsync -a --exclude='.git' beta-src/ _site/beta/
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -42,7 +74,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: '_site'
 
       - name: Deploy to GitHub Pages
         id: deployment
