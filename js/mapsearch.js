@@ -260,6 +260,15 @@ async function msRunBlogChecks() {
   await Promise.all(workers);
 }
 
+// 일시적 오류(카카오/GAS 순간 장애 등)로 "블로그 없음"을 잘못 단정하지 않도록,
+// 실패 시 짧은 대기 후 최대 2회까지 재시도한다 (총 3회 시도)
+var MS_BLOG_CHECK_RETRIES = 2;
+var MS_BLOG_CHECK_RETRY_DELAY = 500;
+
+function msDelay(ms) {
+  return new Promise(function(resolve) { setTimeout(resolve, ms); });
+}
+
 async function msCheckHasBlog(idx, cfg) {
   var academy = msState.results[idx];
   var btn = document.getElementById('ms-blog-btn-' + idx);
@@ -268,6 +277,10 @@ async function msCheckHasBlog(idx, cfg) {
   if (!placeId) return;
 
   var result = await msRequestAcademyPosts(placeId, cfg);
+  for (var attempt = 0; !result.ok && attempt < MS_BLOG_CHECK_RETRIES; attempt++) {
+    await msDelay(MS_BLOG_CHECK_RETRY_DELAY);
+    result = await msRequestAcademyPosts(placeId, cfg);
+  }
   if (!result.ok) return;
   msState.postsCache[placeId] = result.posts;
   if (!result.posts.length) {
