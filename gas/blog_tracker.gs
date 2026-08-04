@@ -369,8 +369,6 @@ function setAdminGeminiKey(key) {
 // 다음 모델로 자동 넘어가서 무료 사용량을 최대한 소진한다.
 // payload.model이 지정되면 그 모델을 맨 앞에 놓고 나머지를 폴백으로 덧붙인다.
 var GEMINI_MODEL_FALLBACK = [
-  'gemini-3.1-pro',
-  'gemini-2.5-pro',
   'gemini-3.6-flash',
   'gemini-3.5-flash',
   'gemini-3-flash',

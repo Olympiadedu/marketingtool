@@ -46,6 +46,15 @@ async function newsCallGemini(systemPrompt, userContent, maxTokens) {
   return geminiProxyCall({ model: getModel('gemini'), system: systemPrompt, content: userContent, max_tokens: maxTokens || 3500 });
 }
 
+// Claude(claudeProxy)를 먼저 시도 — 실패하면(과금/한도/오류 등) Gemini 무료 모델 순차 폴백(geminiProxy 쪽에서 처리)으로 넘어간다.
+async function newsGenerateTopics(systemPrompt, userContent, maxTokens) {
+  try {
+    return await blogCallClaude(systemPrompt, userContent, maxTokens);
+  } catch (claudeErr) {
+    return await newsCallGemini(systemPrompt, userContent, maxTokens);
+  }
+}
+
 async function newsSuggestTopics(btn) {
   var resultEl = document.getElementById('news-result');
   var cfg = (typeof getNewsGasConfig === 'function') ? getNewsGasConfig() : { url: '', token: '' };
@@ -74,13 +83,13 @@ async function newsSuggestTopics(btn) {
 
     var systemPrompt = buildNewsTopicSystem();
     var userContent = JSON.stringify(trimmed);
-    var raw = await newsCallGemini(systemPrompt, userContent, 3500);
+    var raw = await newsGenerateTopics(systemPrompt, userContent, 3500);
     var parsed;
     try {
       parsed = blogParseJson(raw);
     } catch (parseErr) {
       // 응답이 잘렸거나 잡담이 섞였을 가능성 → 더 큰 토큰으로 1회 재시도
-      raw = await newsCallGemini(systemPrompt, userContent, 8192);
+      raw = await newsGenerateTopics(systemPrompt, userContent, 8192);
       try {
         parsed = blogParseJson(raw);
       } catch (parseErr2) {
