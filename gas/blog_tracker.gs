@@ -365,6 +365,21 @@ function setAdminGeminiKey(key) {
   PropertiesService.getScriptProperties().setProperty('GEMINI_API_KEY', key);
 }
 
+// 무료 티어 모델을 성능 좋은 순으로 나열 — 앞 모델이 분당/일일 한도(429)에 걸리면
+// 다음 모델로 자동 넘어가서 무료 사용량을 최대한 소진한다.
+// payload.model이 지정되면 그 모델을 맨 앞에 놓고 나머지를 폴백으로 덧붙인다.
+var GEMINI_MODEL_FALLBACK = [
+  'gemini-3.1-pro',
+  'gemini-2.5-pro',
+  'gemini-3.6-flash',
+  'gemini-3.5-flash',
+  'gemini-3-flash',
+  'gemini-2.5-flash',
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite',
+  'gemini-2.5-flash-lite'
+];
+
 function _geminiProxy(payload) {
   var output = ContentService.createTextOutput();
   output.setMimeType(ContentService.MimeType.JSON);
@@ -373,32 +388,42 @@ function _geminiProxy(payload) {
     output.setContent(JSON.stringify({ ok: false, error: '관리자 Gemini API 키가 아직 설정되지 않았습니다.' }));
     return output;
   }
-  var model = (payload && payload.model) || 'gemini-2.5-flash';
+  var preferred = payload && payload.model;
+  var models = preferred
+    ? [preferred].concat(GEMINI_MODEL_FALLBACK.filter(function(m) { return m !== preferred; }))
+    : GEMINI_MODEL_FALLBACK;
+
+  var lastErr = null;
   try {
-    var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey;
-    var res = UrlFetchApp.fetch(url, {
-      method: 'post',
-      contentType: 'application/json',
-      payload: JSON.stringify({
-        system_instruction: { parts: [{ text: (payload && payload.system) || '' }] },
-        contents: [{ role: 'user', parts: [{ text: (payload && payload.content) || '' }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: (payload && payload.max_tokens) || 3500 }
-      }),
-      muteHttpExceptions: true
-    });
-    var json = JSON.parse(res.getContentText());
-    if (res.getResponseCode() !== 200) {
-      output.setContent(JSON.stringify({ ok: false, error: (json.error && json.error.message) || ('Gemini API 오류 ' + res.getResponseCode()) }));
+    for (var i = 0; i < models.length; i++) {
+      var model = models[i];
+      var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey;
+      var res = UrlFetchApp.fetch(url, {
+        method: 'post',
+        contentType: 'application/json',
+        payload: JSON.stringify({
+          system_instruction: { parts: [{ text: (payload && payload.system) || '' }] },
+          contents: [{ role: 'user', parts: [{ text: (payload && payload.content) || '' }] }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: (payload && payload.max_tokens) || 3500 }
+        }),
+        muteHttpExceptions: true
+      });
+      var json = JSON.parse(res.getContentText());
+      if (res.getResponseCode() !== 200) {
+        lastErr = (json.error && json.error.message) || ('Gemini API 오류 ' + res.getResponseCode());
+        continue; // 한도 초과(429) 등 — 다음 모델로 폴백
+      }
+      var text = json.candidates && json.candidates[0] && json.candidates[0].content &&
+                 json.candidates[0].content.parts && json.candidates[0].content.parts[0] &&
+                 json.candidates[0].content.parts[0].text;
+      if (!text) {
+        lastErr = 'Gemini 빈 응답 (안전 필터에 걸렸을 수 있습니다)';
+        continue;
+      }
+      output.setContent(JSON.stringify({ ok: true, text: text, model: model }));
       return output;
     }
-    var text = json.candidates && json.candidates[0] && json.candidates[0].content &&
-               json.candidates[0].content.parts && json.candidates[0].content.parts[0] &&
-               json.candidates[0].content.parts[0].text;
-    if (!text) {
-      output.setContent(JSON.stringify({ ok: false, error: 'Gemini 빈 응답 (안전 필터에 걸렸을 수 있습니다)' }));
-      return output;
-    }
-    output.setContent(JSON.stringify({ ok: true, text: text }));
+    output.setContent(JSON.stringify({ ok: false, error: lastErr || '모든 모델 실패' }));
   } catch (err) {
     output.setContent(JSON.stringify({ ok: false, error: err.message }));
   }

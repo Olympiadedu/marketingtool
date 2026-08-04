@@ -72,8 +72,23 @@ async function newsSuggestTopics(btn) {
       return { id: i, title: it.title, description: (it.description || '').slice(0, 100), pubDate: it.pubDate };
     });
 
-    var raw = await newsCallGemini(buildNewsTopicSystem(), JSON.stringify(trimmed), 3500);
-    var parsed = blogParseJson(raw);
+    var systemPrompt = buildNewsTopicSystem();
+    var userContent = JSON.stringify(trimmed);
+    var raw = await newsCallGemini(systemPrompt, userContent, 3500);
+    var parsed;
+    try {
+      parsed = blogParseJson(raw);
+    } catch (parseErr) {
+      // 응답이 잘렸거나 잡담이 섞였을 가능성 → 더 큰 토큰으로 1회 재시도
+      raw = await newsCallGemini(systemPrompt, userContent, 8192);
+      try {
+        parsed = blogParseJson(raw);
+      } catch (parseErr2) {
+        // 재시도도 실패 → 잘린 JSON 복구 시도 (최후의 안전망)
+        parsed = blogRepairJson(raw);
+        if (!parsed) throw new Error('JSON 파싱 실패 — 응답 앞부분: ' + String(raw).slice(0, 200));
+      }
+    }
     var topics = (parsed && parsed.topics) || [];
     if (!topics.length) { alert('추천할 만한 주제를 찾지 못했습니다.'); return; }
 
