@@ -327,30 +327,100 @@ function _getMyPosts(userId, n) {
 
 // ── AI 설정 — 전부 "config" 시트에서 관리 (users 시트와 같은 방식, 코드 실행·웹사이트 조작 불필요) ──
 var CONFIG_SHEET_NAME = 'config';
+var MODELS_SHEET_NAME = 'models';
 var AI_PROVIDERS = ['claude', 'gemini', 'openai'];
 var AI_KEY_PROP = { claude: 'ANTHROPIC_API_KEY', gemini: 'GEMINI_API_KEY', openai: 'OPENAI_API_KEY' };
 var AI_DEFAULT_MODEL = { claude: 'claude-sonnet-5', gemini: 'gemini-3.6-flash', openai: 'gpt-5.6-terra' };
 
-// 최초 1회 실행 — config 시트를 만들고 입력칸을 준비함
+// 최초 1회 실행 — config 시트를 만들고 입력칸을 준비함(models 시트·드롭다운까지 함께 설정)
 function setupConfigSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(CONFIG_SHEET_NAME);
   if (!sheet) sheet = ss.insertSheet(CONFIG_SHEET_NAME);
-  if (sheet.getLastRow() > 0) return;
-  var rows = [
-    ['설정', '값'],
-    ['ANTHROPIC_API_KEY', ''],
-    ['GEMINI_API_KEY', ''],
-    ['OPENAI_API_KEY', ''],
-    ['ACTIVE_PROVIDER', 'claude'],          // claude | gemini | openai
-    ['ACTIVE_MODEL', AI_DEFAULT_MODEL.claude]
-  ];
-  sheet.getRange(1, 1, rows.length, 2).setValues(rows);
-  sheet.getRange(1, 1, 1, 2).setBackground('#00a891').setFontColor('#ffffff').setFontWeight('bold');
-  sheet.setFrozenRows(1);
-  sheet.setColumnWidth(1, 200);
-  sheet.setColumnWidth(2, 420);
-  SpreadsheetApp.getUi().alert('config 시트 초기화 완료! API 키와 ACTIVE_PROVIDER/ACTIVE_MODEL 값을 "값" 열에 입력하세요(코드 실행 불필요).');
+  if (sheet.getLastRow() === 0) {
+    var rows = [
+      ['설정', '값'],
+      ['ANTHROPIC_API_KEY', ''],
+      ['GEMINI_API_KEY', ''],
+      ['OPENAI_API_KEY', ''],
+      ['ACTIVE_PROVIDER', 'claude'],          // claude | gemini | openai
+      ['ACTIVE_MODEL', AI_DEFAULT_MODEL.claude]
+    ];
+    sheet.getRange(1, 1, rows.length, 2).setValues(rows);
+    sheet.getRange(1, 1, 1, 2).setBackground('#00a891').setFontColor('#ffffff').setFontWeight('bold');
+    sheet.setFrozenRows(1);
+    sheet.setColumnWidth(1, 200);
+    sheet.setColumnWidth(2, 420);
+  }
+  setupAiSelectionDropdowns();
+  SpreadsheetApp.getUi().alert('config 시트 준비 완료! API 키를 "값" 열에 입력하고, ACTIVE_PROVIDER/ACTIVE_MODEL 칸은 드롭다운에서 선택하세요. 모델 목록 추가/삭제는 "models" 시트에서 합니다.');
+}
+
+// 이미 config 시트를 예전 버전(API 키 3줄만)으로 만들어둔 경우 — 이 함수만 1회 실행하면
+// ACTIVE_PROVIDER/ACTIVE_MODEL 행 + models 시트 + 드롭다운까지 추가로 세팅됨 (기존 값은 안 건드림)
+var AI_MODEL_CATALOG = [
+  ['claude', 'claude-sonnet-5'],
+  ['claude', 'claude-opus-5'],
+  ['claude', 'claude-haiku-4-5-20251001'],
+  ['claude', 'claude-fable-5'],
+  ['gemini', 'gemini-3.6-flash'],
+  ['gemini', 'gemini-3-pro'],
+  ['gemini', 'gemini-3.1-pro'],
+  ['gemini', 'gemini-3.5-flash'],
+  ['gemini', 'gemini-3.5-flash-lite'],
+  ['openai', 'gpt-5.6-terra'],
+  ['openai', 'gpt-5.6-sol'],
+  ['openai', 'gpt-5.6-luna']
+];
+
+// "models" 시트(프로바이더/모델 목록) — 여기 행을 추가/삭제하면 config 시트의 모델 드롭다운도 그대로 반영됨
+function setupModelsSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(MODELS_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(MODELS_SHEET_NAME);
+  if (sheet.getLastRow() === 0) {
+    var rows = [['프로바이더', '모델']].concat(AI_MODEL_CATALOG);
+    sheet.getRange(1, 1, rows.length, 2).setValues(rows);
+    sheet.getRange(1, 1, 1, 2).setBackground('#00a891').setFontColor('#ffffff').setFontWeight('bold');
+    sheet.setFrozenRows(1);
+    sheet.setColumnWidth(1, 120);
+    sheet.setColumnWidth(2, 280);
+  }
+  return sheet;
+}
+
+// config 시트의 ACTIVE_PROVIDER/ACTIVE_MODEL 칸을 드롭다운으로 만듦(없으면 행도 추가).
+// 모델 드롭다운은 models 시트의 "모델" 열 범위를 그대로 참조하므로, 그 시트에서 행을
+// 추가/삭제하면 코드 수정 없이 드롭다운 목록도 바로 바뀜.
+function setupAiSelectionDropdowns() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var configSheet = ss.getSheetByName(CONFIG_SHEET_NAME);
+  if (!configSheet) { configSheet = ss.insertSheet(CONFIG_SHEET_NAME); configSheet.appendRow(['설정', '값']); }
+  var modelsSheet = setupModelsSheet();
+
+  var data = configSheet.getDataRange().getValues();
+  var hasProviderRow = data.some(function(r) { return String(r[0]) === 'ACTIVE_PROVIDER'; });
+  var hasModelRow = data.some(function(r) { return String(r[0]) === 'ACTIVE_MODEL'; });
+  if (!hasProviderRow) configSheet.appendRow(['ACTIVE_PROVIDER', 'claude']);
+  if (!hasModelRow) configSheet.appendRow(['ACTIVE_MODEL', AI_DEFAULT_MODEL.claude]);
+
+  data = configSheet.getDataRange().getValues();
+  var providerRowIdx = -1, modelRowIdx = -1;
+  for (var i = 0; i < data.length; i++) {
+    if (String(data[i][0]) === 'ACTIVE_PROVIDER') providerRowIdx = i + 1;
+    if (String(data[i][0]) === 'ACTIVE_MODEL') modelRowIdx = i + 1;
+  }
+
+  if (providerRowIdx > 0) {
+    var providerRule = SpreadsheetApp.newDataValidation().requireValueInList(AI_PROVIDERS, true).setAllowInvalid(false).build();
+    configSheet.getRange(providerRowIdx, 2).setDataValidation(providerRule);
+  }
+  if (modelRowIdx > 0) {
+    var lastModelRow = Math.max(modelsSheet.getLastRow() - 1, 1);
+    var modelRange = modelsSheet.getRange(2, 2, lastModelRow);
+    var modelRule = SpreadsheetApp.newDataValidation().requireValueInRange(modelRange, true).setAllowInvalid(true).build();
+    configSheet.getRange(modelRowIdx, 2).setDataValidation(modelRule);
+  }
 }
 
 // config 시트에서 값 조회 — 시트에 값이 없으면(과거 방식과의 호환) Script Properties도 확인
