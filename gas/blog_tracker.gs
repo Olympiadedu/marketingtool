@@ -327,23 +327,53 @@ function _getMyPosts(userId, n) {
   return output;
 }
 
-// ── AI 설정 (관리자 전용) — 어떤 프로바이더/모델/키를 쓸지 Script Properties에 저장 ──
-// 관리자 계정으로 로그인하면 화면(설정→AI 설정)에서 관리 가능. 최초 키 등록만 아래 함수를
-// Apps Script 편집기에서 1회 직접 실행해도 됨(화면에서 저장하면 그걸로 대체됨).
-function setAdminApiKey(key) { PropertiesService.getScriptProperties().setProperty('ANTHROPIC_API_KEY', key); }
-// Gemini 키는 setAdminGeminiKey(아래, 기사검색 기능과 공용 프로퍼티 GEMINI_API_KEY 사용)로 등록
-function setAdminOpenAiKey(key) { PropertiesService.getScriptProperties().setProperty('OPENAI_API_KEY', key); }
-
+// ── AI 설정 (관리자 전용) ──────────────────────────────────────────
+// API 키는 코드/웹사이트가 아니라 "config" 시트에 직접 입력(users 시트와 같은 방식 — 코드 실행 불필요).
+// 프로바이더/모델 선택만 웹사이트(설정→AI 설정)에서 저장하면 Script Properties에 기록됨.
+var CONFIG_SHEET_NAME = 'config';
 var AI_PROVIDERS = ['claude', 'gemini', 'openai'];
 var AI_KEY_PROP = { claude: 'ANTHROPIC_API_KEY', gemini: 'GEMINI_API_KEY', openai: 'OPENAI_API_KEY' };
 var AI_DEFAULT_MODEL = { claude: 'claude-sonnet-5', gemini: 'gemini-3.6-flash', openai: 'gpt-5.6-terra' };
+
+// 최초 1회 실행 — config 시트를 만들고 키 입력칸을 준비함
+function setupConfigSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(CONFIG_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(CONFIG_SHEET_NAME);
+  if (sheet.getLastRow() > 0) return;
+  var rows = [
+    ['설정', '값'],
+    ['ANTHROPIC_API_KEY', ''],
+    ['GEMINI_API_KEY', ''],
+    ['OPENAI_API_KEY', '']
+  ];
+  sheet.getRange(1, 1, rows.length, 2).setValues(rows);
+  sheet.getRange(1, 1, 1, 2).setBackground('#00a891').setFontColor('#ffffff').setFontWeight('bold');
+  sheet.setFrozenRows(1);
+  sheet.setColumnWidth(1, 200);
+  sheet.setColumnWidth(2, 420);
+  SpreadsheetApp.getUi().alert('config 시트 초기화 완료! "값" 열에 실제 API 키를 입력하세요(코드 실행 불필요).');
+}
+
+// config 시트에서 값 조회 — 시트에 값이 없으면(과거 방식과의 호환) Script Properties도 확인
+function _getConfigValue(key) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(CONFIG_SHEET_NAME);
+  if (sheet) {
+    var data = sheet.getDataRange().getValues();
+    for (var i = 0; i < data.length; i++) {
+      if (String(data[i][0]) === key && data[i][1]) return String(data[i][1]);
+    }
+  }
+  return PropertiesService.getScriptProperties().getProperty(key) || '';
+}
 
 function _getAiConfig() {
   var props = PropertiesService.getScriptProperties();
   var provider = props.getProperty('ACTIVE_PROVIDER') || 'claude';
   var model = props.getProperty('ACTIVE_MODEL') || AI_DEFAULT_MODEL[provider];
   var hasKey = {};
-  AI_PROVIDERS.forEach(function(p) { hasKey[p] = !!props.getProperty(AI_KEY_PROP[p]); });
+  AI_PROVIDERS.forEach(function(p) { hasKey[p] = !!_getConfigValue(AI_KEY_PROP[p]); });
   return { provider: provider, model: model, hasKey: hasKey };
 }
 
@@ -356,7 +386,7 @@ function _adminGetConfig(role) {
   return output;
 }
 
-// data: { provider?, model?, claudeKey?, geminiKey?, openaiKey? } — 키는 입력된 것만 갱신(비워두면 기존 키 유지)
+// data: { provider?, model? } — API 키는 여기서 안 받음(config 시트에서 직접 관리)
 function _adminSaveConfig(role, data) {
   var output = ContentService.createTextOutput();
   output.setMimeType(ContentService.MimeType.JSON);
@@ -364,9 +394,6 @@ function _adminSaveConfig(role, data) {
   var props = PropertiesService.getScriptProperties();
   if (data.provider && AI_PROVIDERS.indexOf(data.provider) >= 0) props.setProperty('ACTIVE_PROVIDER', data.provider);
   if (data.model) props.setProperty('ACTIVE_MODEL', data.model);
-  if (data.claudeKey) props.setProperty(AI_KEY_PROP.claude, data.claudeKey);
-  if (data.geminiKey) props.setProperty(AI_KEY_PROP.gemini, data.geminiKey);
-  if (data.openaiKey) props.setProperty(AI_KEY_PROP.openai, data.openaiKey);
   output.setContent(JSON.stringify({ ok: true }));
   return output;
 }
@@ -378,9 +405,9 @@ function _aiProxy(payload) {
   var output = ContentService.createTextOutput();
   output.setMimeType(ContentService.MimeType.JSON);
   var cfg = _getAiConfig();
-  var apiKey = PropertiesService.getScriptProperties().getProperty(AI_KEY_PROP[cfg.provider]);
+  var apiKey = _getConfigValue(AI_KEY_PROP[cfg.provider]);
   if (!apiKey) {
-    output.setContent(JSON.stringify({ ok: false, error: '관리자가 ' + cfg.provider + ' API 키를 아직 설정하지 않았습니다.' }));
+    output.setContent(JSON.stringify({ ok: false, error: 'config 시트에 ' + AI_KEY_PROP[cfg.provider] + ' 값이 아직 입력되지 않았습니다.' }));
     return output;
   }
   try {
@@ -424,26 +451,39 @@ function _toGeminiParts(content) {
   });
 }
 
+// 선택된 모델을 우선 시도하고, 한도 초과(429)·오류·빈 응답이면 무료 티어 폴백 목록
+// (GEMINI_MODEL_FALLBACK, 파일 하단 정의)으로 순서대로 넘어가 최대한 사용 가능하게 함
 function _callGeminiGeneral(apiKey, model, payload, output) {
   var messages = (payload && payload.messages) || [];
   var lastUser = messages[messages.length - 1] || {};
+  var parts = _toGeminiParts(lastUser.content);
   var body = {
-    contents: [{ role: 'user', parts: _toGeminiParts(lastUser.content) }],
+    contents: [{ role: 'user', parts: parts }],
     generationConfig: { maxOutputTokens: (payload && payload.max_tokens) || 3500, temperature: 0.7 }
   };
   if (payload && payload.system) body.systemInstruction = { parts: [{ text: payload.system }] };
-  var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey;
-  var res = UrlFetchApp.fetch(url, { method: 'post', contentType: 'application/json', payload: JSON.stringify(body), muteHttpExceptions: true });
-  var json = JSON.parse(res.getContentText());
-  if (res.getResponseCode() !== 200) {
-    output.setContent(JSON.stringify({ ok: false, error: (json.error && json.error.message) || ('Gemini API 오류 ' + res.getResponseCode()) }));
+
+  var models = model
+    ? [model].concat(GEMINI_MODEL_FALLBACK.filter(function(m) { return m !== model; }))
+    : GEMINI_MODEL_FALLBACK;
+
+  var lastErr = null;
+  for (var i = 0; i < models.length; i++) {
+    var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + models[i] + ':generateContent?key=' + apiKey;
+    var res = UrlFetchApp.fetch(url, { method: 'post', contentType: 'application/json', payload: JSON.stringify(body), muteHttpExceptions: true });
+    var json = JSON.parse(res.getContentText());
+    if (res.getResponseCode() !== 200) {
+      lastErr = (json.error && json.error.message) || ('Gemini API 오류 ' + res.getResponseCode());
+      continue; // 한도 초과 등 — 다음 폴백 모델로
+    }
+    var text = json.candidates && json.candidates[0] && json.candidates[0].content &&
+               json.candidates[0].content.parts && json.candidates[0].content.parts[0] &&
+               json.candidates[0].content.parts[0].text;
+    if (!text) { lastErr = 'Gemini 빈 응답(안전 필터에 걸렸을 수 있습니다)'; continue; }
+    output.setContent(JSON.stringify({ ok: true, data: { content: [{ text: text }] }, modelUsed: models[i] }));
     return output;
   }
-  var text = json.candidates && json.candidates[0] && json.candidates[0].content &&
-             json.candidates[0].content.parts && json.candidates[0].content.parts[0] &&
-             json.candidates[0].content.parts[0].text;
-  if (!text) { output.setContent(JSON.stringify({ ok: false, error: 'Gemini 빈 응답(안전 필터에 걸렸을 수 있습니다)' })); return output; }
-  output.setContent(JSON.stringify({ ok: true, data: { content: [{ text: text }] } }));
+  output.setContent(JSON.stringify({ ok: false, error: lastErr || 'Gemini 모든 모델 실패' }));
   return output;
 }
 

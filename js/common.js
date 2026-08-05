@@ -531,18 +531,8 @@ async function adminAiConfigSave() {
   if (statusEl) { statusEl.textContent = '저장 중...'; statusEl.style.color = 'var(--mut)'; }
   try {
     var modelSel = document.getElementById('ai-set-' + _adminAiActiveProvider + '-model');
-    var config = {
-      provider: _adminAiActiveProvider,
-      model: modelSel ? modelSel.value : '',
-      claudeKey: (document.getElementById('ai-set-claude-key') || {}).value || '',
-      geminiKey: (document.getElementById('ai-set-gemini-key') || {}).value || '',
-      openaiKey: (document.getElementById('ai-set-openai-key') || {}).value || ''
-    };
+    var config = { provider: _adminAiActiveProvider, model: modelSel ? modelSel.value : '' };
     await _adminAiRequest('adminSaveConfig', { config: config });
-    ['claude','gemini','openai'].forEach(function(p) {
-      var inp = document.getElementById('ai-set-' + p + '-key');
-      if (inp) inp.value = '';
-    });
     if (statusEl) { statusEl.textContent = '✅ 저장 완료 — 이제 모든 사용자의 작업이 이 설정으로 처리됩니다.'; statusEl.style.color = '#16a34a'; }
     adminAiConfigInit();
   } catch(e) {
