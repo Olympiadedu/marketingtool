@@ -367,7 +367,7 @@ async function blogUpdateQuotaStatus() {
   el.textContent = '오늘 작성 현황 확인 중...';
   try {
     var q = await claudeQuotaCheck();
-    el.textContent = '오늘 작성: ' + q.count + ' / ' + q.limit + '회';
+    el.textContent = q.unlimited ? ('오늘 작성: ' + q.count + '회 (무제한)') : ('오늘 작성: ' + q.count + ' / ' + q.limit + '회');
   } catch(e) {
     el.textContent = '';
   }
@@ -378,7 +378,7 @@ async function blogGenerateDraft() {
   if (!topic) { blogShowAlert('1', '주제를 입력해주세요.'); return; }
   try {
     var quota = await claudeQuotaCheck();
-    if (quota.remaining <= 0) { blogShowAlert('1', '오늘 작성 가능한 글 수(' + quota.limit + '개)를 모두 사용했습니다. 내일 다시 시도해주세요.'); return; }
+    if (!quota.unlimited && quota.remaining <= 0) { blogShowAlert('1', '오늘 작성 가능한 글 수(' + quota.limit + '개)를 모두 사용했습니다. 내일 다시 시도해주세요.'); return; }
   } catch(qe) { blogShowAlert('1', qe.message || '사용량 확인에 실패했습니다.'); return; }
   blogHideAlert('1');
   blogState.inputs = {

@@ -91,7 +91,7 @@ function setupUsersSheet() {
   if (!sheet) sheet = ss.insertSheet(USERS_SHEET_NAME);
   if (sheet.getLastRow() > 0) return; // 이미 데이터 있으면 건드리지 않음
 
-  var headers = ['아이디', '비밀번호', '이름', '학원명', '상태', '역할'];
+  var headers = ['아이디', '비밀번호', '이름', '학원명', '상태', '역할', '일일한도'];
   sheet.appendRow(headers);
   var headerRange = sheet.getRange(1, 1, 1, headers.length);
   headerRange.setBackground('#00a891').setFontColor('#ffffff').setFontWeight('bold').setFontSize(11);
@@ -102,8 +102,9 @@ function setupUsersSheet() {
   sheet.setColumnWidth(4, 200);
   sheet.setColumnWidth(5, 100);
   sheet.setColumnWidth(6, 100);
+  sheet.setColumnWidth(7, 100);
 
-  SpreadsheetApp.getUi().alert('users 시트 초기화 완료! 아이디/비밀번호/이름/학원명/상태("사용")/역할("관리자" 또는 빈칸) 행을 추가해 계정을 등록하세요. 역할이 "관리자"가 아니면 dev 사이트엔 로그인할 수 없습니다.');
+  SpreadsheetApp.getUi().alert('users 시트 초기화 완료! 아이디/비밀번호/이름/학원명/상태("사용")/역할("관리자" 또는 빈칸)/일일한도(빈칸=기본 ' + DAILY_BLOG_LIMIT + '회, 숫자 입력 시 그 값 적용, 역할이 "관리자"면 무시하고 무제한) 행을 추가해 계정을 등록하세요. 역할이 "관리자"가 아니면 dev 사이트엔 로그인할 수 없습니다.');
 }
 
 // 기존에 쓰던 users 시트(역할 열 없음)에 열만 추가할 때 1회 실행
@@ -115,19 +116,31 @@ function migrateAddRoleColumn() {
     sheet.getRange(1, 6).setValue('역할').setBackground('#00a891').setFontColor('#ffffff').setFontWeight('bold');
     sheet.setColumnWidth(6, 100);
   }
+  if (sheet.getRange(1, 7).getValue() !== '일일한도') {
+    sheet.getRange(1, 7).setValue('일일한도').setBackground('#00a891').setFontColor('#ffffff').setFontWeight('bold');
+    sheet.setColumnWidth(7, 100);
+  }
 }
 
 function _findUser(id) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(USERS_SHEET_NAME);
   if (!sheet || sheet.getLastRow() <= 1) return null;
-  var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 6).getValues();
+  var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 7).getValues();
   for (var i = 0; i < data.length; i++) {
     if (String(data[i][0]) === String(id)) {
-      return { id: data[i][0], password: data[i][1], name: data[i][2], academy: data[i][3], status: data[i][4], role: data[i][5] };
+      return { id: data[i][0], password: data[i][1], name: data[i][2], academy: data[i][3], status: data[i][4], role: data[i][5], dailyLimit: data[i][6] };
     }
   }
   return null;
+}
+
+// 관리자는 무제한(null), 그 외에는 본인 행의 "일일한도"(있으면) 또는 전체 기본값(DAILY_BLOG_LIMIT)
+function _getDailyLimitFor(user) {
+  if (!user) return DAILY_BLOG_LIMIT;
+  if (String(user.role) === '관리자') return null; // null = 무제한
+  var n = parseInt(user.dailyLimit, 10);
+  return (!isNaN(n) && n > 0) ? n : DAILY_BLOG_LIMIT;
 }
 
 function _verifyUser(id, password, site) {
@@ -263,12 +276,13 @@ function _savePost(data) {
     sheet = ss.getSheetByName(SHEET_NAME);
   }
 
-  // 일일 작성 한도 재확인 (클라이언트 체크 우회 방지용 최종 방어선)
+  // 일일 작성 한도 재확인 (클라이언트 체크 우회 방지용 최종 방어선) — 관리자는 무제한
   if (data.userId) {
     var v = _verifyUser(data.userId, data.userPw, data.site);
     if (!v.valid) { output.setContent(JSON.stringify({ ok: false, error: v.error })); return output; }
-    if (_countTodayPosts(data.userId) >= DAILY_BLOG_LIMIT) {
-      output.setContent(JSON.stringify({ ok: false, error: '오늘 작성 가능 횟수(' + DAILY_BLOG_LIMIT + '회)를 모두 사용했습니다.' }));
+    var limit = _getDailyLimitFor(_findUser(data.userId));
+    if (limit !== null && _countTodayPosts(data.userId) >= limit) {
+      output.setContent(JSON.stringify({ ok: false, error: '오늘 작성 가능 횟수(' + limit + '회)를 모두 사용했습니다.' }));
       return output;
     }
   }
@@ -291,12 +305,17 @@ function _savePost(data) {
   return output;
 }
 
-// ── 오늘 작성 횟수 조회 (초안 생성 전, 클라이언트가 미리 확인) ──────
+// ── 오늘 작성 횟수 조회 (초안 생성 전, 클라이언트가 미리 확인) — 관리자는 무제한 ──
 function _getQuotaStatus(userId) {
   var output = ContentService.createTextOutput();
   output.setMimeType(ContentService.MimeType.JSON);
   var count = _countTodayPosts(userId);
-  output.setContent(JSON.stringify({ ok: true, count: count, limit: DAILY_BLOG_LIMIT, remaining: Math.max(0, DAILY_BLOG_LIMIT - count) }));
+  var limit = _getDailyLimitFor(_findUser(userId));
+  if (limit === null) {
+    output.setContent(JSON.stringify({ ok: true, count: count, limit: null, remaining: null, unlimited: true }));
+  } else {
+    output.setContent(JSON.stringify({ ok: true, count: count, limit: limit, remaining: Math.max(0, limit - count), unlimited: false }));
+  }
   return output;
 }
 
