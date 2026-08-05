@@ -221,7 +221,7 @@ function doPost(e) {
     var data = JSON.parse(e.postData.contents);
 
     // ── 아래 액션들은 전부 토큰 + 개인 아이디/비밀번호 이중 확인 ──
-    var AUTHED_ACTIONS = ['login','myPosts','quotaStatus','claudeProxy','geminiProxy','adminGetConfig','adminSaveConfig'];
+    var AUTHED_ACTIONS = ['login','myPosts','quotaStatus','claudeProxy','geminiProxy'];
     if (AUTHED_ACTIONS.indexOf(data.action) >= 0) {
       if (data.token !== SECRET) {
         output.setContent(JSON.stringify({ ok: false, error: 'Unauthorized' }));
@@ -237,8 +237,6 @@ function doPost(e) {
       if (data.action === 'quotaStatus')  return _getQuotaStatus(data.userId);
       if (data.action === 'claudeProxy')  return _aiProxy(data.payload);
       if (data.action === 'geminiProxy')  return _geminiProxy(data.payload);
-      if (data.action === 'adminGetConfig')  return _adminGetConfig(v.role);
-      if (data.action === 'adminSaveConfig') return _adminSaveConfig(v.role, data.config || {});
     }
 
     return _savePost(data);
@@ -327,15 +325,13 @@ function _getMyPosts(userId, n) {
   return output;
 }
 
-// ── AI 설정 (관리자 전용) ──────────────────────────────────────────
-// API 키는 코드/웹사이트가 아니라 "config" 시트에 직접 입력(users 시트와 같은 방식 — 코드 실행 불필요).
-// 프로바이더/모델 선택만 웹사이트(설정→AI 설정)에서 저장하면 Script Properties에 기록됨.
+// ── AI 설정 — 전부 "config" 시트에서 관리 (users 시트와 같은 방식, 코드 실행·웹사이트 조작 불필요) ──
 var CONFIG_SHEET_NAME = 'config';
 var AI_PROVIDERS = ['claude', 'gemini', 'openai'];
 var AI_KEY_PROP = { claude: 'ANTHROPIC_API_KEY', gemini: 'GEMINI_API_KEY', openai: 'OPENAI_API_KEY' };
 var AI_DEFAULT_MODEL = { claude: 'claude-sonnet-5', gemini: 'gemini-3.6-flash', openai: 'gpt-5.6-terra' };
 
-// 최초 1회 실행 — config 시트를 만들고 키 입력칸을 준비함
+// 최초 1회 실행 — config 시트를 만들고 입력칸을 준비함
 function setupConfigSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(CONFIG_SHEET_NAME);
@@ -345,14 +341,16 @@ function setupConfigSheet() {
     ['설정', '값'],
     ['ANTHROPIC_API_KEY', ''],
     ['GEMINI_API_KEY', ''],
-    ['OPENAI_API_KEY', '']
+    ['OPENAI_API_KEY', ''],
+    ['ACTIVE_PROVIDER', 'claude'],          // claude | gemini | openai
+    ['ACTIVE_MODEL', AI_DEFAULT_MODEL.claude]
   ];
   sheet.getRange(1, 1, rows.length, 2).setValues(rows);
   sheet.getRange(1, 1, 1, 2).setBackground('#00a891').setFontColor('#ffffff').setFontWeight('bold');
   sheet.setFrozenRows(1);
   sheet.setColumnWidth(1, 200);
   sheet.setColumnWidth(2, 420);
-  SpreadsheetApp.getUi().alert('config 시트 초기화 완료! "값" 열에 실제 API 키를 입력하세요(코드 실행 불필요).');
+  SpreadsheetApp.getUi().alert('config 시트 초기화 완료! API 키와 ACTIVE_PROVIDER/ACTIVE_MODEL 값을 "값" 열에 입력하세요(코드 실행 불필요).');
 }
 
 // config 시트에서 값 조회 — 시트에 값이 없으면(과거 방식과의 호환) Script Properties도 확인
@@ -369,33 +367,12 @@ function _getConfigValue(key) {
 }
 
 function _getAiConfig() {
-  var props = PropertiesService.getScriptProperties();
-  var provider = props.getProperty('ACTIVE_PROVIDER') || 'claude';
-  var model = props.getProperty('ACTIVE_MODEL') || AI_DEFAULT_MODEL[provider];
+  var provider = _getConfigValue('ACTIVE_PROVIDER') || 'claude';
+  if (AI_PROVIDERS.indexOf(provider) < 0) provider = 'claude';
+  var model = _getConfigValue('ACTIVE_MODEL') || AI_DEFAULT_MODEL[provider];
   var hasKey = {};
   AI_PROVIDERS.forEach(function(p) { hasKey[p] = !!_getConfigValue(AI_KEY_PROP[p]); });
   return { provider: provider, model: model, hasKey: hasKey };
-}
-
-function _adminGetConfig(role) {
-  var output = ContentService.createTextOutput();
-  output.setMimeType(ContentService.MimeType.JSON);
-  if (String(role) !== '관리자') { output.setContent(JSON.stringify({ ok: false, error: '관리자만 접근할 수 있습니다.' })); return output; }
-  var cfg = _getAiConfig();
-  output.setContent(JSON.stringify({ ok: true, provider: cfg.provider, model: cfg.model, hasKey: cfg.hasKey }));
-  return output;
-}
-
-// data: { provider?, model? } — API 키는 여기서 안 받음(config 시트에서 직접 관리)
-function _adminSaveConfig(role, data) {
-  var output = ContentService.createTextOutput();
-  output.setMimeType(ContentService.MimeType.JSON);
-  if (String(role) !== '관리자') { output.setContent(JSON.stringify({ ok: false, error: '관리자만 접근할 수 있습니다.' })); return output; }
-  var props = PropertiesService.getScriptProperties();
-  if (data.provider && AI_PROVIDERS.indexOf(data.provider) >= 0) props.setProperty('ACTIVE_PROVIDER', data.provider);
-  if (data.model) props.setProperty('ACTIVE_MODEL', data.model);
-  output.setContent(JSON.stringify({ ok: true }));
-  return output;
 }
 
 // ── AI 프록시 — 관리자가 설정한 프로바이더/모델/키로만 호출, 클라이언트는 키를 절대 보지 않음 ──
