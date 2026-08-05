@@ -67,6 +67,11 @@ jobs:
           echo "=== beta-src/js/flags.js ==="
           cat beta-src/js/flags.js
 
+      - name: Cache-bust local assets (커밋 해시를 쿼리스트링으로 붙여 배포 후 캐시 문제 방지)
+        run: |
+          node dev-src/.github/scripts/cachebust.js dev-src
+          node beta-src/.github/scripts/cachebust.js beta-src
+
       - name: Assemble combined site (dev=루트, beta=/beta)
         run: |
           mkdir -p _site
