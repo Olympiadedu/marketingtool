@@ -325,26 +325,28 @@ function _getMyPosts(userId, n) {
   return output;
 }
 
-// ── AI 설정 — 전부 "config" 시트에서 관리 (users 시트와 같은 방식, 코드 실행·웹사이트 조작 불필요) ──
-// 각 API 키 행 바로 옆(C열)에 그 프로바이더가 쓸 모델을 드롭다운으로 고른다 — 행을 따로 두지 않음.
-// ACTIVE_PROVIDER 한 줄로 지금 어느 프로바이더를 실제로 쓸지만 고르면 됨. 뉴스 소재추천(geminiProxy)도
-// 동일하게 이 시트의 Gemini 모델을 최우선으로 사용 — 사이트의 모든 AI 호출이 이 시트 하나로 제어됨.
+// ── AI 설정 — 전부 "config" 시트 하나로 관리 (users 시트와 같은 방식, 코드 실행·별도 시트 불필요) ──
+// 활성 프로바이더를 따로 고르지 않음 — API 키가 채워진 행이 곧 쓰이는 AI다. 여러 개가 채워져 있으면
+// AI_PROVIDERS 선언 순서(claude → gemini → openai)대로 가장 먼저 키가 있는 걸 사용한다.
+// 각 행의 "모델"(C열)은 그 프로바이더 전용 목록에서만 드롭다운으로 고름. Gemini는 유료 모델을 빼고
+// 무료 모델만 상위 성능 순으로 나열 — 고른 모델이 한도 초과되면 그 아래 무료 모델로 자동 폴백된다.
+// 뉴스 소재추천(geminiProxy)도 이 시트의 Gemini 모델을 그대로 씀 — 사이트의 모든 AI 호출이 여기 하나로 제어됨.
 var CONFIG_SHEET_NAME = 'config';
-var MODELS_SHEET_NAME = 'models';
-var AI_PROVIDERS = ['claude', 'gemini', 'openai'];
+var AI_PROVIDERS = ['claude', 'gemini', 'openai']; // 이 순서가 곧 "여러 키가 있을 때"의 우선순위
 var AI_KEY_PROP = { claude: 'ANTHROPIC_API_KEY', gemini: 'GEMINI_API_KEY', openai: 'OPENAI_API_KEY' };
 var AI_DEFAULT_MODEL = { claude: 'claude-sonnet-5', gemini: 'gemini-3.6-flash', openai: 'gpt-5.6-terra' };
 
-// models 시트 컬럼 순서와 동일 — 여기 각 배열에 행을 추가/삭제하면 최초 생성 시의 기본 목록이 바뀜
-// (이미 만들어진 시트가 있으면 그 시트를 그대로 쓰고 덮어쓰지 않음 — 직접 추가/삭제한 내용 보존)
+// 각 프로바이더 드롭다운에 나열될 모델 목록(코드로 관리 — 추가/삭제하려면 여기를 고치고 재배포).
+// Gemini는 무료 티어 모델만, 성능 좋은 순 — GEMINI_MODEL_FALLBACK(파일 하단)과 동일한 목록이어야
+// "고른 모델 실패 시 자동 폴백"이 그 아래 항목들로 자연스럽게 이어짐.
 var AI_MODEL_CATALOG = {
   claude: ['claude-sonnet-5', 'claude-opus-5', 'claude-haiku-4-5-20251001', 'claude-fable-5'],
-  gemini: ['gemini-3.6-flash', 'gemini-3-pro', 'gemini-3.1-pro', 'gemini-3.5-flash', 'gemini-3.5-flash-lite'],
+  gemini: ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3-flash', 'gemini-2.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-2.5-flash-lite'],
   openai: ['gpt-5.6-terra', 'gpt-5.6-sol', 'gpt-5.6-luna']
 };
 
-// 최초 1회 실행 — config 시트를 만들고 입력칸을 준비함(models 시트·드롭다운까지 함께 설정).
-// 이미 있는 시트에 다시 실행해도 안전 — 없는 것만 채우고 기존 값·레이아웃은 안 건드림.
+// 최초 1회 실행 — config 시트를 만들고 입력칸·드롭다운을 준비함.
+// 이미 있는 시트에 다시 실행해도 안전 — 없는 것만 채우고 기존 값은 안 건드림.
 function setupConfigSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(CONFIG_SHEET_NAME);
@@ -354,8 +356,7 @@ function setupConfigSheet() {
       ['설정', '값', '모델'],
       ['ANTHROPIC_API_KEY', '', AI_DEFAULT_MODEL.claude],
       ['GEMINI_API_KEY', '', AI_DEFAULT_MODEL.gemini],
-      ['OPENAI_API_KEY', '', AI_DEFAULT_MODEL.openai],
-      ['ACTIVE_PROVIDER', 'claude', '']   // claude | gemini | openai — 실제로 어느 프로바이더를 쓸지
+      ['OPENAI_API_KEY', '', AI_DEFAULT_MODEL.openai]
     ];
     sheet.getRange(1, 1, rows.length, 3).setValues(rows);
     sheet.getRange(1, 1, 1, 3).setBackground('#00a891').setFontColor('#ffffff').setFontWeight('bold');
@@ -365,42 +366,18 @@ function setupConfigSheet() {
     sheet.setColumnWidth(3, 220);
   }
   setupAiSelectionDropdowns();
-  SpreadsheetApp.getUi().alert('config 시트 준비 완료! 각 API 키 행의 "값"에 키를, "모델"에 쓸 모델을 드롭다운으로 고르세요. ACTIVE_PROVIDER 행에서 지금 실제로 쓸 프로바이더만 고르면 됩니다. 모델 목록 추가/삭제는 "models" 시트에서 합니다.');
+  SpreadsheetApp.getUi().alert('config 시트 준비 완료! 각 행의 "값"에 API 키를 입력하면 그 AI가 사용됩니다(여러 개 입력 시 claude→gemini→openai 순으로 우선 사용). "모델"은 각자 전용 목록에서 드롭다운으로 고르세요.');
 }
 
-// "models" 시트(Claude/Gemini/OpenAI 3개 열) — 각 열에 행을 추가/삭제하면 config 시트의
-// 해당 프로바이더 모델 드롭다운도 코드 수정 없이 그대로 반영됨
-function setupModelsSheet() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(MODELS_SHEET_NAME);
-  if (!sheet) sheet = ss.insertSheet(MODELS_SHEET_NAME);
-  if (sheet.getLastRow() === 0) {
-    sheet.getRange(1, 1, 1, 3).setValues([['Claude', 'Gemini', 'OpenAI']]);
-    sheet.getRange(1, 1, 1, 3).setBackground('#00a891').setFontColor('#ffffff').setFontWeight('bold');
-    sheet.setFrozenRows(1);
-    AI_PROVIDERS.forEach(function(p, colIdx) {
-      var list = AI_MODEL_CATALOG[p];
-      sheet.getRange(2, colIdx + 1, list.length, 1).setValues(list.map(function(m) { return [m]; }));
-      sheet.setColumnWidth(colIdx + 1, 260);
-    });
-  }
-  return sheet;
-}
-
-// config 시트의 ACTIVE_PROVIDER(값 열)와 각 API 키 행의 "모델"(C열)을 드롭다운으로 만듦.
-// 과거 버전에서 만들어졌던 CLAUDE_MODEL/GEMINI_MODEL/OPENAI_MODEL 행(더 이상 안 씀)이 있으면 정리함.
+// config 시트의 각 API 키 행 "모델"(C열)을 프로바이더 전용 목록의 드롭다운으로 만듦.
+// 과거 버전에서 만들어졌던 ACTIVE_PROVIDER/CLAUDE_MODEL/GEMINI_MODEL/OPENAI_MODEL 행(더 이상 안 씀)이
+// 있으면 정리함 — 뒤에서부터 지워야 행 번호가 안 꼬임.
 function setupAiSelectionDropdowns() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var configSheet = ss.getSheetByName(CONFIG_SHEET_NAME);
   if (!configSheet) { configSheet = ss.insertSheet(CONFIG_SHEET_NAME); configSheet.appendRow(['설정', '값', '모델']); }
-  var modelsSheet = setupModelsSheet();
 
-  if (!configSheet.getDataRange().getValues().some(function(r) { return String(r[0]) === 'ACTIVE_PROVIDER'; })) {
-    configSheet.appendRow(['ACTIVE_PROVIDER', 'claude', '']);
-  }
-
-  // 예전 버전의 CLAUDE_MODEL/GEMINI_MODEL/OPENAI_MODEL 행 정리(있으면 삭제) — 뒤에서부터 지워야 행 번호가 안 꼬임
-  var legacyKeys = ['CLAUDE_MODEL', 'GEMINI_MODEL', 'OPENAI_MODEL'];
+  var legacyKeys = ['ACTIVE_PROVIDER', 'CLAUDE_MODEL', 'GEMINI_MODEL', 'OPENAI_MODEL'];
   var data = configSheet.getDataRange().getValues();
   for (var r = data.length - 1; r >= 0; r--) {
     if (legacyKeys.indexOf(String(data[r][0])) >= 0) configSheet.deleteRow(r + 1);
@@ -412,18 +389,10 @@ function setupAiSelectionDropdowns() {
     return -1;
   }
 
-  var providerRowIdx = rowOf('ACTIVE_PROVIDER');
-  if (providerRowIdx > 0) {
-    var providerRule = SpreadsheetApp.newDataValidation().requireValueInList(AI_PROVIDERS, true).setAllowInvalid(false).build();
-    configSheet.getRange(providerRowIdx, 2).setDataValidation(providerRule);
-  }
-
-  AI_PROVIDERS.forEach(function(p, colIdx) {
+  AI_PROVIDERS.forEach(function(p) {
     var keyRowIdx = rowOf(AI_KEY_PROP[p]);
     if (keyRowIdx < 0) return;
-    var lastRow = Math.max(modelsSheet.getLastRow() - 1, 1);
-    var modelRange = modelsSheet.getRange(2, colIdx + 1, lastRow);
-    var modelRule = SpreadsheetApp.newDataValidation().requireValueInRange(modelRange, true).setAllowInvalid(true).build();
+    var modelRule = SpreadsheetApp.newDataValidation().requireValueInList(AI_MODEL_CATALOG[p], true).setAllowInvalid(false).build();
     configSheet.getRange(keyRowIdx, 3).setDataValidation(modelRule);
     if (!configSheet.getRange(keyRowIdx, 3).getValue()) {
       configSheet.getRange(keyRowIdx, 3).setValue(AI_DEFAULT_MODEL[p]);
@@ -458,9 +427,16 @@ function _getConfiguredModel(provider) {
   return AI_DEFAULT_MODEL[provider];
 }
 
+// 활성 프로바이더 = API 키가 채워진 첫 프로바이더(AI_PROVIDERS 선언 순서 = 우선순위)
+function _getActiveProvider() {
+  for (var i = 0; i < AI_PROVIDERS.length; i++) {
+    if (_getConfigValue(AI_KEY_PROP[AI_PROVIDERS[i]])) return AI_PROVIDERS[i];
+  }
+  return 'claude';
+}
+
 function _getAiConfig() {
-  var provider = _getConfigValue('ACTIVE_PROVIDER') || 'claude';
-  if (AI_PROVIDERS.indexOf(provider) < 0) provider = 'claude';
+  var provider = _getActiveProvider();
   var model = _getConfiguredModel(provider);
   var hasKey = {};
   AI_PROVIDERS.forEach(function(p) { hasKey[p] = !!_getConfigValue(AI_KEY_PROP[p]); });
