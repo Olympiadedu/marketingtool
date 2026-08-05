@@ -90,14 +90,14 @@ function showPage(id) {
     } else if (id === 'blog-history') {
       blogHistoryInit();
     }
-  } else if (id === 'settings-ai' || id === 'settings-prompt' || id === 'settings-instagram') {
+  } else if (id === 'settings-ai' || id === 'settings-prompt' || id === 'settings-instagram' || id === 'settings-aiconfig') {
     document.getElementById('page-settings').classList.add('active');
     var navSettings = document.getElementById('nav-settings');
     if (navSettings) navSettings.classList.add('active');
     var subnav = document.getElementById('sidebar-subnav-settings');
     if (subnav) subnav.style.display = '';
-    var sub = id === 'settings-ai' ? 'ai' : id === 'settings-prompt' ? 'prompt' : 'instagram';
-    ['ai','prompt','instagram'].forEach(function(t) {
+    var sub = id === 'settings-ai' ? 'ai' : id === 'settings-prompt' ? 'prompt' : id === 'settings-aiconfig' ? 'aiconfig' : 'instagram';
+    ['ai','prompt','instagram','aiconfig'].forEach(function(t) {
       var ni = document.getElementById('nav-settings-' + t);
       if (ni) ni.classList.toggle('active', t === sub);
       var ti = document.getElementById('settab-' + t);
@@ -105,6 +105,7 @@ function showPage(id) {
     });
     if (sub === 'ai') settingsInit();
     else if (sub === 'prompt') settingsInitPrompt();
+    else if (sub === 'aiconfig') adminAiConfigInit();
     else settingsInitInstagram();
   } else if (id === 'monitor') {
     document.getElementById('page-monitor').classList.add('active');
@@ -167,11 +168,16 @@ function getUserAuth() {
   var id = localStorage.getItem(_authKey('user_id')) || '';
   var pw = localStorage.getItem(_authKey('user_pw')) || '';
   if (!id || !pw) return null;
-  return { id: id, pw: pw, name: localStorage.getItem(_authKey('user_name')) || id, academy: localStorage.getItem(_authKey('user_academy')) || '' };
+  return { id: id, pw: pw, name: localStorage.getItem(_authKey('user_name')) || id, academy: localStorage.getItem(_authKey('user_academy')) || '', role: localStorage.getItem(_authKey('user_role')) || '' };
+}
+
+function isAdmin() {
+  var auth = getUserAuth();
+  return !!auth && auth.role === '관리자';
 }
 
 function clearUserAuth() {
-  ['user_id','user_pw','user_name','user_academy'].forEach(function(k){ localStorage.removeItem(_authKey(k)); });
+  ['user_id','user_pw','user_name','user_academy','user_role'].forEach(function(k){ localStorage.removeItem(_authKey(k)); });
 }
 
 async function loginSubmit() {
@@ -198,6 +204,7 @@ async function loginSubmit() {
     localStorage.setItem(_authKey('user_pw'), pw);
     localStorage.setItem(_authKey('user_name'), json.name || id);
     localStorage.setItem(_authKey('user_academy'), json.academy || '');
+    localStorage.setItem(_authKey('user_role'), json.role || '');
     hideLoginOverlay();
   } catch(e) {
     if (errEl) { errEl.textContent = '연결 오류: ' + e.message; errEl.style.display = 'block'; }
@@ -221,10 +228,17 @@ function hideLoginOverlay() {
   var nameEl = document.getElementById('login-user-name');
   var auth = getUserAuth();
   if (nameEl && auth) nameEl.textContent = auth.name + (auth.academy ? ' · ' + auth.academy : '');
+  applyRoleUI();
 }
 function initLoginGate() {
   if (getUserAuth()) { hideLoginOverlay(); return; }
   showLoginOverlay();
+}
+
+// 관리자 계정에만 "AI 설정" 메뉴 노출
+function applyRoleUI() {
+  var navAiConfig = document.getElementById('nav-settings-aiconfig');
+  if (navAiConfig) navAiConfig.style.display = isAdmin() ? '' : 'none';
 }
 
 // ── Claude 프록시 (관리자 키로 서버측 호출 — 클라이언트는 Claude API 키를 절대 갖지 않음) ──
@@ -461,6 +475,81 @@ function settingsInit() {
   if (gasUrl) gasUrl.value = localStorage.getItem('mtt_gas_url') || '';
   if (gasToken) gasToken.value = localStorage.getItem('mtt_gas_token') || '';
   settingsUpdateStatus();
+}
+
+// ── AI 설정(관리자 전용) — 모든 사용자의 작업에 쓰일 프로바이더/모델/키를 서버에 저장 ──
+var _adminAiActiveProvider = 'claude';
+
+function adminSelectProvider(provider) {
+  _adminAiActiveProvider = provider;
+  document.querySelectorAll('#settab-aiconfig .set-provider-card').forEach(function(c) {
+    c.classList.toggle('active', c.dataset.provider === provider);
+  });
+  ['claude','gemini','openai'].forEach(function(p) {
+    var d = document.getElementById('ai-setdetail-' + p);
+    if (d) d.style.display = p === provider ? 'flex' : 'none';
+  });
+}
+
+async function _adminAiRequest(action, extra) {
+  var auth = getUserAuth();
+  if (!auth) throw new Error('로그인이 필요합니다.');
+  var cfg = getGasConfig();
+  if (!cfg.url || !cfg.token) throw new Error('서버 설정 오류(GAS 미설정)');
+  var body = Object.assign({ action: action, token: cfg.token, userId: auth.id, userPw: auth.pw, site: _siteId() }, extra || {});
+  var res = await fetch(cfg.url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body)
+  });
+  var json = await res.json();
+  if (!json.ok) throw new Error(json.error || '요청 실패');
+  return json;
+}
+
+async function adminAiConfigInit() {
+  var statusEl = document.getElementById('ai-config-status');
+  if (statusEl) statusEl.textContent = '';
+  try {
+    var cfg = await _adminAiRequest('adminGetConfig');
+    adminSelectProvider(cfg.provider || 'claude');
+    ['claude','gemini','openai'].forEach(function(p) {
+      var sel = document.getElementById('ai-set-' + p + '-model');
+      if (sel && cfg.provider === p && cfg.model) sel.value = cfg.model;
+      var st = document.getElementById('ai-status-' + p);
+      if (st) st.textContent = cfg.hasKey && cfg.hasKey[p] ? '✓ 설정됨' : '× 미설정';
+    });
+  } catch(e) {
+    if (statusEl) { statusEl.textContent = e.message; statusEl.style.color = '#ef4444'; }
+  }
+}
+
+async function adminAiConfigSave() {
+  var statusEl = document.getElementById('ai-config-status');
+  var btn = document.querySelector('#settab-aiconfig .set-save-btn');
+  if (btn) btn.disabled = true;
+  if (statusEl) { statusEl.textContent = '저장 중...'; statusEl.style.color = 'var(--mut)'; }
+  try {
+    var modelSel = document.getElementById('ai-set-' + _adminAiActiveProvider + '-model');
+    var config = {
+      provider: _adminAiActiveProvider,
+      model: modelSel ? modelSel.value : '',
+      claudeKey: (document.getElementById('ai-set-claude-key') || {}).value || '',
+      geminiKey: (document.getElementById('ai-set-gemini-key') || {}).value || '',
+      openaiKey: (document.getElementById('ai-set-openai-key') || {}).value || ''
+    };
+    await _adminAiRequest('adminSaveConfig', { config: config });
+    ['claude','gemini','openai'].forEach(function(p) {
+      var inp = document.getElementById('ai-set-' + p + '-key');
+      if (inp) inp.value = '';
+    });
+    if (statusEl) { statusEl.textContent = '✅ 저장 완료 — 이제 모든 사용자의 작업이 이 설정으로 처리됩니다.'; statusEl.style.color = '#16a34a'; }
+    adminAiConfigInit();
+  } catch(e) {
+    if (statusEl) { statusEl.textContent = '❌ ' + e.message; statusEl.style.color = '#ef4444'; }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 function _migrateOldPrompts() {

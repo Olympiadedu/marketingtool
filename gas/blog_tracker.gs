@@ -221,7 +221,8 @@ function doPost(e) {
     var data = JSON.parse(e.postData.contents);
 
     // ── 아래 액션들은 전부 토큰 + 개인 아이디/비밀번호 이중 확인 ──
-    if (data.action === 'login' || data.action === 'myPosts' || data.action === 'quotaStatus' || data.action === 'claudeProxy' || data.action === 'geminiProxy') {
+    var AUTHED_ACTIONS = ['login','myPosts','quotaStatus','claudeProxy','geminiProxy','adminGetConfig','adminSaveConfig'];
+    if (AUTHED_ACTIONS.indexOf(data.action) >= 0) {
       if (data.token !== SECRET) {
         output.setContent(JSON.stringify({ ok: false, error: 'Unauthorized' }));
         return output;
@@ -231,11 +232,13 @@ function doPost(e) {
         output.setContent(JSON.stringify({ ok: false, error: v.error }));
         return output;
       }
-      if (data.action === 'login')       { output.setContent(JSON.stringify({ ok: true, name: v.name, academy: v.academy })); return output; }
+      if (data.action === 'login')       { output.setContent(JSON.stringify({ ok: true, name: v.name, academy: v.academy, role: v.role || '' })); return output; }
       if (data.action === 'myPosts')      return _getMyPosts(data.userId, data.n || 100);
       if (data.action === 'quotaStatus')  return _getQuotaStatus(data.userId);
-      if (data.action === 'claudeProxy')  return _claudeProxy(data.payload);
+      if (data.action === 'claudeProxy')  return _aiProxy(data.payload);
       if (data.action === 'geminiProxy')  return _geminiProxy(data.payload);
+      if (data.action === 'adminGetConfig')  return _adminGetConfig(v.role);
+      if (data.action === 'adminSaveConfig') return _adminSaveConfig(v.role, data.config || {});
     }
 
     return _savePost(data);
@@ -324,38 +327,155 @@ function _getMyPosts(userId, n) {
   return output;
 }
 
-// ── Claude 프록시 — 관리자 API 키로만 호출, 클라이언트는 키를 절대 보지 않음 ──
-// 최초 1회, Apps Script 편집기에서 setAdminApiKey('sk-ant-...') 를 직접 실행해서 키를 등록할 것
-// (코드에 키를 적지 말 것 — PropertiesService에 저장되며 이 파일/git에는 남지 않음)
-function setAdminApiKey(key) {
-  PropertiesService.getScriptProperties().setProperty('ANTHROPIC_API_KEY', key);
+// ── AI 설정 (관리자 전용) — 어떤 프로바이더/모델/키를 쓸지 Script Properties에 저장 ──
+// 관리자 계정으로 로그인하면 화면(설정→AI 설정)에서 관리 가능. 최초 키 등록만 아래 함수를
+// Apps Script 편집기에서 1회 직접 실행해도 됨(화면에서 저장하면 그걸로 대체됨).
+function setAdminApiKey(key) { PropertiesService.getScriptProperties().setProperty('ANTHROPIC_API_KEY', key); }
+// Gemini 키는 setAdminGeminiKey(아래, 기사검색 기능과 공용 프로퍼티 GEMINI_API_KEY 사용)로 등록
+function setAdminOpenAiKey(key) { PropertiesService.getScriptProperties().setProperty('OPENAI_API_KEY', key); }
+
+var AI_PROVIDERS = ['claude', 'gemini', 'openai'];
+var AI_KEY_PROP = { claude: 'ANTHROPIC_API_KEY', gemini: 'GEMINI_API_KEY', openai: 'OPENAI_API_KEY' };
+var AI_DEFAULT_MODEL = { claude: 'claude-sonnet-5', gemini: 'gemini-3.6-flash', openai: 'gpt-5.6-terra' };
+
+function _getAiConfig() {
+  var props = PropertiesService.getScriptProperties();
+  var provider = props.getProperty('ACTIVE_PROVIDER') || 'claude';
+  var model = props.getProperty('ACTIVE_MODEL') || AI_DEFAULT_MODEL[provider];
+  var hasKey = {};
+  AI_PROVIDERS.forEach(function(p) { hasKey[p] = !!props.getProperty(AI_KEY_PROP[p]); });
+  return { provider: provider, model: model, hasKey: hasKey };
 }
 
-function _claudeProxy(payload) {
+function _adminGetConfig(role) {
   var output = ContentService.createTextOutput();
   output.setMimeType(ContentService.MimeType.JSON);
-  var apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+  if (String(role) !== '관리자') { output.setContent(JSON.stringify({ ok: false, error: '관리자만 접근할 수 있습니다.' })); return output; }
+  var cfg = _getAiConfig();
+  output.setContent(JSON.stringify({ ok: true, provider: cfg.provider, model: cfg.model, hasKey: cfg.hasKey }));
+  return output;
+}
+
+// data: { provider?, model?, claudeKey?, geminiKey?, openaiKey? } — 키는 입력된 것만 갱신(비워두면 기존 키 유지)
+function _adminSaveConfig(role, data) {
+  var output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+  if (String(role) !== '관리자') { output.setContent(JSON.stringify({ ok: false, error: '관리자만 접근할 수 있습니다.' })); return output; }
+  var props = PropertiesService.getScriptProperties();
+  if (data.provider && AI_PROVIDERS.indexOf(data.provider) >= 0) props.setProperty('ACTIVE_PROVIDER', data.provider);
+  if (data.model) props.setProperty('ACTIVE_MODEL', data.model);
+  if (data.claudeKey) props.setProperty(AI_KEY_PROP.claude, data.claudeKey);
+  if (data.geminiKey) props.setProperty(AI_KEY_PROP.gemini, data.geminiKey);
+  if (data.openaiKey) props.setProperty(AI_KEY_PROP.openai, data.openaiKey);
+  output.setContent(JSON.stringify({ ok: true }));
+  return output;
+}
+
+// ── AI 프록시 — 관리자가 설정한 프로바이더/모델/키로만 호출, 클라이언트는 키를 절대 보지 않음 ──
+// 클라이언트는 항상 { system, messages:[{role,content}], max_tokens } 형태(Anthropic 형식과 유사)로 보내고,
+// 응답도 항상 { content:[{text}] } 형태로 정규화해서 돌려준다 — 어떤 프로바이더든 클라이언트 파싱 코드는 그대로 유지됨.
+function _aiProxy(payload) {
+  var output = ContentService.createTextOutput();
+  output.setMimeType(ContentService.MimeType.JSON);
+  var cfg = _getAiConfig();
+  var apiKey = PropertiesService.getScriptProperties().getProperty(AI_KEY_PROP[cfg.provider]);
   if (!apiKey) {
-    output.setContent(JSON.stringify({ ok: false, error: '관리자 Claude API 키가 아직 설정되지 않았습니다.' }));
+    output.setContent(JSON.stringify({ ok: false, error: '관리자가 ' + cfg.provider + ' API 키를 아직 설정하지 않았습니다.' }));
     return output;
   }
   try {
-    var res = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
-      method: 'post',
-      contentType: 'application/json',
-      headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-      payload: JSON.stringify(payload || {}),
-      muteHttpExceptions: true
-    });
-    var json = JSON.parse(res.getContentText());
-    if (res.getResponseCode() !== 200) {
-      output.setContent(JSON.stringify({ ok: false, error: (json.error && json.error.message) || ('Claude API 오류 ' + res.getResponseCode()) }));
-      return output;
-    }
-    output.setContent(JSON.stringify({ ok: true, data: json }));
+    if (cfg.provider === 'gemini') return _callGeminiGeneral(apiKey, cfg.model, payload, output);
+    if (cfg.provider === 'openai') return _callOpenAiGeneral(apiKey, cfg.model, payload, output);
+    return _callClaude(apiKey, cfg.model, payload, output);
   } catch (err) {
     output.setContent(JSON.stringify({ ok: false, error: err.message }));
+    return output;
   }
+}
+
+function _callClaude(apiKey, model, payload, output) {
+  var res = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+    payload: JSON.stringify({
+      model: model,
+      max_tokens: (payload && payload.max_tokens) || 2048,
+      system: (payload && payload.system) || '',
+      messages: (payload && payload.messages) || []
+    }),
+    muteHttpExceptions: true
+  });
+  var json = JSON.parse(res.getContentText());
+  if (res.getResponseCode() !== 200) {
+    output.setContent(JSON.stringify({ ok: false, error: (json.error && json.error.message) || ('Claude API 오류 ' + res.getResponseCode()) }));
+    return output;
+  }
+  output.setContent(JSON.stringify({ ok: true, data: json })); // 이미 { content:[{text}] } 형태
+  return output;
+}
+
+// Anthropic 스타일 content(문자열 또는 {type:'image'|'text',...} 블록 배열)를 Gemini parts로 변환
+function _toGeminiParts(content) {
+  if (typeof content === 'string') return [{ text: content }];
+  return (content || []).map(function(block) {
+    if (block.type === 'image') return { inlineData: { mimeType: block.source.media_type, data: block.source.data } };
+    return { text: block.text || '' };
+  });
+}
+
+function _callGeminiGeneral(apiKey, model, payload, output) {
+  var messages = (payload && payload.messages) || [];
+  var lastUser = messages[messages.length - 1] || {};
+  var body = {
+    contents: [{ role: 'user', parts: _toGeminiParts(lastUser.content) }],
+    generationConfig: { maxOutputTokens: (payload && payload.max_tokens) || 3500, temperature: 0.7 }
+  };
+  if (payload && payload.system) body.systemInstruction = { parts: [{ text: payload.system }] };
+  var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey;
+  var res = UrlFetchApp.fetch(url, { method: 'post', contentType: 'application/json', payload: JSON.stringify(body), muteHttpExceptions: true });
+  var json = JSON.parse(res.getContentText());
+  if (res.getResponseCode() !== 200) {
+    output.setContent(JSON.stringify({ ok: false, error: (json.error && json.error.message) || ('Gemini API 오류 ' + res.getResponseCode()) }));
+    return output;
+  }
+  var text = json.candidates && json.candidates[0] && json.candidates[0].content &&
+             json.candidates[0].content.parts && json.candidates[0].content.parts[0] &&
+             json.candidates[0].content.parts[0].text;
+  if (!text) { output.setContent(JSON.stringify({ ok: false, error: 'Gemini 빈 응답(안전 필터에 걸렸을 수 있습니다)' })); return output; }
+  output.setContent(JSON.stringify({ ok: true, data: { content: [{ text: text }] } }));
+  return output;
+}
+
+// Anthropic 스타일 content를 OpenAI chat completions 형식으로 변환
+function _toOpenAiContent(content) {
+  if (typeof content === 'string') return content;
+  return (content || []).map(function(block) {
+    if (block.type === 'image') return { type: 'image_url', image_url: { url: 'data:' + block.source.media_type + ';base64,' + block.source.data } };
+    return { type: 'text', text: block.text || '' };
+  });
+}
+
+function _callOpenAiGeneral(apiKey, model, payload, output) {
+  var messages = (payload && payload.messages) || [];
+  var oaMessages = [];
+  if (payload && payload.system) oaMessages.push({ role: 'system', content: payload.system });
+  messages.forEach(function(m) { oaMessages.push({ role: m.role || 'user', content: _toOpenAiContent(m.content) }); });
+  var res = UrlFetchApp.fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { 'Authorization': 'Bearer ' + apiKey },
+    payload: JSON.stringify({ model: model, max_tokens: (payload && payload.max_tokens) || 2048, messages: oaMessages }),
+    muteHttpExceptions: true
+  });
+  var json = JSON.parse(res.getContentText());
+  if (res.getResponseCode() !== 200) {
+    output.setContent(JSON.stringify({ ok: false, error: (json.error && json.error.message) || ('OpenAI API 오류 ' + res.getResponseCode()) }));
+    return output;
+  }
+  var text = json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content;
+  if (!text) { output.setContent(JSON.stringify({ ok: false, error: 'OpenAI 빈 응답' })); return output; }
+  output.setContent(JSON.stringify({ ok: true, data: { content: [{ text: text }] } }));
   return output;
 }
 
