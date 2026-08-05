@@ -86,6 +86,7 @@ function showPage(id) {
     if (id === 'blog') {
       initAcademyProfile();
       blogGoStep(blogState.step || 1);
+      if (typeof blogUpdateQuotaStatus === 'function') blogUpdateQuotaStatus();
     } else if (id === 'blog-history') {
       blogHistoryInit();
     }
@@ -518,13 +519,6 @@ function settingsUpdateCurrent() {
   var nameEl = document.getElementById('cur-user');
   var auth = getUserAuth();
   if (nameEl) nameEl.textContent = auth ? (auth.name + (auth.academy ? ' · ' + auth.academy : '')) : '—';
-  var quotaEl = document.getElementById('cur-quota');
-  if (quotaEl && auth) {
-    quotaEl.textContent = '확인 중...';
-    claudeQuotaCheck().then(function(q) {
-      quotaEl.textContent = q.count + ' / ' + q.limit + '회 (오늘)';
-    }).catch(function() { quotaEl.textContent = '—'; });
-  }
 }
 
 function settingsSave() {

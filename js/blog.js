@@ -360,6 +360,19 @@ async function blogAnalyzeFreeText(btn) {
   }
 }
 
+// 블로그 작성 페이지 상단의 "오늘 작성 현황" 표시 갱신
+async function blogUpdateQuotaStatus() {
+  var el = document.getElementById('blog-quota-status');
+  if (!el) return;
+  el.textContent = '오늘 작성 현황 확인 중...';
+  try {
+    var q = await claudeQuotaCheck();
+    el.textContent = '오늘 작성: ' + q.count + ' / ' + q.limit + '회';
+  } catch(e) {
+    el.textContent = '';
+  }
+}
+
 async function blogGenerateDraft() {
   var topic = document.getElementById('blog-topic').value.trim();
   if (!topic) { blogShowAlert('1', '주제를 입력해주세요.'); return; }
@@ -551,6 +564,7 @@ async function blogFinalize(triggerBtn) {
       body:      bodyParts.join('\n\n'),
       structure: updatedDraft.structure                            || ''
     });
+    blogUpdateQuotaStatus();
   } catch(e) {
     blogShowAlert('2', e.message || '오류가 발생했습니다.');
   } finally {
