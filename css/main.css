@@ -27,7 +27,7 @@ body{display:flex;height:100vh;overflow:hidden;font-family:'Noto Sans KR',sans-s
 .sidebar-bottom{margin-top:auto;padding-top:12px;border-top:1px solid #f3f4f6;display:flex;flex-direction:column;gap:2px;}
 .sidebar-subnav{display:flex;flex-direction:column;gap:1px;padding-left:12px;}
 .sidebar-subitem{padding:7px 10px;font-size:12px;font-weight:500;color:#6b7280;border-radius:6px;cursor:pointer;transition:background .12s,color .12s;}
-.sidebar-subitem::before{content:'– ';color:#c3c9d1;}
+.sidebar-subitem::before{content:'· ';color:#c3c9d1;}
 .sidebar-subitem.active::before{color:var(--acc);}
 .sidebar-subitem:hover{background:#f3f4f6;color:#111827;}
 .sidebar-subitem.active{background:var(--acc-light);color:var(--acc);font-weight:700;}
