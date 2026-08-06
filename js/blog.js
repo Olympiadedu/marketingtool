@@ -408,13 +408,13 @@ async function blogGenerateDraft() {
   blogState.inputs = {
     type:     (document.getElementById('blog-type')     || {}).value || '',
     mood:     (document.getElementById('blog-mood')     || {}).value || '',
-    refUrl:   (document.getElementById('blog-ref-url')  || {}).value.trim() || '',
-    point:    (document.getElementById('blog-point')    || {}).value.trim() || '',
+    refUrl:   ((document.getElementById('blog-ref-url')  || {}).value || '').trim(),
+    point:    ((document.getElementById('blog-point')    || {}).value || '').trim(),
     topic:    topic,
-    target:   (document.getElementById('blog-target')   || {}).value.trim() || '',
+    target:   ((document.getElementById('blog-target')   || {}).value || '').trim(),
     length:   (document.getElementById('blog-length')   || {}).value || '1500',
-    keywords: (document.getElementById('blog-keywords') || {}).value.trim() || '',
-    core:     (document.getElementById('blog-core')     || {}).value.trim() || ''
+    keywords: ((document.getElementById('blog-keywords') || {}).value || '').trim(),
+    core:     ((document.getElementById('blog-core')     || {}).value || '').trim()
   };
   var btn = document.getElementById('btn-draft');
   var btnOrig = btn.textContent;
