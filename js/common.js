@@ -187,12 +187,11 @@ async function loginSubmit() {
   if (!cfg.url || !cfg.token) { if (errEl) { errEl.textContent = '서버 설정 오류(GAS 미설정)'; errEl.style.display = 'block'; } return; }
   if (btn) { btn.disabled = true; btn.textContent = '확인 중...'; }
   try {
-    var res = await fetch(cfg.url, {
+    var json = await _fetchGasJson(cfg.url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GAS는 OPTIONS(preflight)를 못 받으므로 simple-request로 보냄
       body: JSON.stringify({ action: 'login', token: cfg.token, userId: id, userPw: pw, site: _siteId() })
     });
-    var json = await res.json();
     if (!json.ok) { if (errEl) { errEl.textContent = json.error || '로그인 실패'; errEl.style.display = 'block'; } return; }
     localStorage.setItem(_authKey('user_id'), id);
     localStorage.setItem(_authKey('user_pw'), pw);
@@ -234,26 +233,37 @@ async function claudeProxyCall(payload) {
   if (!auth) { showLoginOverlay(); throw new Error('로그인이 필요합니다.'); }
   var cfg = getGasConfig();
   if (!cfg.url || !cfg.token) throw new Error('서버 설정 오류(GAS 미설정)');
-  var res = await fetch(cfg.url, {
+  var json = await _fetchGasJson(cfg.url, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GAS는 OPTIONS(preflight)를 못 받으므로 simple-request로 보냄
     body: JSON.stringify({ action: 'claudeProxy', token: cfg.token, userId: auth.id, userPw: auth.pw, site: _siteId(), payload: payload })
   });
-  var json = await _parseGasJson(res);
   if (!json.ok) throw new Error(json.error || 'Claude 요청 실패');
   return json.data;
 }
 
-// GAS 응답이 JSON이 아니라 HTML(구글 로그인/에러 페이지 등)로 오면 res.json()이
-// "Unexpected token '<' ... is not valid JSON" 같은 알기 어려운 에러를 던지므로,
-// 원인을 바로 알 수 있는 메시지로 바꿔줌 (GAS URL 미배포/권한 미설정/재배포로 URL 변경 등이 흔한 원인)
-async function _parseGasJson(res) {
-  var text = await res.text();
-  try {
-    return JSON.parse(text);
-  } catch (e) {
-    throw new Error('서버(GAS) 응답이 올바르지 않습니다 — GAS 웹앱 URL/배포 권한을 확인해 주세요. (HTTP ' + res.status + ')');
+// 로그인/사용량 등 로그인 경로를 도는 요청들이 GAS 실행 할당량이 몰릴 때 가끔 JSON 대신
+// HTML 에러 페이지를 돌려주는 게 확인됨(간헐적, 재시도하면 대부분 성공) — 그래서 한 번 자동
+// 재시도하고, 그래도 안 되면 원인을 바로 알 수 있는 메시지로 던짐(res.json()의
+// "Unexpected token '<' ... is not valid JSON" 그대로 노출하지 않음).
+async function _fetchGasJson(url, options) {
+  var lastErr;
+  for (var attempt = 0; attempt < 2; attempt++) {
+    try {
+      var res = await fetch(url, options);
+      var text = await res.text();
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        lastErr = new Error('서버(GAS)가 일시적으로 응답하지 못했습니다. 다시 시도해주세요. (HTTP ' + res.status + ')');
+        continue;
+      }
+    } catch (e) {
+      lastErr = e;
+      continue;
+    }
   }
+  throw lastErr;
 }
 
 // Gemini 프록시 (뉴스 소재 추천 등 텍스트 전용 호출) — { model, system, content, max_tokens } 형태
@@ -262,12 +272,11 @@ async function geminiProxyCall(payload) {
   if (!auth) { showLoginOverlay(); throw new Error('로그인이 필요합니다.'); }
   var cfg = getGasConfig();
   if (!cfg.url || !cfg.token) throw new Error('서버 설정 오류(GAS 미설정)');
-  var res = await fetch(cfg.url, {
+  var json = await _fetchGasJson(cfg.url, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GAS는 OPTIONS(preflight)를 못 받으므로 simple-request로 보냄
     body: JSON.stringify({ action: 'geminiProxy', token: cfg.token, userId: auth.id, userPw: auth.pw, site: _siteId(), payload: payload })
   });
-  var json = await _parseGasJson(res);
   if (!json.ok) throw new Error(json.error || 'Gemini 요청 실패');
   return json.text;
 }
@@ -278,12 +287,11 @@ async function claudeQuotaCheck() {
   if (!auth) { showLoginOverlay(); throw new Error('로그인이 필요합니다.'); }
   var cfg = getGasConfig();
   if (!cfg.url || !cfg.token) throw new Error('서버 설정 오류(GAS 미설정)');
-  var res = await fetch(cfg.url, {
+  var json = await _fetchGasJson(cfg.url, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GAS는 OPTIONS(preflight)를 못 받으므로 simple-request로 보냄
     body: JSON.stringify({ action: 'quotaStatus', token: cfg.token, userId: auth.id, userPw: auth.pw, site: _siteId() })
   });
-  var json = await res.json();
   if (!json.ok) throw new Error(json.error || '사용량 확인 실패');
   return json; // { count, limit, remaining }
 }
@@ -294,16 +302,13 @@ async function gasGetMyPosts(n) {
   if (!auth) return [];
   var cfg = getGasConfig();
   if (!cfg.url || !cfg.token) return [];
-  try {
-    var res = await fetch(cfg.url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GAS는 OPTIONS(preflight)를 못 받으므로 simple-request로 보냄
-      body: JSON.stringify({ action: 'myPosts', token: cfg.token, userId: auth.id, userPw: auth.pw, site: _siteId(), n: n || 100 })
-    });
-    var json = await res.json();
-    if (!json.ok) throw new Error(json.error || '히스토리 조회 실패');
-    return json.posts || [];
-  } catch(e) { throw e; }
+  var json = await _fetchGasJson(cfg.url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GAS는 OPTIONS(preflight)를 못 받으므로 simple-request로 보냄
+    body: JSON.stringify({ action: 'myPosts', token: cfg.token, userId: auth.id, userPw: auth.pw, site: _siteId(), n: n || 100 })
+  });
+  if (!json.ok) throw new Error(json.error || '히스토리 조회 실패');
+  return json.posts || [];
 }
 
 // ── 기능별 on/off (flags.js가 배포 시 window.FEATURE_FLAGS 일부를 덮어씀) ──
