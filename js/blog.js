@@ -572,7 +572,9 @@ async function blogFinalize(triggerBtn) {
     blogRenderImages(result.images || []);
     blogShowFilterNotice(bannedFound);
     blogGoStep(3);
-    // 구글 시트에 저장 (fire-and-forget)
+    // 구글 시트에 저장 — 저장이 실제로 끝난 뒤에 오늘 작성 현황을 다시 조회해야
+    // 화면 카운트가 이번 글을 포함해서 올라간다 (await 없이 바로 quotaStatus를
+    // 조회하면 저장이 서버에 반영되기 전에 조회가 먼저 도착하는 경쟁 상태가 있었음)
     var bodyParts = [];
     if (result.intro) bodyParts.push(result.intro);
     (result.sections || []).forEach(function(s) {
@@ -580,7 +582,7 @@ async function blogFinalize(triggerBtn) {
       if (s.body) bodyParts.push(s.body);
     });
     if (result.conclusion) bodyParts.push(result.conclusion);
-    gasSavePost({
+    await gasSavePost({
       type:      blogState.inputs.type                              || '',
       mood:      blogState.inputs.mood                             || '',
       title:     result.title                                      || '',

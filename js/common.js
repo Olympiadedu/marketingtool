@@ -382,12 +382,18 @@ async function gasSavePost(data) {
     userPw:    auth ? auth.pw : '',
     site:      _siteId()
   };
-  fetch(cfg.url, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  }).catch(function() {});
+  // 저장 후 화면의 "오늘 작성 현황"이 바로 갱신되도록, 호출부에서 await할 수 있게
+  // fetch의 완료를 기다린다 (no-cors라 응답 내용은 못 읽지만, 요청이 서버에 도달했는지는
+  // 이 await로 보장됨 — 이게 없으면 quotaStatus 조회가 저장 완료보다 먼저 도착해서
+  // 화면에는 갱신 전 개수가 표시되는 경쟁 상태가 있었음)
+  try {
+    await fetch(cfg.url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch (e) {}
 }
 
 function _gasSetTestStatus(msg, ok) {
