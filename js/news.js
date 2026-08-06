@@ -141,8 +141,8 @@ function newsRenderTopicSuggestions(topics) {
   var rows = topics.map(function(t, i) {
     var isActive = i === newsSelectedIdx;
     return '<div class="blog-card' + (isActive ? ' is-thumb' : '') + '" style="cursor:pointer;padding:10px 12px;margin-bottom:8px;" onclick="newsShowTopicDetail(' + i + ')">'
+      + (t.blogType ? '<div style="margin-bottom:4px;"><span style="background:var(--acc-light);color:var(--acc);font-size:10px;padding:2px 8px;border-radius:99px;font-weight:600;">' + t.blogType.replace(/</g,'&lt;') + '</span></div>' : '')
       + '<div style="font-size:13px;font-weight:700;color:var(--txt);line-height:1.4;">' + (t.title || '').replace(/</g,'&lt;') + '</div>'
-      + (t.blogType ? '<div style="margin-top:4px;"><span style="background:var(--acc-light);color:var(--acc);font-size:10px;padding:2px 8px;border-radius:99px;font-weight:600;">' + t.blogType.replace(/</g,'&lt;') + '</span></div>' : '')
       + '</div>';
   }).join('');
 
