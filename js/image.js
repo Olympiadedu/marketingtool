@@ -278,17 +278,12 @@ function hitTextHandle(boxes, selId, x, y) {
 
 function cursorForHandle(handle) {
   if (!handle) return 'default';
-  if (handle === 'move') return 'move';
+  if (handle === 'move') return 'pointer';
   if (handle === 'l' || handle === 'r') return 'ew-resize';
   if (handle === 't' || handle === 'b') return 'ns-resize';
   if (handle === 'tl' || handle === 'br') return 'nwse-resize';
   if (handle === 'tr' || handle === 'bl') return 'nesw-resize';
   return 'default';
-}
-
-function applyBgMove(state, start, current, W, H) {
-  state.bgTransform.posX = Math.max(-100, Math.min(100, start.posX + ((current.x - start.x) / W) * 100));
-  state.bgTransform.posY = Math.max(-100, Math.min(100, start.posY + ((current.y - start.y) / H) * 100));
 }
 
 function applyBgResize(state, handle, start, current) {
@@ -1413,17 +1408,20 @@ function p2setCol(n, skipRender) {
     }
     if (bgHandle) {
       p2State.bgSelected = true;
-      p2State.cropMode = true;
       p2State.selId = null;
       p2State.selLogoFile = null;
       p2updatePanel();
-      var g2 = getBgGeometry(p2State, p2Canvas.width, p2Canvas.height);
-      dragging = {type: bgHandle === 'move' ? 'bg-move' : (bgHandle === 'crop' ? 'bg-crop' : 'bg-resize'), handle: bgHandle};
-      cropDragStart = {x: pos.x, y: pos.y, scale: p2State.bgTransform.scale || 100, posX: p2State.bgTransform.posX || 0, posY: p2State.bgTransform.posY || 0, rect: g2.cropRect};
       // 배경 세부 조정 패널 자동 열기
       var detailEl = document.getElementById('p2-bg-detail');
       if (detailEl && detailEl.style.display === 'none') {
         toggleCollapse('p2-bg-detail', 'p2-bg-detail-toggle');
+      }
+      // 이미지 위치는 슬라이더로만 조정 — 클릭+드래그로 옮기는 기능은 제거됨
+      if (bgHandle !== 'move') {
+        p2State.cropMode = true;
+        var g2 = getBgGeometry(p2State, p2Canvas.width, p2Canvas.height);
+        dragging = {type: 'bg-resize', handle: bgHandle};
+        cropDragStart = {x: pos.x, y: pos.y, scale: p2State.bgTransform.scale || 100, posX: p2State.bgTransform.posX || 0, posY: p2State.bgTransform.posY || 0, rect: g2.cropRect};
       }
       p2render();
       e.preventDefault();
@@ -1465,9 +1463,6 @@ function p2setCol(n, skipRender) {
     }
     if (dragging.type === 'bg-crop') {
       applyCropDrag(p2State, dragging.handle, cropDragStart, pos, W, H);
-      updateBgControls('p2', p2State);
-    } else if (dragging.type === 'bg-move') {
-      applyBgMove(p2State, cropDragStart, pos, W, H);
       updateBgControls('p2', p2State);
     } else if (dragging.type === 'bg-resize') {
       applyBgResize(p2State, dragging.handle, cropDragStart, pos);
@@ -2031,7 +2026,8 @@ document.getElementById('p2-undo-btn').addEventListener('click', p2undo);
 document.getElementById('p2-redo-btn').addEventListener('click', p2redo);
 
 // Autosave
-var AUTO_SAVE_KEY = 'mtt_p2_autosave';
+// dev/beta가 같은 도메인 하위경로라 localStorage가 공유되므로, site별로 키를 분리한다 (common.js의 _authKey와 동일 패턴)
+var AUTO_SAVE_KEY = 'mtt_p2_autosave_' + ((typeof window.SITE_ID === 'string' && window.SITE_ID) ? window.SITE_ID : 'local');
 
 function p2autosave() {
   try {
