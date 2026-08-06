@@ -104,7 +104,9 @@ function blogSwitchTab(tab) {
 
 async function blogCallClaude(systemPrompt, userContent, maxTokens) {
   var data = await claudeProxyCall({ model: getModel('claude'), max_tokens: maxTokens || 2048, system: systemPrompt, messages: [{ role: 'user', content: userContent }] });
-  return data.content[0].text;
+  var text = data && data.content && data.content[0] && data.content[0].text;
+  if (!text) throw new Error('AI로부터 빈 응답을 받았습니다. 다시 시도해 주세요.');
+  return text;
 }
 
 async function blogCall(systemPrompt, userContent, maxTokens) {

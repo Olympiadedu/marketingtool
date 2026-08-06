@@ -502,6 +502,13 @@ function _callClaude(apiKey, model, payload, output) {
     output.setContent(JSON.stringify({ ok: false, error: (json.error && json.error.message) || ('Claude API 오류 ' + res.getResponseCode()) }));
     return output;
   }
+  // Gemini/OpenAI 경로와 동일하게, 텍스트 블록이 실제로 있는지 확인 — 없으면 클라이언트가
+  // data.content[0].text를 undefined로 받아 이후 .trim() 호출에서 크래시하므로 여기서 막음
+  var text = json.content && json.content[0] && json.content[0].text;
+  if (!text) {
+    output.setContent(JSON.stringify({ ok: false, error: 'Claude 빈 응답(텍스트 블록 없음)' }));
+    return output;
+  }
   output.setContent(JSON.stringify({ ok: true, data: json })); // 이미 { content:[{text}] } 형태
   return output;
 }
