@@ -156,6 +156,16 @@ function _todayKST() {
   return Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd');
 }
 
+// appendRow에 "yyyy-MM-dd HH:mm" 문자열을 넣어도 시트가 자동으로 실제 Date 값으로
+// 바꿔버리는 경우가 있음 — String(dateObj)는 "Thu Aug 06 2026 ..." 형태라
+// String(row[0]).substring(0,10)이 "yyyy-MM-dd"와 절대 일치하지 않게 됨.
+// Date 객체면 KST로 다시 포맷하고, 이미 문자열이면 앞 10자를 그대로 씀.
+function _rowDateKST(val) {
+  if (!val) return '';
+  if (val instanceof Date) return Utilities.formatDate(val, 'Asia/Seoul', 'yyyy-MM-dd');
+  return String(val).substring(0, 10);
+}
+
 // blog_posts 시트에서 오늘 해당 사용자가 작성(저장)한 글 수
 function _countTodayPosts(userId) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -165,7 +175,7 @@ function _countTodayPosts(userId) {
   var today = _todayKST();
   var count = 0;
   data.forEach(function(row) {
-    var rowDate = row[0] ? String(row[0]).substring(0, 10) : '';
+    var rowDate = _rowDateKST(row[0]);
     if (rowDate === today && String(row[9] || '') === String(userId)) count++;
   });
   return count;
@@ -209,7 +219,7 @@ function doGet(e) {
 
   var posts = data.reverse().map(function(row) {
     return {
-      date:      row[0] ? String(row[0]).substring(0, 10) : '',
+      date:      _rowDateKST(row[0]),
       type:      row[1] || '',
       mood:      row[2] || '',
       topic:     row[3] || '',
@@ -334,7 +344,7 @@ function _getMyPosts(userId, n) {
     .slice(0, Math.min(n || 100, 100))
     .map(function(row) {
       return {
-        date: row[0] ? String(row[0]).substring(0, 10) : '',
+        date: _rowDateKST(row[0]),
         type: row[1] || '', mood: row[2] || '', topic: row[3] || '', keywords: row[4] || '',
         tags: row[5] || '', title: row[6] || '', body: row[7] || '', structure: row[8] || ''
       };
