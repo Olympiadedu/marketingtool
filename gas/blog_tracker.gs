@@ -166,12 +166,20 @@ function _rowDateKST(val) {
   return String(val).substring(0, 10);
 }
 
+// 시트 전체를 매번 읽으면 글이 쌓일수록(초안 생성 전 1회 + 저장 후 1회, 글쓰기마다 2번씩
+// 호출됨) 점점 느려짐. appendRow로만 쓰기 때문에 항상 뒤쪽에 최신 행이 쌓이므로, "오늘"
+// 행은 반드시 꼬리 쪽에 있다 — 일일 한도(DAILY_BLOG_LIMIT)를 감안하면 아무리 사용자가
+// 많아도 최근 수백 행 안에 오늘자가 전부 들어있어, 꼬리만 읽어도 정확도 손실이 없다.
+var RECENT_SCAN_ROWS = 500;
+
 // blog_posts 시트에서 오늘 해당 사용자가 작성(저장)한 글 수
 function _countTodayPosts(userId) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet || sheet.getLastRow() <= 1) return 0;
-  var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, 10).getValues();
+  var lastRow = sheet.getLastRow();
+  var startRow = Math.max(2, lastRow - RECENT_SCAN_ROWS + 1);
+  var data = sheet.getRange(startRow, 1, lastRow - startRow + 1, 10).getValues();
   var today = _todayKST();
   var count = 0;
   data.forEach(function(row) {
