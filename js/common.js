@@ -239,9 +239,21 @@ async function claudeProxyCall(payload) {
     headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GAS는 OPTIONS(preflight)를 못 받으므로 simple-request로 보냄
     body: JSON.stringify({ action: 'claudeProxy', token: cfg.token, userId: auth.id, userPw: auth.pw, site: _siteId(), payload: payload })
   });
-  var json = await res.json();
+  var json = await _parseGasJson(res);
   if (!json.ok) throw new Error(json.error || 'Claude 요청 실패');
   return json.data;
+}
+
+// GAS 응답이 JSON이 아니라 HTML(구글 로그인/에러 페이지 등)로 오면 res.json()이
+// "Unexpected token '<' ... is not valid JSON" 같은 알기 어려운 에러를 던지므로,
+// 원인을 바로 알 수 있는 메시지로 바꿔줌 (GAS URL 미배포/권한 미설정/재배포로 URL 변경 등이 흔한 원인)
+async function _parseGasJson(res) {
+  var text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    throw new Error('서버(GAS) 응답이 올바르지 않습니다 — GAS 웹앱 URL/배포 권한을 확인해 주세요. (HTTP ' + res.status + ')');
+  }
 }
 
 // Gemini 프록시 (뉴스 소재 추천 등 텍스트 전용 호출) — { model, system, content, max_tokens } 형태
@@ -255,7 +267,7 @@ async function geminiProxyCall(payload) {
     headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // GAS는 OPTIONS(preflight)를 못 받으므로 simple-request로 보냄
     body: JSON.stringify({ action: 'geminiProxy', token: cfg.token, userId: auth.id, userPw: auth.pw, site: _siteId(), payload: payload })
   });
-  var json = await res.json();
+  var json = await _parseGasJson(res);
   if (!json.ok) throw new Error(json.error || 'Gemini 요청 실패');
   return json.text;
 }
