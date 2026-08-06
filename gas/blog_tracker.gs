@@ -502,14 +502,16 @@ function _callClaude(apiKey, model, payload, output) {
     output.setContent(JSON.stringify({ ok: false, error: (json.error && json.error.message) || ('Claude API 오류 ' + res.getResponseCode()) }));
     return output;
   }
-  // Gemini/OpenAI 경로와 동일하게, 텍스트 블록이 실제로 있는지 확인 — 없으면 클라이언트가
-  // data.content[0].text를 undefined로 받아 이후 .trim() 호출에서 크래시하므로 여기서 막음
-  var text = json.content && json.content[0] && json.content[0].text;
-  if (!text) {
-    output.setContent(JSON.stringify({ ok: false, error: 'Claude 빈 응답(텍스트 블록 없음)' }));
+  // content[0]이 항상 텍스트 블록이라고 가정하면 안 됨 — 모델이 "thinking" 블록을 먼저
+  // 반환하고 그 다음에 텍스트 블록을 두는 경우, content[0].text는 undefined가 됨.
+  // 배열 전체에서 text 속성을 가진 첫 블록을 찾는다.
+  var textBlock = (json.content || []).filter(function(b) { return b && b.text; })[0];
+  if (!textBlock) {
+    output.setContent(JSON.stringify({ ok: false, error: 'Claude 빈 응답(텍스트 블록 없음) — max_tokens을 늘려보세요.' }));
     return output;
   }
-  output.setContent(JSON.stringify({ ok: true, data: json })); // 이미 { content:[{text}] } 형태
+  // 클라이언트는 data.content[0].text만 읽으므로, 텍스트 블록을 맨 앞으로 정규화해서 돌려줌
+  output.setContent(JSON.stringify({ ok: true, data: { content: [textBlock] } }));
   return output;
 }
 
