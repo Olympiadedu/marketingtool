@@ -1646,8 +1646,6 @@ function initCanvasSelectionClear() {
   });
 }
 
-// ── GEMINI AI PROMO ──
-var GEMINI_PROMO_FALLBACK = ['gemini-2.5-flash','gemini-3.5-flash','gemini-3-flash','gemini-3.1-flash-lite','gemini-2.5-flash-lite'];
 
 function setAiStatus(msg, type) {
   var el = document.getElementById('ai-status');
@@ -1656,11 +1654,6 @@ function setAiStatus(msg, type) {
   el.className = 'ai-status' + (type ? ' ' + type : '');
 }
 
-async function loadGeminiKeys() {
-  var key = getApiKey('gemini');
-  if (key && key.trim().length > 10) return [key.trim()];
-  return [];
-}
 
 function getCleanP2ImageDataUrl(mimeType, quality) {
   if (!p2Canvas) return null;
@@ -1797,46 +1790,6 @@ function isUsablePromoText(text) {
   return v.hookOk && v.bodyOk && v.tagsOk;
 }
 
-async function callGeminiPromo(keys, imageDataUrl, prompt) {
-  var b64 = imageDataUrl.split(',')[1];
-  var mimeType = imageDataUrl.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
-  var selectedGemini = getModel('gemini');
-  var geminiModels = [selectedGemini].concat(GEMINI_PROMO_FALLBACK.filter(function(m){ return m !== selectedGemini; }));
-  var lastErr = null;
-  for (var ki = 0; ki < keys.length; ki++) {
-    for (var mi = 0; mi < geminiModels.length; mi++) {
-      var model = geminiModels[mi];
-      try {
-        var url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + keys[ki];
-        var body = {
-          contents: [{
-            parts: [
-              { inline_data: { mime_type: mimeType, data: b64 } },
-              { text: prompt }
-            ]
-          }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 800 }
-        };
-        var res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
-        if (!res.ok) {
-          var errText = await res.text();
-          lastErr = 'HTTP ' + res.status + ': ' + errText.substring(0, 100);
-          continue;
-        }
-        var data = await res.json();
-        var text = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) ? data.candidates[0].content.parts[0].text : null;
-        if (text && text.trim()) return { ok: true, text: text, model: model };
-        lastErr = '빈 응답';
-      } catch(e) { lastErr = e.message; }
-    }
-  }
-  return { ok: false, error: lastErr || '모든 키/모델 실패' };
-}
-
 async function callClaudePromo(imageDataUrl, prompt) {
   var b64 = imageDataUrl.split(',')[1];
   var mimeType = imageDataUrl.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
@@ -1851,30 +1804,6 @@ async function callClaudePromo(imageDataUrl, prompt) {
     });
     var text = data.content && data.content[0] && data.content[0].text;
     if (text && text.trim()) return { ok: true, text: text, model: getModel('claude') };
-    return { ok: false, error: '빈 응답' };
-  } catch(e) { return { ok: false, error: e.message }; }
-}
-
-async function callOpenAIPromo(imageDataUrl, prompt) {
-  var key = getApiKey('openai');
-  if (!key || key.length < 10) return { ok: false, error: '키 없음' };
-  try {
-    var res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
-      body: JSON.stringify({
-        model: getModel('openai'),
-        max_tokens: 800,
-        messages: [{ role: 'user', content: [
-          { type: 'image_url', image_url: { url: imageDataUrl } },
-          { type: 'text', text: prompt }
-        ]}]
-      })
-    });
-    if (!res.ok) { var e = await res.text(); return { ok: false, error: 'HTTP ' + res.status + ': ' + e.substring(0, 80) }; }
-    var data = await res.json();
-    var text = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-    if (text && text.trim()) return { ok: true, text: text, model: 'gpt-4o-mini' };
     return { ok: false, error: '빈 응답' };
   } catch(e) { return { ok: false, error: e.message }; }
 }

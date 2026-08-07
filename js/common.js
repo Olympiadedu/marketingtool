@@ -401,31 +401,6 @@ async function gasSavePost(data) {
   } catch (e) {}
 }
 
-function _gasSetTestStatus(msg, ok) {
-  var el = document.getElementById('gas-test-status');
-  if (el) { el.textContent = msg; el.style.color = ok === true ? '#16a34a' : ok === false ? '#ef4444' : 'var(--mut)'; }
-}
-
-async function gasTestSave() {
-  var cfg = getGasConfig();
-  if (!cfg.url || !cfg.token) { _gasSetTestStatus('⚠️ GAS URL/토큰 없음', false); return; }
-  _gasSetTestStatus('전송 중...', null);
-  try {
-    await gasSavePost({ type: '테스트', mood: '', title: '[테스트] 연동확인', topic: '연동테스트', keywords: 'test', tags: '테스트', body: '구글시트 연동 테스트 데이터입니다.' });
-    _gasSetTestStatus('✅ 저장 전송 완료 (시트에서 확인하세요)', true);
-  } catch(e) { _gasSetTestStatus('❌ ' + e.message, false); }
-}
-
-async function gasTestFetch() {
-  var cfg = getGasConfig();
-  if (!cfg.url || !cfg.token) { _gasSetTestStatus('⚠️ GAS URL/토큰 없음', false); return; }
-  _gasSetTestStatus('조회 중...', null);
-  try {
-    var posts = await gasGetRecentPosts(1);
-    _gasSetTestStatus('✅ 조회 성공 — 저장된 글 ' + posts.length + '건 확인', true);
-  } catch(e) { _gasSetTestStatus('❌ ' + e.message, false); }
-}
-
 async function gasGetRecentPosts(n) {
   var cfg = getGasConfig();
   if (!cfg.url || !cfg.token) return [];
@@ -451,39 +426,8 @@ async function gasFetchNaverBlogContent(url) {
   } catch(e) { return null; }
 }
 
-async function gasTestConnection() {
-  var urlEl = document.getElementById('set-gas-url');
-  var tokenEl = document.getElementById('set-gas-token');
-  var statusEl = document.getElementById('set-gas-status');
-  if (!urlEl || !tokenEl || !statusEl) return;
-  var url = urlEl.value.trim();
-  var token = tokenEl.value.trim();
-  if (!url || !token) { statusEl.textContent = '⚠️ URL과 토큰을 먼저 입력하세요.'; return; }
-  statusEl.textContent = '연결 확인 중...';
-  try {
-    var res = await fetch(url + '?action=get&token=' + encodeURIComponent(token) + '&n=1');
-    var json = await res.json();
-    if (json.error) {
-      statusEl.textContent = '❌ 오류: ' + json.error;
-    } else {
-      statusEl.textContent = '✅ 연결 성공! 저장된 글: ' + (json.posts ? json.posts.length + '개 조회됨' : '0개');
-      statusEl.style.color = 'var(--acc)';
-    }
-  } catch(e) {
-    statusEl.textContent = '❌ 연결 실패: ' + e.message;
-    statusEl.style.color = '#ef4444';
-  }
-}
-
 // ── 설정 페이지 초기화 ────────────────────────────────────────────
 function settingsInit() {
-  var sel = document.getElementById('set-claude-model');
-  if (sel) sel.value = getModel('claude');
-  // GAS 설정 로드 (레거시 필드 — 현재 settings.html엔 없지만 존재하면 채움)
-  var gasUrl = document.getElementById('set-gas-url');
-  var gasToken = document.getElementById('set-gas-token');
-  if (gasUrl) gasUrl.value = localStorage.getItem('mtt_gas_url') || '';
-  if (gasToken) gasToken.value = localStorage.getItem('mtt_gas_token') || '';
   settingsUpdateStatus();
 }
 
@@ -546,13 +490,6 @@ function settingsUpdateCurrent() {
 }
 
 function settingsSave() {
-  var sel = document.getElementById('set-claude-model');
-  if (sel && sel.value) localStorage.setItem('mtt_model_claude', sel.value);
-  // GAS 설정 저장
-  var gasUrl = document.getElementById('set-gas-url');
-  var gasToken = document.getElementById('set-gas-token');
-  if (gasUrl) { var gv = gasUrl.value.trim(); if (gv) localStorage.setItem('mtt_gas_url', gv); else localStorage.removeItem('mtt_gas_url'); }
-  if (gasToken) { var gt = gasToken.value.trim(); if (gt) localStorage.setItem('mtt_gas_token', gt); else localStorage.removeItem('mtt_gas_token'); }
   // 프롬프트 저장
   var promoEl = document.getElementById('promo-prompt-edit');
   if (promoEl && promoEl.value.trim()) localStorage.setItem('mtt_promo_prompt', promoEl.value.trim());
